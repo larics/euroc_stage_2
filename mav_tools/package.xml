@@ -1,0 +1,24 @@
+<package>
+  <name>mav_tools</name>
+  <version>1.0.0</version>
+  <description>A set of tools used by our MAVS</description>
+  <maintainer email="markus.achtelik_devel@mavt.ethz.ch">Markus Achtelik</maintainer>
+
+  <license>BSD</license>
+
+  <!--url type="website">http://ros.org/wiki/asctec_mav_framework</url-->
+  <url type="bugtracker">https://github.com/ethz-asl/mav_tools/issues</url>
+
+  <author>Markus Achtelik</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>mav_startup</run_depend>
+  <run_depend>mav_joy</run_depend>
+  
+  <export>
+    <metapackage/>
+  </export>
+</package>
