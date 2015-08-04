@@ -1,0 +1,11 @@
+*~
+*~
+build
+lib
+*.o
+*.so
+*.pyc
+.project
+.cproject
+.pydevproject
+.DS_Store

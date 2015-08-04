@@ -1,0 +1,17 @@
+- git: {local-name: catkin_simple, uri: 'git@github.com:catkin/catkin_simple.git'}
+- git: {local-name: doxygen_catkin, uri: 'git@github.com:ethz-asl/doxygen_catkin.git'}
+- git: {local-name: eclipsify, uri: 'git@github.com:ethz-asl/eclipsify.git'}
+- git: {local-name: eigen_checks, uri: 'git@github.com:ethz-asl/eigen_checks.git'}
+- git: {local-name: ethzasl_brisk, uri: 'git@github.com:ethz-asl/ethzasl_brisk.git'}
+- git: {local-name: gurobi_catkin, uri: 'git@github.com:ethz-asl/gurobi_catkin.git'}
+- git: {local-name: libnabo, uri: 'git@github.com:ethz-asl/libnabo.git'}
+- git: {local-name: libvisensor, uri: 'git@github.com:ethz-asl/libvisensor_devel.git'}
+- git: {local-name: minkindr, uri: 'git@github.com:ethz-asl/minkindr.git'}
+- git: {local-name: minkindr_ros, uri: 'git@github.com:ethz-asl/minkindr_ros.git'}
+- git: {local-name: mono_dense_reconstruction, uri: 'git@github.com:ethz-asl/mono_dense_reconstruction.git'}
+- git: {local-name: multiagent_mapping, uri: 'git@github.com:ethz-asl/multiagent_mapping.git'}
+- git: {local-name: opengv, uri: 'git@github.com:ethz-asl/opengv.git'}
+- git: {local-name: schweizer_messer, uri: 'git@github.com:ethz-asl/Schweizer-Messer.git'}
+- git: {local-name: thirdparty_submodules, uri: 'git@github.com:ethz-asl/thirdparty_submodules.git', version: 5d3084f0d272e39f1716a6baab7f8a9e611de33f}
+- git: {local-name: volumetric_mapping, uri: 'git@github.com:ethz-asl/volumetric_mapping.git'}
+- git: {local-name: numerical_methods, uri: 'git@github.com:ethz-asl/numerical_methods.git'}

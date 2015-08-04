@@ -1,0 +1,6 @@
+- git: {local-name: euroc_challenger, uri: 'git@github.com:ethz-asl/euroc_challenger.git'}
+- git: {local-name: euroc_simulator, uri: 'git@github.com:ethz-asl/euroc_simulator.git'}
+- git: {local-name: euroc_comm, uri: 'git@github.com:ethz-asl/euroc_comm.git'}
+- git: {local-name: hector_gazebo, uri: 'https://github.com/tu-darmstadt-ros-pkg/hector_gazebo'}
+- git: {local-name: mav_gui, uri: 'git@github.com:ethz-asl/mav_gui.git'}
+- git: {local-name: mav_planning_gui, uri: 'git@github.com:ethz-asl/mav_planning_gui.git'}
