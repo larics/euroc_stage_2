@@ -1,0 +1,5 @@
+<library path="lib/libethzasl_mav_interface_nodelet">
+  <class name="ethzasl_mav_interface/MavInterface" type="ethzasl_mav_interface::MavInterfaceNodelet" base_class_type="nodelet::Nodelet">
+    <description>This is the nodelet version of mav_interface</description>
+  </class>
+</library>
