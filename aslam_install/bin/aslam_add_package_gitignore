@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+ignores = [ "*~",
+            "\#*",
+            "bin",
+            "build",
+            "lib",
+            "*.o",
+            "*.so",
+            "*.pyc",
+            ".project",
+            ".cproject",
+            ".pydevproject"]
+
+with open('.gitignore','a') as gi:
+    for ignore in ignores:
+        gi.write("{0}\n".format(ignore))
