@@ -1,0 +1,45 @@
+<launch>
+
+  <arg name="namespace" default="hummy"/>
+
+  <include file="$(find vicon_bridge)/launch/vicon.launch" />
+
+    <node name="joy" pkg="joy" type="joy_node" clear_params="true" output="screen">
+    </node>
+
+  <group ns="$(arg namespace)" >
+
+
+	        <!-- camera -->
+			<include file="$(find mav_startup)/launch/cam_bluefox.launch" >             
+				<arg name="guid_file" value="$(find mav_startup)/parameters/mavs/hummy_2/cam_down_guid.yaml"/> 
+			</include>
+
+    <rosparam file="$(find mav_startup)/parameters/mavs/hummy_2/controller_parameters.yaml" ns="fcu"/>
+    <node name="fcu" pkg="asctec_hl_interface" type="hl_node" output="screen" respawn="true" clear_params="true">       
+      <param name="frame_id" value="fcu" />
+      <rosparam file="$(find mav_startup)/parameters/mavs/hummy_2/fcu_parameters.yaml" />
+      <rosparam file="$(find mav_startup)/parameters/mavs/hummy_2/ssdk_parameters.yaml" />
+      <param name="capability_group" value="Core"/>       
+    </node>
+
+    <node name="msf" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+      <remap from="msf_updates/transform_input" to="/vicon/hummy_2/hummy_2" />
+      <remap from="msf_core/hl_state_input" to="/hummy/fcu/ekf_state_out" />
+      <remap from="msf_core/correction" to="/hummy/fcu/ekf_state_in"/>
+      <rosparam file="$(find mav_startup)/parameters/mavs/hummy_2/vicon_msf.yaml"/>
+      <param name="capability_group" value="Core"></param>
+    </node>
+
+    <node name="rate_controller" pkg="rate_controller" type="rate_controller_node" clear_params="true" output="screen">
+       <param name="capability_group" value="Core"></param>
+    </node>
+    <node name="throw_controller" pkg="throw_controller" type="throw_control_node" clear_params="true" output="screen">
+      <remap from="/hummy/fcu/joy" to="/joy"/>
+
+       <param name="capability_group" value="Core"></param>
+    </node>
+
+  </group>
+
+</launch>

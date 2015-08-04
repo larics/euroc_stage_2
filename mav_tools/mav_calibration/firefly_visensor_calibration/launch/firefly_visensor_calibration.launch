@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<launch>
+     <node  name="firefly_visensor_calibration" pkg="firefly_visensor_calibration" type="firefly_visensor_calibration_node" clear_params="true" output="screen">
+      <rosparam file="$(find firefly_visensor_calibration)/launch/config.yaml" />
+   </node> 
+</launch>

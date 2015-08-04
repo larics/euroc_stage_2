@@ -1,0 +1,17 @@
+<package>
+  <name>mav_startup</name>
+  <version>1.0.0</version>
+  <description>collection of launch files and parameters</description>
+  <maintainer email="markus.achtelik_devel@mavt.ethz.ch">Markus Achtelik</maintainer>
+
+  <license>BSD</license>
+
+  <!--url type="website">http://ros.org/wiki/asctec_mav_framework</url-->
+  <url type="bugtracker">https://github.com/ethz-asl/mav_tools/issues</url>
+
+  <author>Markus Achtelik</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

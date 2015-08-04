@@ -1,0 +1,19 @@
+<launch>
+   <arg name="namespace" default="auk"/>
+
+   <group ns="$(arg namespace)" >
+      <node name="auk" pkg="asctec_hl_interface" type="hl_node" output="screen" respawn="true" clear_params="true">       
+         <param name="frame_id" value="fcu" />
+         <rosparam file="$(find mav_startup)/parameters/mavs/auk/fcu_parameters_aslam.yaml" />
+         <rosparam file="$(find mav_startup)/parameters/mavs/auk/ssdk_parameters_aslam.yaml" />
+         <param name="capability_group" value="Asctec Interface"/>       
+      </node>
+      <node name="pose_sensor" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+         <remap from="msf_core/hl_state_input" to="fcu/ekf_state_out" />
+         <remap from="msf_core/correction" to="fcu/ekf_state_in" />
+         <remap from="msf_updates/transform_input" to="/aslam/aslam_transform" />
+         <rosparam file="$(find mav_startup)/parameters/mavs/auk/msf_parameters_aslam.yaml"/>
+         <param name="capability_group" value="State Estimation"></param>
+      </node>
+   </group>
+</launch>
