@@ -1,0 +1,7 @@
+<launch>
+  <arg name="object_name" default="auk" />
+  <node name="$(arg object_name)_kill_switch" type="kill_switch_node" pkg="kill_switch_library" output="screen">
+    <param name="port_name" value="/dev/ttyUSB1" />
+    <param name="check_frequency_hz" value="10" />
+  </node>
+</launch>
