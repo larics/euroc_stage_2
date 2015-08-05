@@ -2,7 +2,7 @@
 <package>
   <name>euroc_stage_2</name>
   <version>0.0.0</version>
-  <description>Meta-package for all EUROC Stage 2 on-board MAV packages.</description>
+  <description>Meta-package for all EUROC Stage 2 MAV packages provided to the challengers.</description>
   <maintainer email="elena.oleynikova@mavt.ethz.ch">Helen Oleynikova</maintainer>
 
   <license>See individual packages</license>
