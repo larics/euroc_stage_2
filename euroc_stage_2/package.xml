@@ -17,9 +17,11 @@
   <run_depend>ethzasl_brisk</run_depend>
   <run_depend>ethzasl_mav_interface</run_depend>
   <run_depend>ethzasl_msf</run_depend>
+  <run_depend>euroc_launch</run_depend>
   <run_depend>glog_catkin</run_depend>
   <run_depend>libvisensor</run_depend>
   <run_depend>mav_comm</run_depend>
+  <run_depend>mav_control</run_depend>
   <run_depend>mav_tools</run_depend>
   <run_depend>opencv2_catkin</run_depend>
   <run_depend>opengv</run_depend>
