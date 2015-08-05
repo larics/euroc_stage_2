@@ -6,8 +6,7 @@
       <node name="mav_interface" pkg="ethzasl_mav_interface" type="mav_interface_node"
         output="screen" respawn="true" clear_params="true">
         <param name="frame_id" value="fcu" />
-        <param name="serial_port" value="/dev/ttyS3" />
-        <param name="baudrate" value="57600" />
+        <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/mav_interface.yaml"/>
       </node>
 
       <node name="visensor_node" pkg="visensor_node" type="visensor_node" output="screen">
