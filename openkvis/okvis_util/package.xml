@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <name>okvis_util</name>
+  <version>0.0.1</version>
+  <description>okvis_util</description>
+  <maintainer email="stefan.leutenegger@mavt.ethz.ch">Stefan Leutenegger</maintainer>
+  <license>New BSD</license>
+  <license>CLOSED</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+</package>
