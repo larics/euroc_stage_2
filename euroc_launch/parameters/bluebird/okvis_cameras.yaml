@@ -1,0 +1,102 @@
+%YAML:1.0
+# p21014
+cameras:
+    - {T_SC:
+       [ -0.00474024580804, -0.999979968616, 0.00419433377151, -0.0150069501295,
+         0.999957556455, -0.00477319357782, -0.00788047655297, -0.0694967842844,
+         0.00790033906314, 0.00415680035318, 0.999960152033, 0.00203121078775,
+          0.0, 0.0, 0.0, 1.0],
+       image_dimension: [752, 480],
+       distortion_coefficients: [-0.0116985210121, 0.0718707198887, -0.134936615637, 0.08696913114],
+       distortion_type: equidistant,
+       focal_length: [468.726144609, 467.180200739],
+       principal_point: [367.396005351, 237.961941703]}
+
+    - {T_SC:
+       [ -0.00544367153873, -0.999977951707, 0.00380296454237, -0.0153761838635,
+         0.999983597973, -0.00545039497149, -0.00175982395501, 0.040511183096,
+         0.00178051281272, 0.00379332226246, 0.999991220202, 0.0020541747555,
+          0.0, 0.0, 0.0, 1.0],
+       image_dimension: [752, 480],
+       distortion_coefficients: [-0.0093418305355, 0.0525904665568, -0.0913961631307, 0.0580273239756],
+       distortion_type: equidistant,
+       focal_length: [467.130434784, 465.767077124],
+       principal_point: [383.708652341, 236.61095204]}
+
+camera_params:
+    camera_rate: 20
+    sigma_absolute_translation: 0.0 #1.0e-8
+    sigma_absolute_orientation: 0.0 #1.0e-3
+    sigma_c_relative_translation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
+    sigma_c_relative_orientation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
+    timestamp_tolerance: 0.005 # seconds
+
+# tranform Body-Sensor (IMU)
+T_BS:
+    [1.0000, 0.0000, 0.0000, 0.0000,
+     0.0000, 1.0000, 0.0000, 0.0000,
+     0.0000, 0.0000, 1.0000, 0.0000,
+     0.0000, 0.0000, 0.0000, 1.0000]
+
+imu_params:
+    a_max: 176.0 #m/s^2
+    g_max: 7.8 #rad/s
+    sigma_g_c: 6.0e-4 #6.0e-4
+    sigma_a_c: 2.0e-3 #2.0e-3
+    sigma_gw_c: 3.0e-6 #3.0e-6
+    sigma_aw_c: 2.0e-5 #2.0e-5
+    tau: 3600.0
+    g: 9.81007
+    a0: [ 0.0, -0.0, 0.00 ]
+    #[09:49:28] Joern: accelerometer_noise_density: 1.7e-3, accelerometer_random_walk: 6.3895e-005,
+    imu_rate: 200
+#gyroscope_noise_density: 0.2e-3, gyroscope_random_walk: 2.8577e-006
+
+# dummy magnetometer
+magnetometer_params:
+    stdev: 2.0                           # measurement (white noise part) stdev [uT]
+    biasPriorStdev: 5.0                  # prior [uT]
+    zDistortionPriorStdev: 2.0           # prior [uT]
+    tau_bias: 100.0                     # reversion time constant of bias [s]
+    tau_zDistortion: 1000.0               # reversion time constant of z-component [s]
+    biasDiffNoiseDensity: 1.0e-2         # bias noise density [uT/sqrt(Hz)]
+    zDistortionDiffNoiseDensity: 1.0e-4  # z-component noise density [uT/sqrt(Hz)]
+
+# use the IMU at all?
+useImu: true
+
+# VIO window parameters
+numKeyframes: 5
+numImuFrames: 3
+
+# ceres optimization options
+ceres_options:
+    minIterations: 3
+    maxIterations: 10
+    timeLimit: 0.025      # [s] negative values will set the an unlimited time limit
+
+# detection
+detectionThreshold: 40.0
+detectionOctaves: 0
+
+# delay of images [s]: -8ms with zero-order hold integration at 200 Hz: makes sense.
+imageDelay: 0.0 # -0.0055 without Joern's awesome synchronization, 0 otherwise
+
+# display Images?
+displayImages: false
+
+# use direct driver
+useDriver: false
+
+# save optimization to disk
+saveGraphs: false
+
+# rate at which odometry updates are published
+# only works properly if imu_rate/publish_rate is an integer!!
+publish_rate: 20
+
+publishing_options:
+    landmarkQualityThreshold: 1.0e-5     # landmark with lower quality will not be published
+    maximumLandmarkQuality: 0.05         # landmark with higher quality will be published with the maximum colour intensity
+    maxPathLength: 20                    # maximum length of the published path
+    publishImuPropagatedState: true      # publish state after each processed IMU measurement instead of after each processed image
