@@ -531,34 +531,79 @@ bool VioParametersReader::getCalibrationViaVisensorAPI(
   for (auto it = listOfCameraIds.begin(); it != listOfCameraIds.end(); ++it) {
     visensor::ViCameraCalibration calibrationFromAPI;
     okvis::VioParametersReader::CameraCalibration calibration;
-    if(!viSensor->getCameraCalibration(*it,calibrationFromAPI)) {
+
+    // TODO(burrimi): move this to some sort of configuration file.
+    const int is_flipped = 1;
+    const int slot_number = 0;
+
+    std::vector<visensor::ViCameraCalibration> calibration_list =
+        viSensor->getCameraCalibrations(*it, slot_number, is_flipped, visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT,
+                                        visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
+
+    // We prefer equidistant, therefore we only try to load a radial model if no equidistant is found.
+    if(calibrations.empty()) {
+      calibration_list = viSensor->getCameraCalibrations(*it, slot_number, is_flipped, visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+                                                         visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
+    }
+
+    if(calibration_list.empty()) {
       LOG(ERROR) << "Reading the calibration via the sensor API failed.";
       calibrations.clear();
       return false;
     }
+
+    calibrationFromAPI = calibration_list.front();
+
     LOG(INFO) << "Reading the calbration for camera " << size_t(*it) << " via API successful";
-    double* R = calibrationFromAPI.R;
-    double* t = calibrationFromAPI.t;
+    std::vector<double> R = calibrationFromAPI.R_;
+    std::vector<double> t = calibrationFromAPI.t_;
     // getCameraCalibration apparently gives T_CI back.
     //(Confirmed by comparing it to output of service)
     Eigen::Matrix4d T_CI;
     T_CI << R[0], R[1], R[2], t[0],
-            R[3], R[4], R[5], t[1],
-            R[6], R[7], R[8], t[2],
-            0,    0,    0,    1;
+        R[3], R[4], R[5], t[1],
+        R[6], R[7], R[8], t[2],
+        0,    0,    0,    1;
     okvis::kinematics::Transformation T_CI_okvis(T_CI);
     calibration.T_SC = T_CI_okvis.inverse();
 
-    calibration.focalLength << calibrationFromAPI.focal_point[0],
-                               calibrationFromAPI.focal_point[1];
-    calibration.principalPoint << calibrationFromAPI.principal_point[0],
-                                  calibrationFromAPI.principal_point[1];
-    calibration.distortionCoefficients << calibrationFromAPI.dist_coeff[0],
-                                          calibrationFromAPI.dist_coeff[1],
-                                          calibrationFromAPI.dist_coeff[2],
-                                          calibrationFromAPI.dist_coeff[3];
-    calibration.imageDimension << 752, 480;
-    calibration.distortionType = "plumb_bob";
+    calibration.imageDimension << calibrationFromAPI.resolution_[0], calibrationFromAPI.resolution_[1];
+
+    if(calibrationFromAPI.projection_model_->type_ != visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE) {
+      LOG(ERROR) << "Reading the calibration via the sensor API failed. Projection model not supported";
+      calibrations.clear();
+      return false;
+    }
+    std::vector<double> projection_coefficients = calibrationFromAPI.projection_model_->getCoefficients();
+
+    calibration.focalLength << projection_coefficients[0],
+        projection_coefficients[1];
+    calibration.principalPoint << projection_coefficients[2],
+        projection_coefficients[3];
+
+
+    if(calibrationFromAPI.lens_model_->type_ != visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT) {
+      std::vector<double> lens_coefficients = calibrationFromAPI.projection_model_->getCoefficients();
+
+      calibration.distortionCoefficients << lens_coefficients[0],
+          lens_coefficients[1],
+          lens_coefficients[2],
+          lens_coefficients[3];
+      calibration.distortionType = "equdistant";
+    } else if(calibrationFromAPI.lens_model_->type_ != visensor::ViCameraLensModel::LensModelTypes::RADIAL) {
+      std::vector<double> lens_coefficients = calibrationFromAPI.projection_model_->getCoefficients();
+
+      calibration.distortionCoefficients << lens_coefficients[0],
+          lens_coefficients[1],
+          lens_coefficients[2],
+          lens_coefficients[3];
+      calibration.distortionType = "radialtangential";
+    } else {
+      LOG(ERROR) << "Reading the calibration via the sensor API failed. Lense model not supported";
+      calibrations.clear();
+      return false;
+    }
+
     calibrations.push_back(calibration);
   }
 
