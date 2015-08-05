@@ -1,4 +1,0 @@
-- git: {local-name: catkin_simple, uri: 'git@github.com:catkin/catkin_simple.git'}
-- git: {local-name: eigen_checks, uri: 'git@github.com:ethz-asl/eigen_checks.git'}
-- git: {local-name: libnabo, uri: 'git@github.com:ethz-asl/libnabo.git'}
-- git: {local-name: thirdparty_submodules, uri: 'git@github.com:ethz-asl/thirdparty_submodules.git'}

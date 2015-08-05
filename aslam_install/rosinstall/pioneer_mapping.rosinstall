@@ -1,7 +1,0 @@
-- git: {local-name: pioneer_mapping, uri: 'git@github.com:ethz-asl/pioneer_mapping.git'}
-- git: {local-name: catkin_simple, uri: 'git@github.com:catkin/catkin_simple.git'}
-- git: {local-name: thirdparty_submodules, uri: 'git@github.com:ethz-asl/thirdparty_submodules.git'}
-- git: {local-name: visensor_node_devel, uri: 'git@github.com:ethz-asl/visensor_node_devel.git'}
-- git: {local-name: libvisensor_devel, uri: 'git@github.com:ethz-asl/libvisensor_devel.git'}
-- git: {local-name: rosaria, uri: 'git@github.com:amor-ros-pkg/rosaria.git'}
-- git: {local-name: p2os, uri: 'git@github.com:allenh1/p2os.git'}

@@ -1,6 +1,0 @@
-- git: {local-name: visual_inertial_odometry_g2o, uri: 'git@github.com:ethz-asl/visual_inertial_odometry_g2o.git'}
-- git: {local-name: thirdparty_submodules, uri: 'git@github.com:ethz-asl/thirdparty_submodules.git'}
-- git: {local-name: schweizer_messer, uri: 'git@github.com:ethz-asl/Schweizer-Messer.git'}
-- git: {local-name: ethzasl_brisk, uri: 'git@github.com:ethz-asl/ethzasl_brisk.git'}
-- git: {local-name: visensor_node, uri: 'git@github.com:ethz-asl/visensor_node_devel.git'}
-- git: {local-name: libvisensor, uri: 'git@github.com:ethz-asl/libvisensor_devel.git'}
