@@ -1,0 +1,7 @@
+<launch>
+  <node name="mav_saver" pkg="mav_saver" type="mav_saver_node" clear_params="true" output="screen" >
+    <remap from="transform" to="/firefly/ground_truth/transform" />
+  </node>
+
+  <include file="$(find rotors_gazebo)/launch/mav_hovering_example.launch" />
+</launch>
