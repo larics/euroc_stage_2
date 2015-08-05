@@ -161,7 +161,18 @@ void Subscriber::initialiseDriverCallbacks()
     sensor_->setFramesCornersCallback(
         std::bind(&Subscriber::directFrameCornerCallback, this,
                   std::placeholders::_1, std::placeholders::_2));
-    sensor_->setCameraCalibrationSlot(0);  // 0 is factory calibration
+
+    std::vector<visensor::SensorId::SensorId> listOfCameraIds =
+        sensor_->getListOfCameraIDs();
+
+    for (auto it = listOfCameraIds.begin(); it != listOfCameraIds.end(); ++it) {
+      // TODO(burrimi): move this to some sort of configuration file.
+      const int is_flipped = 1;
+      const int slot_number = 0; // 0 is factory calibration
+      sensor_->setCameraCalibrationToUse(*it, slot_number, is_flipped,
+                                         visensor::ViCameraLensModel::LensModelTypes::UNKNOWN, // TODO(burrimi): which one to select?
+                                         visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
+    }
   } catch (Exception const &ex) {
     LOG(ERROR) << ex.what();
   }
