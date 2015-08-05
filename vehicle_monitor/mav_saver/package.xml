@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>mav_saver</name>
+  <version>0.0.0</version>
+  <description>The mav_saver package</description>
+
+  <maintainer email="markus.achtelik_devel@mavt.ethz.ch">Markus Achtelik</maintainer>
+
+  <license>ASL 2.0</license>
+
+  <url type="website">https://github.com/ethz-asl/vehicle_monitor_library</url>
+  <url type="bugtracker">https://github.com/ethz-asl/vehicle_monitor_library/issues</url>
+
+  <author email="markus.achtelik_devel@mavt.ethz.ch">Markus Achtelik</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>actionlib</depend>
+  <depend>asctec_communication_interface</depend>
+  <depend>cmake_modules</depend>
+  <depend>diagnostic_updater</depend>
+  <depend>ethzasl_mav_interface</depend>
+  <depend>geometry_msgs</depend>
+  <depend>mav_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>nodelet</depend>
+  <depend>octomap</depend>
+  <depend>octomap_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf</depend>
+  <depend>vehicle_monitor_library</depend>
+  <depend>kill_switch_library</depend>
+
+  <test_depend>eigen_checks</test_depend>
+  <test_depend>glog_catkin</test_depend>
+
+  <export>
+    <nodelet plugin="${prefix}/ethzasl_mav_interface_plugins.xml"/>
+  </export>
+</package>

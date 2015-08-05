@@ -1,0 +1,58 @@
+<launch>
+	<arg name="namespace" default="auk"/>	 
+    <arg name="joystick_dev" default="/dev/input/js0"/> 
+
+    <rosparam file="$(find mav_startup)/parameters/capabilities.yaml"/>
+	
+	<group ns="$(arg namespace)" >
+	    
+        <group ns="down">
+	        <!-- bottom camera -->
+			<include file="$(find mav_startup)/launch/image_view.launch" >              
+				<arg name="cam_name" value="camera"/>                
+			</include>
+			
+            <node name="camera_rectified" type="image_view" pkg="image_view">
+                <remap from="image" to="camera/image_rect"/>        
+            </node>
+			
+	        <!-- ptam -->
+	        <include file="$(find mav_startup)/launch/ptam_remote.launch"/>
+        </group>
+        
+        <group ns="forward">
+            <!-- bottom camera -->
+            <include file="$(find mav_startup)/launch/image_view.launch" >              
+                <arg name="cam_name" value="camera"/>                
+            </include>
+            
+            <node name="camera_rectified" type="image_view" pkg="image_view">
+                <remap from="image" to="camera/image_rect"/>        
+            </node>
+            
+            <!-- ptam -->
+            <include file="$(find mav_startup)/launch/ptam_remote.launch"/>
+        </group>
+		
+        <!-- imu -->  
+		<include file="$(find mav_startup)/launch/imu_plots.launch" />
+        
+        <!-- sensor fusion -->
+        <include file="$(find mav_startup)/launch/sensor_fusion_plots.launch" />
+
+        <include file="$(find mav_startup)/launch/sensor_fusion_plots.launch" >
+            <arg name="name" value="msf_core"/>    
+        </include>
+        
+        <!-- joystick interface -->
+        <include file="$(find mav_startup)/launch/joy.launch" >
+            <arg name="dev" value="$(arg joystick_dev)"/>
+        </include>
+        
+	</group>
+
+
+
+<!--rosparam command="load" file="$(find mav_startup)/parameters/gps_ref_$(arg location).yaml"/-->
+
+</launch>

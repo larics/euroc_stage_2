@@ -1,0 +1,10 @@
+<launch>
+  <group ns="okvis">
+    <node name="okvis_node" pkg="okvis_node" type="okvis_node" output="screen">
+      <param name="config_filename" value="/home/lestefan/datasets/aslam/stereo/Archiv/config_fpga_p2_euroc.yaml" />
+      <remap from="/camera0" to="/cam0/image_raw" />
+      <remap from="/camera1" to="/cam1/image_raw" />
+      <remap from="/imu" to="/imu0" />
+    </node>
+  </group>
+</launch>

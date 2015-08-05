@@ -1,0 +1,8 @@
+<launch>
+  <group ns="okvis">
+    <node name="okvis_node" pkg="okvis_node" type="okvis_node_run" output="screen">
+      <rosparam file="$(find okvis_node)/config_fpga_p1c_new.yaml" />
+    </node>
+  </group>
+
+</launch>

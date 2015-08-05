@@ -1,0 +1,45 @@
+base_topic: /
+#cameras:
+#    - {image_base_topic: left/, image_topic: image_raw, info_topic: camera_info}
+#    - {image_base_topic: right/, image_topic: image_raw, info_topic: camera_info}
+
+cameras:
+     - {image_base_topic: camera/, image_topic: rgb/image_mono, info_topic: rgb/camera_info, depth_topic: depth/image}
+
+camera_params:
+    camera_rate: 20
+
+# transform Body-Cameras
+T_BC:
+    translation: [0.0, 0.0, 0.03]
+    quaternion:  [0.5, -0.5, 0.5, 0.5]
+
+# tranform Body-Sensor (IMU)
+T_BS:
+    translation: [0.0, 0.0, 0.0]
+    quaternion:  [0.0, 1.0, 0.0, 0.0]
+
+imu:
+    - {imu_topic: imu/data}
+
+imu_params:
+    sigma_g_c: 8.0e-5
+    sigma_a_c: 6.0e-2
+    sigma_gw_c: 18.0e-5
+    sigma_aw_c: 14.0e-4
+    tau: 360.0
+    g: 9.806
+    imu_rate: 200
+
+# use the IMU at all?
+useImu: true
+
+# detection threshold
+detectionThreshold: 58.0
+
+# delay of images [ms]
+imageDelay: 0.001
+
+# rate at which odometry updates are published
+# only works properly if imu_rate/publish_rate is an integer!!
+publish_rate: 200

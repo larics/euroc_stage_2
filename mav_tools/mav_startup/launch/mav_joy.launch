@@ -1,0 +1,6 @@
+<launch>
+	<node name="mav_joy" pkg="mav_joy" type="mav_joy" output="screen" respawn="true" >
+    	<param name="v_max_yaw" value="90.0"/>
+        <param name="capability_group" value="Core"/>
+	</node>
+</launch>

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>euroc_launch</name>
+  <version>0.0.0</version>
+  <description>Launch files and configuration for the EUROC MAVs.</description>
+
+  <maintainer email="elena.oleynikova@mavt.ethz.ch">Helen Oleynikova</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+  </export>
+</package>

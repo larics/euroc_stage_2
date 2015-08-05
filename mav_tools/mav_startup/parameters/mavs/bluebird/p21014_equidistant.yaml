@@ -1,0 +1,86 @@
+base_topic: /bluebird/
+
+cameras:
+    - {image_base_topic: cam0/, image_topic: image_raw, info_topic: camera_info,
+       T_SC:
+       [ -0.00107509666461, -0.999930561505, 0.0117352603487, -0.00996903268454,
+          0.999964377715, -0.00117323062924, -0.00835863813358, -0.0654289905038,
+          0.00837182588921, 0.011725855968, 0.99989620303, -0.00209044081061,
+          0.0, 0.0, 0.0, 1.0],
+       image_dimension: [752, 480],
+       distortion_coefficients: [0.01346183716521228, -0.049495095271161964, 0.08797859531673764, -0.05120107324930216],
+       distortion_type: equidistant,
+       focal_length: [468.5172255207551, 468.2219149553833],
+       principal_point: [370.6913040380416, 231.07448892337283]}
+
+    - {image_base_topic: cam1/, image_topic: image_raw, info_topic: camera_info,
+       T_SC:
+       [ -0.00225284600326, -0.999944465463, 0.0102951772841, -0.00969368921552,
+          0.999996821395, -0.00226438146464, -0.00110895330886, 0.045237559168,
+          0.00113220393227, 0.0102926462588, 0.999946388337, 0.00150733986446,
+          0.0, 0.0, 0.0, 1.0],
+       image_dimension: [752, 480],
+       distortion_coefficients: [-0.0033164766108819757, 0.031335754607583616, -0.056269104724081684, 0.036217459828924874],
+       distortion_type: equidistant,
+       focal_length: [466.9019634719802, 466.61662790674296],
+       principal_point: [391.1943763301925, 237.04740259980406]}
+
+camera_params:
+    camera_rate: 20
+    sigma_absolute_translation: 0.0 # 8.0e-3
+    sigma_absolute_orientation: 0.0 # 8.0e-3
+    sigma_c_relative_translation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
+    sigma_c_relative_orientation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
+
+# tranform Body-Sensor (IMU)
+T_BS:
+    [1.0000, 0.0000, 0.0000, 0.0000,
+     0.0000, 1.0000, 0.0000, 0.0000,
+     0.0000, 0.0000, 1.0000, 0.0000,
+     0.0000, 0.0000, 0.0000, 1.0000]
+
+imu:
+    - {imu_topic: imu0}
+
+imu_params:
+    a_max: 176.0 #m/s^2
+    g_max: 7.8 #rad/s
+    sigma_g_c: 6.0e-4 #6.0e-4
+    sigma_a_c: 2.0e-3 #2.0e-3
+    sigma_gw_c: 3.0e-6 #3.0e-6
+    sigma_aw_c: 2.0e-5 #2.0e-5
+    tau: 3600.0
+    g: 9.81007
+    a0: [ 0.0, -0.0, 0.00 ]
+    #[09:49:28] Joern: accelerometer_noise_density: 1.7e-3, accelerometer_random_walk: 6.3895e-005,
+    imu_rate: 200
+#gyroscope_noise_density: 0.2e-3, gyroscope_random_walk: 2.8577e-006
+
+# use the IMU at all?
+useImu: true
+
+# detection
+detectionThreshold: 45.0 # 45
+detectionOctaves: 0
+
+# delay of images [s]: -8ms with zero-order hold integration at 200 Hz: makes sense.
+imageDelay: 0.000 # -0.0055 without Joern's awesome synchronization, 0 otherwise
+
+# display Images?
+displayImages: false
+
+# use direct driver
+useDriver: false
+
+# save optimization to disk
+saveGraphs: false
+
+# try to obtain calibration via topic
+tryTopic: false
+
+# try to obtain calibration via service call
+tryService: false
+
+# rate at which odometry updates are published
+# only works properly if imu_rate/publish_rate is an integer!!
+publish_rate: 20

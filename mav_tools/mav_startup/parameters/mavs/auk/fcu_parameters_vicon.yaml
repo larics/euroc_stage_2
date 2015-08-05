@@ -1,0 +1,15 @@
+fcu/serial_port:            /dev/ttyS2
+fcu/baudrate:               57600
+fcu/packet_rate_imu:        100.0
+fcu/packet_rate_rc:         5.0
+fcu/packet_rate_gps:        0.0
+fcu/packet_rate_ssdk_debug: 20.0
+fcu/packet_rate_ekf_state:  100.0
+fcu/packet_rate_mag:        0.0
+fcu/max_velocity_xy:        5.0
+fcu/max_velocity_z:         2.0
+
+fcu/state_estimation:       HighLevel_EKF
+fcu/position_control:       HighLevel
+
+fcu/battery_warning:        10.7

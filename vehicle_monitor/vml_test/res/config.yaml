@@ -1,0 +1,6 @@
+bounding_box_vertexA : [-4.7, -5.0, 0.0] 
+bounding_box_vertexB : [5.9, 5.1, 11.1]
+motion_capture_frequency : 200
+max_distance_to_check_collision : 2.0
+collision_threeshold_in_sphere_radius: 2.0
+projection_window : 20
