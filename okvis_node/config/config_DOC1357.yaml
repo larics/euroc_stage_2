@@ -1,0 +1,97 @@
+%YAML:1.0
+# 'cameras' sequence contains for each camera: T_SC, image_dimension, distortion_coefficients, distortion_type, focal_length and principal_point
+# if this sequence or one of the parameters of an entry is missing the calibration will not be used. Depending on 'useDriver' it will try to 
+# get the calibration directly from the sensor. If useDriver==false it will first try to get the calibration via the visensor calibration service 
+# and then as a last resort the calibration topic is tried. 
+cameras:
+    - {T_SC:
+         [0.999983871478707, -0.003378272078458, 0.004565529566263, 0.036327130103992,
+          0.003394964456101, 0.999987563420818, -0.003653384737134, -0.009239753497739,
+          -0.004553130659044, 0.003668825624041, 0.999982904213738, 0.000422652652043,
+           0.0, 0.0, 0.0, 1.0],
+       image_dimension: [752, 480],
+       distortion_coefficients: [-0.29370123496555756, 0.08730871667303616, 0.00010038160473754507, 0.00013680373784768344],
+       distortion_type: radialtangential,
+       focal_length: [466.8586127874696, 466.7725034368207],
+       principal_point: [368.87847654026825, 240.78852760520198]}
+
+    - {T_SC:
+         [0.999970407015966, -0.005254557938991, 0.005619138117969, -0.072440830443425,
+          0.005282751748116, 0.999973473583788, -0.005014445407151, -0.009075617855002,
+          -0.005592640368449, 0.005043981526464, 0.999971639909887, 0.001012817402609,
+           0.0, 0.0, 0.0, 1.0],
+       image_dimension: [752, 480],
+       distortion_coefficients: [-0.28861728460359526, 0.0822799844561439, -0.00015343044028117667, 3.3302619927644084e-05],
+       distortion_type: radialtangential,
+       focal_length: [467.7233457288314, 467.72122883849744],
+       principal_point: [368.8077608831562, 213.90503557806537]}
+
+camera_params:
+    camera_rate: 20
+    sigma_absolute_translation: 0.0 #1.0e-10
+    sigma_absolute_orientation: 0.0 #1.0e-3
+    sigma_c_relative_translation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
+    sigma_c_relative_orientation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
+    timestamp_tolerance: 0.005 # seconds
+
+# tranform Body-Sensor (IMU)
+T_BS:
+    [1.0000, 0.0000, 0.0000, 0.0000,
+     0.0000, 1.0000, 0.0000, 0.0000,
+     0.0000, 0.0000, 1.0000, 0.0000,
+     0.0000, 0.0000, 0.0000, 1.0000]
+
+imu:
+    - {imu_topic: imu0}
+
+imu_params:
+    a_max: 176.0 #m/s^2
+    g_max: 7.8 #rad/s
+    sigma_g_c: 12.0e-4 #6.0e-4
+    sigma_a_c: 8.0e-3 #2.0e-3
+    sigma_gw_c: 3.0e-6 #3.0e-6
+    sigma_aw_c: 2.0e-5 #2.0e-5
+    tau: 3600.0
+    g: 9.81007
+    a0: [ 0.0, -0.0, 0.00 ]
+    #[09:49:28] Joern: accelerometer_noise_density: 1.7e-3, accelerometer_random_walk: 6.3895e-005,
+    imu_rate: 200
+#gyroscope_noise_density: 0.2e-3, gyroscope_random_walk: 2.8577e-006
+
+# use the IMU at all?
+useImu: true
+
+# VIO window parameters
+numKeyframes: 5
+numImuFrames: 3
+
+# ceres optimization options
+ceres_options:
+    minIterations: 3
+    maxIterations: 10
+    timeLimit: 0.035      # [s] negative values will set the an unlimited time limit
+
+# detection
+detectionThreshold: 40.0
+detectionOctaves: 0
+
+# delay of images [s]: -8ms with zero-order hold integration at 200 Hz: makes sense.
+imageDelay: 0.0 # -0.0055 without Joern's awesome synchronization, 0 otherwise
+
+# display Images?
+displayImages: true
+
+# use direct driver
+useDriver: false
+
+# save optimization to disk
+saveGraphs: false
+
+# rate at which odometry updates are published
+# only works properly if imu_rate/publish_rate is an integer!!
+publish_rate: 200
+
+publishing_options:
+    landmarkQualityThreshold: 1.0e-5     # landmark with lower quality will not be published
+    maximumLandmarkQuality: 0.05         # landmark with higher quality will be published with the maximum colour intensity
+    maxPathLength: 20                    # maximum length of the published path

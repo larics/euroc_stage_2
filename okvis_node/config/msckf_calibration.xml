@@ -1,0 +1,73 @@
+<rig>
+    <device_id>24</device_id>
+    <camera>
+        <camera_model name="" index="0" type="calibu_fu_fv_u0_v0_w" version="8">
+            <width>640</width>
+            <height>480</height>
+            <!--Use RDF matrix, [right down forward], to decide the coordinate frame convention.-->
+            <right>[ 1; 0; 0 ]</right>
+            <down>[ 0; 1; 0 ]</down>
+            <forward>[ 0; 0; 1 ]</forward>
+            <!--Camera parameters ordered as per type name.-->
+            <params> [ 258.884; 259.0383; 288.2318; 248.6413; 0.9178397 ] </params>
+
+        </camera_model>
+        <pose />
+    </camera>
+    <camera>
+        <camera_model name="" index="1" type="calibu_fu_fv_u0_v0_w" version="8">
+            <width>640</width>
+            <height>480</height>
+            <!--Use RDF matrix, [right down forward], to decide the coordinate frame convention.-->
+            <right>[ 1; 0; 0 ]</right>
+            <down>[ 0; 1; 0 ]</down>
+            <forward>[ 0; 0; 1 ]</forward>
+            <!--Camera parameters ordered as per type name.-->
+            <params> [454.897;   456.281;   317.225;   230.198;   -1.06903] </params>
+        </camera_model>
+        <pose />
+    </camera>
+    <camera>
+        <camera_model name="" index="2" type="calibu_fu_fv_u0_v0_w" version="8">
+            <width>640</width>
+            <height>480</height>
+            <!--Use RDF matrix, [right down forward], to decide the coordinate frame convention.-->
+            <right>[ 1; 0; 0 ]</right>
+            <down>[ 0; 1; 0 ]</down>
+            <forward>[ 0; 0; 1 ]</forward>
+            <!--Camera parameters ordered as per type name.-->
+            <params> [530.467;   532.176;   327.638;   246.334;   0.400857] </params>
+        </camera_model>
+        <pose />
+    </camera>
+    <camera>
+        <camera_model name="" index="3" type="calibu_fu_fv_u0_v0_w" version="8">
+            <width>160</width>
+            <height>120</height>
+            <!--Use RDF matrix, [right down forward], to decide the coordinate frame convention.-->
+            <right>[ 1; 0; 0 ]</right>
+            <down>[ 0; 1; 0 ]</down>
+            <forward>[ 0; 0; 1 ]</forward>
+            <!--Camera parameters ordered as per type name.-->
+            <params> [132.617;   133.044;   81.9094;   61.5834;   0.400857] </params>
+        </camera_model>
+        <pose />
+    </camera>
+    <intrinsic_imu_calibration name="device " imu_id="100" serialno="0" type="" version="1.0">
+        <b_w_b_a> [0.0;   0.0;   0.0;   0.0;   0.0;   0.0] </b_w_b_a>
+        <crossterms> [1, 0, 0, 0, 0, 0;   0, 1, 0, 0, 0, 0;   0, 0, 1, 0, 0, 0;   0, 0, 0, 1, 0, 0;   0, 0, 0, 0, 1, 0;   0, 0, 0, 0, 0, 1] </crossterms>
+    </intrinsic_imu_calibration>
+    <extrinsic_calibration name="device " index="0" frame_A_id="100" frame_B_id="0" serialno="0" type="" version="1.0">
+        <!--A_T_B> [ 0.0,  -1.0,  0.0, 0.017;     1.0,  0.0,  0.0,   0.027;   0.0,  0.0,   1.0, 0.005] </A_T_B-->
+        <A_T_B> [1, 0, 0, 0;   0, 1, 0, 0;   0, 0, 1, 0] </A_T_B>
+    </extrinsic_calibration>
+    <extrinsic_calibration name="device " index="0" frame_A_id="100" frame_B_id="1" serialno="0" type="" version="1.0">
+        <A_T_B> [1, 0, 0, 0;   0, 1, 0, 0;   0, 0, 1, 0] </A_T_B>
+    </extrinsic_calibration>
+    <extrinsic_calibration name="device " index="0" frame_A_id="100" frame_B_id="2" serialno="0" type="" version="1.0">
+        <A_T_B> [1, 0, 0, 0;   0, 1, 0, 0;   0, 0, 1, 0] </A_T_B>
+    </extrinsic_calibration>
+    <extrinsic_calibration name="device " index="0" frame_A_id="100" frame_B_id="3" serialno="0" type="" version="1.0">
+        <A_T_B> [1, 0, 0, 0;   0, 1, 0, 0;   0, 0, 1, 0] </A_T_B>
+    </extrinsic_calibration>
+</rig>

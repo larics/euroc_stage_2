@@ -1,0 +1,76 @@
+base_topic: /
+cameras:
+    - {image_base_topic: cam0/, image_topic: image_raw, info_topic: camera_info, 
+       T_SC:
+        [ 0.9999621067641358, -0.0034406030680354787, 0.007996704718675307, -0.09409758756793332,
+         -0.0035486649896677137, -0.99990205139441, 0.01353863338893108, -0.01158859940720212,
+        0.007949340389023844, -0.01356649799237068, -0.9998763714177872, -0.030477372174871457,
+         0.0,                0.0,                0.0,                1.000000000000000],
+       image_dimension: [752, 480],
+       distortion_coefficients: [-0.29225152223719064, 0.08471896741886316, 0.0006218055227970754,
+    -3.8953788873890695e-05, 0.0],
+       distortion_type: tsai,
+       focal_length: [464.6625145945658, 462.7491594498084],
+       principal_point: [385.63051627187735, 227.52677568327675]}
+    - {image_base_topic: cam1/, image_topic: image_raw, info_topic: camera_info,
+       T_SC:
+       [ 0.9999892420148779, -0.00463627307419383, 0.0001443138547853375, 0.015362472929845232,
+         -0.004636974062874377, -0.9999751506581629, 0.005310041216607642, -0.01199412839321463,
+        0.00011969146756561101, -0.005310653270864796, -0.9999858912183646, -0.02936592956874106,
+                  0.0,                  0.0,                  0.00,  1.000000000000000],
+       image_dimension: [752, 480],
+       distortion_coefficients: [-0.29018577029492815, 0.08213935693937682, 0.0005474668670361094,
+    0.00014950430654591155, 0.0],
+       distortion_type: tsai,
+       focal_length: [465.20610773568654, 463.7966839024147],
+       principal_point: [377.76319285075306, 260.24090565804255]}
+
+camera_params:
+    camera_rate: 15
+
+# tranform Body-Sensor (IMU)
+T_BS:
+    [-1.0000, 0.0000, 0.0000, 0.0000,
+     0.0000, 1.0000, 0.0000, 0.0000,
+     0.0000, 0.0000, -1.0000, 0.0000,
+     0.0000, 0.0000, 0.0000, 1.0000]
+
+imu:
+    - {imu_topic: imu0}
+
+imu_params:
+    a_max: 176.0 #m/s^2
+    g_max: 7.8 #rad/s
+    sigma_g_c: 8.0e-3 #4.0e-4
+    sigma_a_c: 6.0e-2 #6.0e-3
+    sigma_gw_c: 4.0e-5 #4.0e-6
+    sigma_aw_c: 2.0e-3 #2.0e-4
+    tau: 3600.0
+    g: 9.81007
+    imu_rate: 1000
+    a0: [0.0, 0.0, 0.0]
+#gyroscope_noise_density: 0.2e-3, gyroscope_random_walk: 2.8577e-006
+
+# use the IMU at all?
+useImu: true
+
+# detection
+detectionThreshold: 38.0
+detectionOctaves: 0
+
+# delay of images [s]: -12ms: strange.
+#imageDelay: -0.0026 #as estimated by Paul's framework
+imageDelay: -0.001 #the true delay is higher - but forward integration is delayed by half the sample time as well...
+
+# display Images?
+displayImages: true
+
+# use direct driver
+useDriver: true
+
+# save optimization to disk
+saveGraphs: false
+
+# rate at which odometry updates are published
+# only works properly if imu_rate/publish_rate is an integer!!
+publish_rate: 50
