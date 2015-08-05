@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>kill_switch_library</name>
+  <version>0.0.0</version>
+  <description>
+    Implements the kill switch.  
+  </description>
+  <url></url>
+  <author>Alex Millane</author>
+  <maintainer email="alex.millane@gmail.com">Alex Millane</maintainer>
+  <license>New BSD</license>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <!--<buildtool_depend>message_generation</buildtool_depend>-->
+
+  <!-- Dependencies needed after this package is compiled. -->  
+  <depend>roscpp</depend>
+  <depend>cmake_modules</depend>
+
+</package>
