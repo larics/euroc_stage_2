@@ -1,5 +1,0 @@
-<launch>
-    <include file="$(find gcs_startup)/launch/joy.launch"></include>
-    <include file="$(find leica_interface)/launch/leica.launch"></include>
-    <include file="$(find xbee_ros_interface)/launch/groundstation.launch"></include>
-</launch>

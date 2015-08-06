@@ -22,7 +22,6 @@
   <run_depend>libvisensor</run_depend>
   <run_depend>mav_comm</run_depend>
   <run_depend>mav_control</run_depend>
-  <run_depend>mav_tools</run_depend>
   <run_depend>opencv2_catkin</run_depend>
   <run_depend>opengv</run_depend>
   <run_depend>openkvis</run_depend>
