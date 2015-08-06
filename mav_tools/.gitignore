@@ -1,8 +1,0 @@
-.cproject
-.project
-bin/
-lib/
-build/
-msg_gen/
-*~
-mav_status/src/mav_status/
