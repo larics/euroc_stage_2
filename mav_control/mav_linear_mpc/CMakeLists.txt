@@ -7,7 +7,7 @@ set(SOLVER_NAME "FORCES")
 
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" AND NOT APPLE)
   add_definitions(-fPIC)
-endif() 
+endif()
 
 if(SOLVER_NAME STREQUAL "CVXGEN")
  add_library(${PROJECT_NAME}_cvxgen_solver
@@ -67,7 +67,7 @@ include_directories(
 catkin_package(
   INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
   LIBRARIES
-  CATKIN_DEPENDS geometry_msgs mav_msgs roscpp sensor_msgs mav_control_interface
+  CATKIN_DEPENDS geometry_msgs mav_msgs roscpp sensor_msgs mav_control_interface message_runtime
   DEPENDS Eigen
   )
 
@@ -77,7 +77,7 @@ add_library(mav_linear_mpc
   src/steady_state_calculation.cpp
   src/KF_disturbance_observer.cpp
   )
-add_dependencies(mav_linear_mpc ${catkin_EXPORTED_TARGETS})
+add_dependencies(mav_linear_mpc ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS}})
 SET_TARGET_PROPERTIES(mav_linear_mpc PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 add_library(PD_attitude_controller src/PD_attitude_controller.cpp)
