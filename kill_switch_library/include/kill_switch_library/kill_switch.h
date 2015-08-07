@@ -26,17 +26,23 @@
 
 namespace kill_switch_library {
 
+enum SwitchState { 
+  KILLED,
+  TRANS_TO_SAFE,
+  SAFE
+};
+
 class KillSwitch
 {
 
  public:
 
   // Constructor
-  KillSwitch(double check_frequency_hz = 10);
+  KillSwitch(double check_frequency_hz = 10, double wait_time_s = 2.0);
   ~KillSwitch();
 
   // Connects to the external hardware
-  bool connect(const std::string& port, int baudrate = 57600);
+  bool connect(const std::string& port, int baudrate = 9600); //57600
   // Returns the status of the switch
   bool getKillStatus() const { return kill_status_; }
   // Starts the checking thread
@@ -71,6 +77,12 @@ class KillSwitch
   bool started_;
   // A flag indicating if the switch has been connected to the hardware or not
   bool connected_;
+  // The current state of the switch
+  SwitchState switch_state_;
+  // The length of time to wait after switch deactivation to return to safe kill status
+  double wait_time_s_;
+  // The counter used to wait the wait time
+  int safe_counter_;
 
 };
 
