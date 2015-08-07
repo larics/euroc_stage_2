@@ -1,4 +1,26 @@
 %YAML:1.0
+cameras:
+    - {T_SC: #cam2
+      [ 0.9999806894, -0.0046838582,  0.0040844080, -0.0761012142,
+        0.0047335042,  0.9999139917, -0.0122312383, -0.0091260209,
+       -0.0040267673,  0.0122503357,  0.9999168538, -0.0068668264,
+        0.0000000000,  0.0000000000,  0.0000000000,  1.0000000000],
+       image_dimension: [752, 480],
+       distortion_type: equidistant,
+       distortion_coefficients: [0.005607134386698993, -0.03309364455152734, 0.0741160530359484, -0.04707649237679751],
+       focal_length: [468.4347356756471, 467.74142438522057],
+       principal_point: [381.7863900208179, 249.97381969372634]}
+
+    - {T_SC: #cam0
+      [ 0.9999924381, -0.0030774924, -0.0023775493,  0.0339638327,
+        0.0030534661,  0.9999448969, -0.0100438830, -0.0077621971,
+        0.0024083282,  0.0100365473,  0.9999467324, -0.0084673526,
+        0.0000000000,  0.0000000000,  0.0000000000,  1.0000000000],
+       image_dimension: [752, 480],
+       distortion_type: equidistant,
+       distortion_coefficients: [-0.010209777362601587, 0.048087321756956604, -0.07558294919338213, 0.04766022597027853],
+       focal_length: [472.1798228792008, 471.56865502736963],
+       principal_point: [372.1527343321873, 219.84816356781627]}
 
 camera_params:
     camera_rate: 20
@@ -77,3 +99,4 @@ publishing_options:
     maximumLandmarkQuality: 0.05         # landmark with higher quality will be published with the maximum colour intensity
     maxPathLength: 20                    # maximum length of the published path
     publishImuPropagatedState: true      # publish state after each processed IMU measurement instead of after each processed image
+
