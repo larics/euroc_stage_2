@@ -27,7 +27,8 @@ void VehicleMonitorObserver::Update(const std::map<std::string, std::map<std::st
 
 MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh): vehicle_id_("MAV1"),
     frame_number_(0),
-    take_control_flag_(false) {
+    take_control_flag_(false),
+    emergency_button_pressed_prev_(false) {
 
   safety_pose_publisher_.reset(new SafetyPosePublisher(nh, private_nh));
 
@@ -43,6 +44,8 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh): vehicle_id
   private_nh.param("max_pitch", max_pitch_, kDefaultMaxPitch);
   private_nh.param("kill_switch_port_name", kill_switch_port_name_, kDefaultKillSwitchPort);
   private_nh.param("kill_switch_check_rate", kill_switch_check_rate_, kDefaultKillSwitchCheckRate);
+  private_nh.param("kill_switch_baudrate_", kill_switch_baudrate_, kDefaultKillSwitchBaudrate);
+  private_nh.param("kill_switch_wait_time_", kill_switch_wait_time_, kDefaultKillSwitchWaitTime);
 
 
   std::string configFilePath = ros::package::getPath("mav_saver");
@@ -79,8 +82,8 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh): vehicle_id
   octomap_publisher_.publish(octomap_msg_);
 
   // Starting up kill switch
-  kill_switch_.reset(new kill_switch_library::KillSwitch(kill_switch_check_rate_));
-  if(kill_switch_->connect(kill_switch_port_name_)){
+  kill_switch_.reset(new kill_switch_library::KillSwitch(kill_switch_check_rate_, kill_switch_wait_time_));
+  if(kill_switch_->connect(kill_switch_port_name_, kill_switch_baudrate_)){
     kill_switch_->start();
     kill_switch_connected_ == true;
   } else {
@@ -108,7 +111,7 @@ void MavSaver::RegisterConstraintCheckers() {
                                                    velocity_estimator_collision_checker
       );
 
-  vehicle_monitor_->RegisterChecker(collisionChecker);
+//  vehicle_monitor_->RegisterChecker(collisionChecker);
 
   // the vehicle monitor library needs a new velocity estimator for every constraint!!!
   // TODO(burrimi): delete vehicle monitor library and write a new one.
@@ -176,28 +179,32 @@ void MavSaver::SetPose(const Eigen::Vector3d& p_W_I, const Eigen::Quaterniond& q
   // Setting the emergency state by 
   // - checking switch state if connected.
   // - assuming no emergency if switch not connected 
-  bool emergency;
+  bool emergency_button_pressed;
   if (kill_switch_connected_){
-    emergency = kill_switch_->getKillStatus();
-    SetTakeControlFlag(emergency);
+    emergency_button_pressed = kill_switch_->getKillStatus();
+    if(emergency_button_pressed) {
+      SetTakeControlFlag(true);
+      ROS_WARN_THROTTLE(1, "[MAV_SAVER]: EXTERNAL MAV RESCUE REQUESTED, TAKING OVER !!!");
+    }
+
+    // You can release the safety pilot, by releasing the kill switch.
+    if(!emergency_button_pressed && emergency_button_pressed_prev_) {
+      SetTakeControlFlag(false);
+      ROS_WARN_THROTTLE(1, "[MAV_SAVER]: MAV RELEASED, you're back in control !!!");
+    }
   } else {
-    emergency = false;
+    emergency_button_pressed = false;
   }
+  emergency_button_pressed_prev_ = emergency_button_pressed;
 
-  vehicle_monitor_->Trigger(*frame_, emergency);
+  vehicle_monitor_->Trigger(*frame_, emergency_button_pressed);
 
-  bool take_control = false;
   if(vehicle_monitor_observer_->getTakeControlFlag()) {
-    take_control = true;
+    SetTakeControlFlag(true);
     ROS_WARN_THROTTLE(1, "[MAV_SAVER]: CONSTRAINTS HIT, TAKING OVER !!!");
   }
 
-  if(take_control_flag_) {
-    take_control = true;
-    ROS_WARN_THROTTLE(1, "[MAV_SAVER]: EXTERNAL MAV RESCUE REQUESTED, TAKING OVER !!!");
-  }
-
-  safety_pose_publisher_->SetTakeControlFlag(take_control);
+  safety_pose_publisher_->SetTakeControlFlag(take_control_flag_);
 
   safety_pose_publisher_->SetPose(p_W_I, q_W_I);
 

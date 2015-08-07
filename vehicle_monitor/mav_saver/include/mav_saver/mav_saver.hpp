@@ -72,15 +72,17 @@ constexpr double kDefaultCollisionThreesholdInBoundingSphereRadius = 1.5;
 constexpr double kDefaultMaxDistToCheckCollision = 2.0;
 constexpr int kDefaultProjectionWindow = 20;
 constexpr double kDefaultVehicleRadius = 0.6;
-constexpr double kDefaultMaxRoll = 30.0/180.0*M_PI;
-constexpr double kDefaultMaxPitch = 30.0/180.0*M_PI;
+constexpr double kDefaultMaxRoll = 20.0/180.0*M_PI;
+constexpr double kDefaultMaxPitch = 20.0/180.0*M_PI;
 
 const std::string kDefaultObstacleOctomapPath = "res/LeoC6.bt";
 const Eigen::Vector3d kBoundingBoxCorner1(-5.0, -5.0, -1.0);
 const Eigen::Vector3d kBoundingBoxCorner2(5.0, 5.0, 5.0);
 
 const std::string kDefaultKillSwitchPort = "/dev/ttyUSB1" ;
-constexpr double kDefaultKillSwitchCheckRate = 10.0 ;
+constexpr double kDefaultKillSwitchCheckRate = 10.0;
+constexpr int kDefaultKillSwitchBaudrate = 9600;
+constexpr double kDefaultKillSwitchWaitTime = 2.0;
 
 class MavSaver {
  public:
@@ -127,8 +129,10 @@ class MavSaver {
   std::shared_ptr<kill_switch_library::KillSwitch> kill_switch_;
   std::string kill_switch_port_name_;
   double kill_switch_check_rate_;
+  int kill_switch_baudrate_;
+  double kill_switch_wait_time_;
   bool kill_switch_connected_;
-
+  bool emergency_button_pressed_prev_;
 };
 
 }

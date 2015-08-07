@@ -2,14 +2,17 @@
 
 namespace kill_switch_library {
 
-KillSwitch::KillSwitch(double check_frequency_hz)
+KillSwitch::KillSwitch(double check_frequency_hz, double wait_time_s)
     : check_char_(0),
       kill_status_(false),
       check_frequency_hz_(check_frequency_hz),
       checkingThread_(nullptr),
       stop_(false),
       started_(false),
-      connected_(false)
+      connected_(false),
+      switch_state_(SAFE),
+      safe_counter_(0),
+      wait_time_s_(wait_time_s)
 {
   // The timeout is half the time required by the checking frequency.
   // For example for a checkfreq of 100Hz we have a timeout of 5ms.
@@ -99,11 +102,48 @@ void KillSwitch::checkLoop()
   // Looping forever and printing
   ros::Rate loop_rate(check_frequency_hz_);
   while (ros::ok() && !stop_) {
-    // Checking the switch
-    if (check()) {
-      kill_status_ = true;
-      started_ = false;
-      break;
+    // Taking action depending on switch state
+    switch(switch_state_)
+    {
+      // Kill state
+      case KILLED:
+        // If switch saying safe - start transition
+        if(check() == false)
+        {
+          switch_state_ = TRANS_TO_SAFE;
+//          ROS_INFO_STREAM("Entering transition to safe state. Wait: " << wait_time_s_ << " seconds.");
+        }
+        break;
+      // Transitioning to safe state
+      case TRANS_TO_SAFE:
+        // If switch saying safe - keep counting
+        if(check() == false)
+        {
+          safe_counter_++;
+          // If count reached - transition to safe state
+          if(safe_counter_>= static_cast<int>(wait_time_s_*check_frequency_hz_) )
+          {
+            kill_status_ = false;
+            switch_state_ = SAFE;
+          }
+        }
+        // If switch saying kill - transition to kill state + reset counter
+        else
+        {
+          safe_counter_ = 0;
+          switch_state_ = KILLED;
+        }
+        break;
+      // Safe state
+      case SAFE:
+        // If switch saying kill - immediately transition to kill state
+        if(check() == true)
+        {
+          kill_status_ = true;
+          safe_counter_ = 0;
+          switch_state_ = KILLED;
+        }
+        break;
     }
     // Sleeping until next execution
     loop_rate.sleep();
