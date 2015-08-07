@@ -10,6 +10,8 @@
       </node>
 
       <node name="visensor_node" pkg="visensor_node" type="visensor_node" output="screen">
+        <remap from="/camera0" to="cam2/image_raw" />
+        <remap from="/camera1" to="cam0/image_raw" />
       </node>
 
       <node name="pose_sensor" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">

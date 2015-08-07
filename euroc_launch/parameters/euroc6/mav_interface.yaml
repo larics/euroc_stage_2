@@ -1,2 +1,3 @@
 serial_port: '/dev/ttyUSB0'
-baudrate: 57600
+baudrate: 460800
+publish_commanded_motor_speeds: false
