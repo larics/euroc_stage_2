@@ -34,20 +34,32 @@ int main(int argc, char** argv)
   nh.param<std::string>("port_name", port_name, "/dev/ttyUSB1");
   int check_frequency_hz;
   nh.param<int>("check_frequency_hz", check_frequency_hz, 10);
+  int baudrate;
+  nh.param<int>("baudrate", baudrate, 9600);
+  double wait_time;
+  nh.param<double>("wait_time", wait_time, 2.0);
 
   // Create the kill switch
-  kill_switch_library::KillSwitch kill_switch(check_frequency_hz);
-  kill_switch.connect(port_name);
+  kill_switch_library::KillSwitch kill_switch(check_frequency_hz, wait_time);
+  kill_switch.connect(port_name, baudrate);
   kill_switch.start();
 
   // Looping and waiting until switch pressed
   double test_freq_hz = 1.0;
   ros::Rate loop_rate(test_freq_hz);
-  while(ros::ok() && !kill_switch.getKillStatus()) {
-    ROS_INFO("Everything ok.");
+  while(ros::ok())
+  {
+    if(!kill_switch.getKillStatus())
+    {
+      ROS_INFO("Everything ok.");
+    }
+    else
+    {
+      ROS_INFO("Kill switch pressed.");
+    }
+
     loop_rate.sleep();
   }
-  ROS_INFO("Kill switch pressed.");
 
   // Stopping the kill switch
   kill_switch.stop();

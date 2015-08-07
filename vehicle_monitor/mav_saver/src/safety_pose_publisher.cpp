@@ -47,13 +47,12 @@ __attribute__((packed))
 #define EXT_QUAT_YAW_ACTIVE 0x0100
 #define EXT_POS_DELAY_ACTIVE 0x200
 #define EXT_SPEED_DELAY_ACTIVE 0x400
-#define EXT_SAFETYPILOT_TAKEOVER 0x800
+//#define EXT_SAFETYPILOT_TAKEOVER 0x800
+#define EXT_SAFETYPILOT_TAKEOVER 0x01000000
 
 SafetyPosePublisher::SafetyPosePublisher(ros::NodeHandle& nh, ros::NodeHandle& private_nh):
-        take_control_(false),
-        serial_port_open_(false) {
-
-
+            take_control_(false),
+            serial_port_open_(false) {
 
   // TODO(burrimi): Move parameters to somewhere else.
   private_nh.param("baudrate", baudrate_, kDefaultBaudrate);
@@ -127,7 +126,7 @@ void SafetyPosePublisher::SetPose(const Eigen::Vector3d& p_W_I, const Eigen::Qua
   ethzasl_mav_interface::helper::rosGeographicPoseToAsctec(p_W_I, q_W_I, &pos_asc, &q_asc);
 
   ROS_INFO_ONCE("sending pose ");
-  ROS_INFO_THROTTLE(1, ".");
+  ROS_INFO_STREAM_THROTTLE(2, "takeover: " << take_control_ << " x: " << pos_asc.x() << " y: " << pos_asc.y() << " z: " << pos_asc.z());
 
   aci_msg.position.x = pos_asc.x();
   aci_msg.position.y = pos_asc.y();
