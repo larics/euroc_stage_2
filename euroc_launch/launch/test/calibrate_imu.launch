@@ -1,0 +1,28 @@
+<launch>
+  <arg name="mav_name" default="euroc6"/>
+  <node name="mav_interface" pkg="ethzasl_mav_interface" type="mav_interface_node"
+    output="screen" respawn="true" clear_params="true">
+    <param name="frame_id" value="fcu" />
+    <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/mav_interface.yaml"/>
+  </node>
+
+  <node name="visensor_node" pkg="visensor_node" type="visensor_node" output="screen">
+    <param name="camRate" value="20" />
+    <param name="cam0_aec_enable" value="false" />
+    <param name="cam0_agc_enable" value="false" />
+    <param name="cam0_coarse_shutter_width" value="0.125" />
+    <param name="cam0_global_analog_gain" value="64" />
+    <param name="cam1_aec_enable" value="false" />
+    <param name="cam1_agc_enable" value="false" />
+    <param name="cam1_coarse_shutter_width" value="0.125" />
+    <param name="cam1_global_analog_gain" value="64" />
+    <param name="cam2_aec_enable" value="false" />
+    <param name="cam2_agc_enable" value="false" />
+    <param name="cam2_coarse_shutter_width" value="0.125" />
+    <param name="cam2_global_analog_gain" value="64" />
+    <param name="cam_aec_enable" value="false" />
+    <param name="cam_agc_enable" value="false" />
+    <param name="cam_coarse_shutter_width" value="0.125" />
+    <param name="cam_global_analog_gain" value="64" />
+  </node>
+</launch>
