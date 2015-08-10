@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -273,7 +273,8 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
           new okvis::kinematics::Transformation(calibrations[i].T_SC.r(),
                                                 calibrations[i].T_SC.q().normalized()));
 
-    if (strcmp(calibrations[i].distortionType.c_str(), "equidistant") == 0) {
+    if (strcmp(calibrations[i].distortionType.c_str(), "equidistant") == 0 ||
+        strcmp(calibrations[i].distortionType.c_str(), "equi") == 0) {
       vioParameters_.nCameraSystem.addCamera(
           T_SC_okvis_ptr,
           std::shared_ptr<const okvis::cameras::CameraBase>(
