@@ -26,7 +26,7 @@
 
 namespace mav_control_interface {
 
-constexpr double MavControlInterfaceImpl::kWatchdogTimeout;
+constexpr double MavControlInterfaceImpl::kOdometryWatchdogTimeout;
 
 MavControlInterfaceImpl::MavControlInterfaceImpl(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
                                                  std::shared_ptr<PositionControllerInterface> controller,
@@ -37,8 +37,8 @@ MavControlInterfaceImpl::MavControlInterfaceImpl(ros::NodeHandle& nh, ros::NodeH
 {
   ros::NodeHandle interface_nh(private_nh, "control_interface");
 
-  watchdog_ = nh_.createTimer(ros::Duration(kWatchdogTimeout), &MavControlInterfaceImpl::WatchdogCallback,
-                              this, false, true);
+  odometry_watchdog_ = nh_.createTimer(ros::Duration(kOdometryWatchdogTimeout),
+                                       &MavControlInterfaceImpl::OdometryWatchdogCallback, this, false, true);
 
   command_trajectory_subscriber_ = nh_.subscribe(mav_msgs::default_topics::COMMAND_POSE, 1,
                                                  &MavControlInterfaceImpl::CommandPoseCallback, this);
@@ -125,10 +125,10 @@ void MavControlInterfaceImpl::OdometryCallback(const nav_msgs::OdometryConstPtr&
   state_machine_->process_event(state_machine::OdometryUpdate(odometry));
 }
 
-void MavControlInterfaceImpl::WatchdogCallback(const ros::TimerEvent& e)
+void MavControlInterfaceImpl::OdometryWatchdogCallback(const ros::TimerEvent& e)
 {
-//  ROS_WARN("watchdog triggered");
-// TODO(acmarkus): implement.
+  ROS_WARN("odometry watchdog triggered");
+  state_machine_->process_event(state_machine::OdometryWatchdog());
 }
 
 bool MavControlInterfaceImpl::TakeoffCallback(std_srvs::Empty::Request& request,
