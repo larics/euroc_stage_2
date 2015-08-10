@@ -71,13 +71,16 @@ constexpr int kDefaultMotionCaptureFrequency = 100;
 constexpr double kDefaultCollisionThreesholdInBoundingSphereRadius = 1.5;
 constexpr double kDefaultMaxDistToCheckCollision = 2.0;
 constexpr int kDefaultProjectionWindow = 20;
-constexpr double kDefaultVehicleRadius = 0.6;
-constexpr double kDefaultMaxRoll = 20.0/180.0*M_PI;
-constexpr double kDefaultMaxPitch = 20.0/180.0*M_PI;
+constexpr double kDefaultVehicleRadius = 0.35;
+constexpr double kDefaultMaxRoll = 30.0/180.0*M_PI;
+constexpr double kDefaultMaxPitch = 30.0/180.0*M_PI;
 
-const std::string kDefaultObstacleOctomapPath = "res/LeoC6.bt";
+const std::string kDefaultObstacleOctomapPath = "res/LeoC6_no_floor.bt";
 const Eigen::Vector3d kBoundingBoxCorner1(-5.0, -5.0, -1.0);
 const Eigen::Vector3d kBoundingBoxCorner2(5.0, 5.0, 5.0);
+constexpr bool kDefaultEnableCollisionConstraint(true);
+constexpr bool kDefaultEnableBoundingVolumeConstraint(true);
+constexpr bool kDefaultEnableAttitudeConstraint(true);
 
 const std::string kDefaultKillSwitchPort = "/dev/ttyUSB1" ;
 constexpr double kDefaultKillSwitchCheckRate = 10.0;
@@ -133,6 +136,11 @@ class MavSaver {
   double kill_switch_wait_time_;
   bool kill_switch_connected_;
   bool emergency_button_pressed_prev_;
+
+  bool enable_collision_constraint_;
+  bool enable_bounding_volume_constraint_;
+  bool enable_attitude_constraint_;
+
 };
 
 }
