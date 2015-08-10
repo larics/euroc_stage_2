@@ -99,6 +99,8 @@ class LinearModelPredictiveController{
     return mass_;
   }
 
+  bool GetCurrentReference(mav_msgs::EigenTrajectoryPoint* reference) const;
+
   void SetOdometry(const mav_msgs::EigenOdometry& odometry);
   void SetCommandTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory);
   void SetCommandTrajectory(const mav_msgs::EigenTrajectoryPointDeque& command_trajectory);
@@ -140,6 +142,11 @@ class LinearModelPredictiveController{
 
   double command_position_filter_time_constant_;
   double command_velocity_filter_time_constant_;
+
+  Eigen::Vector4d command_roll_pitch_yaw_thrust_;  //actual roll, pitch, yaw, thrust command
+  Eigen::Vector3d linearized_command_roll_pitch_thrust_;
+
+  double SolveTime_avg;
 
   Vector3dDeque position_command_queue_;
   Vector3dDeque velocity_command_queue_;

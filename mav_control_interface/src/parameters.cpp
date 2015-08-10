@@ -24,5 +24,7 @@ constexpr double Parameters::kDefaultRcTeleopMaxCarrotDistance;
 constexpr double Parameters::kDefaultRcTeleopMaxVelocity;
 constexpr double Parameters::kDefaultRcMaxRollPitchCommand;
 constexpr double Parameters::kDefaultRcMaxYawRateCommand;
+constexpr double Parameters::kDefaultTakeoffDistance;
+constexpr double Parameters::kDefaultTakeoffTime;
 
 }  // end namespace mav_control_interface
