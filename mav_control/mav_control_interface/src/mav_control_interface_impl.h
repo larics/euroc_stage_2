@@ -44,7 +44,7 @@ class MavControlInterfaceImpl
   virtual ~MavControlInterfaceImpl();
 
  private:
-  static constexpr double kWatchdogTimeout = 0.05;  // seconds
+  static constexpr double kOdometryWatchdogTimeout = 1.0;  // seconds
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -52,7 +52,7 @@ class MavControlInterfaceImpl
   ros::Subscriber odometry_subscriber_;
   ros::Subscriber command_trajectory_subscriber_;
   ros::Subscriber command_trajectory_array_subscriber_;
-  ros::Timer watchdog_;
+  ros::Timer odometry_watchdog_;
 
   ros::ServiceServer takeoff_server_;
   ros::ServiceServer back_to_position_hold_server_;
@@ -64,7 +64,7 @@ class MavControlInterfaceImpl
   void CommandPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
   void CommandTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg);
   void OdometryCallback(const nav_msgs::OdometryConstPtr& msg);
-  void WatchdogCallback(const ros::TimerEvent& e);
+  void OdometryWatchdogCallback(const ros::TimerEvent& e);
   void RcUpdatedCallback(const RcInterfaceBase&);
   bool TakeoffCallback(std_srvs::EmptyRequest& request, std_srvs::EmptyResponse& response);
   bool BackToPositionHoldCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
