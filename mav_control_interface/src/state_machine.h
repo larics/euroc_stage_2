@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+/**
+ * This implements the state machine that can be seen and edited here:
+ * https://drive.google.com/file/d/0B6zP-RNkbXDcRFZENUF6MEhFbW8/view?usp=sharing
+ * The pdf and svg can be found in the resource folder.
+ */
+
 #ifndef STATE_MACHINE_H_
 #define STATE_MACHINE_H_
 
