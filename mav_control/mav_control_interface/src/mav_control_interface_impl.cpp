@@ -37,9 +37,6 @@ MavControlInterfaceImpl::MavControlInterfaceImpl(ros::NodeHandle& nh, ros::NodeH
 {
   ros::NodeHandle interface_nh(private_nh, "control_interface");
 
-  command_roll_pitch_yawrate_thrust_publisher_ = nh_.advertise<mav_msgs::RollPitchYawrateThrust>(
-      mav_msgs::default_topics::COMMAND_ROLL_PITCH_YAWRATE_THRUST, 1);
-
   watchdog_ = nh_.createTimer(ros::Duration(kWatchdogTimeout), &MavControlInterfaceImpl::WatchdogCallback,
                               this, false, true);
 
@@ -56,13 +53,12 @@ MavControlInterfaceImpl::MavControlInterfaceImpl(ros::NodeHandle& nh, ros::NodeH
 
   rc_interface_->registerUpdatedCallback(&MavControlInterfaceImpl::RcUpdatedCallback, this);
 
-  state_machine_.reset(
-      new state_machine::StateMachine(controller, command_roll_pitch_yawrate_thrust_publisher_));
+  takeoff_server_ = nh.advertiseService("takeoff", &MavControlInterfaceImpl::TakeoffCallback, this);
+  back_to_position_hold_server_ = nh.advertiseService("back_to_position_hold",
+                                                      &MavControlInterfaceImpl::BackToPositionHoldCallback,
+                                                      this);
 
-  bool verbose;
-  if (interface_nh.getParam("verbose", verbose)) {
-    state_machine_->SetVerbose(verbose);
-  }
+  state_machine_.reset(new state_machine::StateMachine(nh_, private_nh_, controller));
 
   Parameters p;
   interface_nh.param("rc_teleop_max_carrot_distance", p.rc_teleop_max_carrot_distance_,
@@ -73,6 +69,8 @@ MavControlInterfaceImpl::MavControlInterfaceImpl(ros::NodeHandle& nh, ros::NodeH
                      Parameters::kDefaultRcMaxRollPitchCommand);
   interface_nh.param("rc_max_yaw_rate_command", p.rc_max_yaw_rate_command_,
                      Parameters::kDefaultRcMaxYawRateCommand);
+  interface_nh.param("takeoff_distance", p.takeoff_distance_, Parameters::kDefaultTakeoffDistance);
+  interface_nh.param("takeoff_time", p.takeoff_time_, Parameters::kDefaultTakeoffTime);
 
   p.stick_deadzone_ = Deadzone<double>(rc_interface->getStickDeadzone());
   state_machine_->SetParameters(p);
@@ -131,6 +129,21 @@ void MavControlInterfaceImpl::WatchdogCallback(const ros::TimerEvent& e)
 {
 //  ROS_WARN("watchdog triggered");
 // TODO(acmarkus): implement.
+}
+
+bool MavControlInterfaceImpl::TakeoffCallback(std_srvs::Empty::Request& request,
+                                              std_srvs::Empty::Response& response)
+{
+  ROS_INFO("Take off event sent");
+  state_machine_->process_event(state_machine::Takeoff());
+  return true;
+}
+
+bool MavControlInterfaceImpl::BackToPositionHoldCallback(std_srvs::Empty::Request& request,
+                                                         std_srvs::Empty::Response& response)
+{
+  state_machine_->process_event(state_machine::BackToPositionHold());
+  return true;
 }
 
 }  // end namespace mav_control_interface

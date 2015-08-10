@@ -41,6 +41,8 @@ class PositionControllerInterface {
 
   virtual bool setOdometry(const mav_msgs::EigenOdometry& odometry) = 0;
 
+  virtual bool getCurrentReference(mav_msgs::EigenTrajectoryPoint* reference) const = 0;
+
   virtual bool calculateRollPitchYawrateThrustCommand(
       mav_msgs::EigenRollPitchYawrateThrust* attitude_thrust_command);
 

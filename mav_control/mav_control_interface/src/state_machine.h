@@ -75,7 +75,9 @@ struct OdometryUpdate
   mav_msgs::EigenOdometry odometry;
 };
 
-struct Watchdog {};
+struct BackToPositionHold {};
+struct Takeoff {};
+struct OdometryWatchdog {};
 
 class StateMachineDefinition;
 //typedef boost::msm::back::state_machine<StateMachineDefinition> StateMachine;
@@ -93,7 +95,6 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
   struct HaveOdometry;
   struct PositionHold;
   struct RcTeleOp;
-  struct ExternalReferenceMode;
 
   // Actions
   struct SetReferenceAttitude;
@@ -102,6 +103,7 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
   struct SetOdometry;
   struct ComputeCommand;
   struct SetReferenceFromRc;
+  struct SetTakeoffCommands;
 
   // Guards
   struct RcModeManual;
@@ -116,7 +118,9 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
 
   // Some convenience typedefs to make the table below more readable:
   typedef msm_front::ActionSequence_<mpl::vector<SetOdometry, ComputeCommand> > SetOdometryAndCompute;
+  typedef euml::Not_<RcActive> RcInactive;
   typedef euml::And_<RcActive, RcModePosition> RcActivePosition;
+  typedef euml::And_<RcInactive, RcModePosition> RcInactivePosition;
   typedef euml::Not_<RcModeManual> RcModeNotManual;
   typedef msm_front::none InternalTransition;
   typedef msm_front::none NoAction;
@@ -137,57 +141,54 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
       //  +---------+-------------+---------+---------------------------+----------------------+
       msm_front::Row<HaveOdometry, RcUpdate, InternalTransition, SetReferenceAttitude, RcModeManual >,
       msm_front::Row<HaveOdometry, OdometryUpdate, InternalTransition, SetOdometry, NoGuard >,
-      msm_front::Row<HaveOdometry, Watchdog, RemoteControl, NoAction, NoGuard >,
-      msm_front::Row<HaveOdometry, RcUpdate, PositionHold, SetReferenceToCurrentPosition, RcModePosition >,
+      msm_front::Row<HaveOdometry, OdometryWatchdog, RemoteControl, NoAction, NoGuard >,
+      msm_front::Row<HaveOdometry, RcUpdate, PositionHold, SetReferenceToCurrentPosition, RcInactivePosition >,
+      msm_front::Row<HaveOdometry, RcUpdate, RcTeleOp, SetReferenceFromRc, RcActivePosition >,
       //  +---------+-------------+---------+---------------------------+----------------------+
       msm_front::Row<PositionHold, RcUpdate, RemoteControl, NoAction, RcModeManual>,
-      msm_front::Row<PositionHold, RcUpdate, RcTeleOp, NoAction, RcActivePosition >,
+      msm_front::Row<PositionHold, RcUpdate, RcTeleOp, SetReferenceToCurrentPosition, RcActivePosition >,
       msm_front::Row<PositionHold, OdometryUpdate, InternalTransition, SetOdometryAndCompute, NoGuard>,
-      msm_front::Row<PositionHold, ReferenceUpdate, ExternalReferenceMode, SetReferencePosition, NoGuard >,
+      msm_front::Row<PositionHold, ReferenceUpdate, InternalTransition, SetReferencePosition, NoGuard >,
       //  +---------+-------------+---------+---------------------------+----------------------+
-      msm_front::Row<RcTeleOp, RcUpdate, PositionHold, SetReferenceToCurrentPosition, euml::And_<euml::Not_<RcActive>, RcModePosition> >,
       msm_front::Row<RcTeleOp, RcUpdate, RemoteControl, NoAction, RcModeManual>,
+      msm_front::Row<RcTeleOp, BackToPositionHold, PositionHold, NoAction, NoGuard>,
+      msm_front::Row<RcTeleOp, Takeoff, PositionHold, SetTakeoffCommands, NoGuard>,
       msm_front::Row<RcTeleOp, RcUpdate, InternalTransition, SetReferenceFromRc, RcActivePosition >,
-      msm_front::Row<RcTeleOp, OdometryUpdate, InternalTransition, SetOdometryAndCompute, NoGuard>,
-      //  +---------+-------------+---------+---------------------------+----------------------+
-      msm_front::Row<ExternalReferenceMode, RcUpdate, RemoteControl, NoAction, RcModeManual>,
-      msm_front::Row<ExternalReferenceMode, RcUpdate, RcTeleOp, NoAction, RcActivePosition >,
-      msm_front::Row<ExternalReferenceMode, ReferenceUpdate, InternalTransition, SetReferencePosition, NoGuard>,
-      msm_front::Row<ExternalReferenceMode, OdometryUpdate, InternalTransition, SetOdometryAndCompute, NoGuard>
-  //  +---------+-------------+---------+---------------------------+----------------------+
+      //msm_front::Row<RcTeleOp, RcUpdate, InternalTransition, SetReferenceToCurrentPosition, RcInactivePosition >,
+      msm_front::Row<RcTeleOp, OdometryUpdate, InternalTransition, SetOdometryAndCompute, NoGuard>
       >
   {
   };
 
  public:
-  StateMachineDefinition(std::shared_ptr<PositionControllerInterface> controller,
-                         ros::Publisher& command_publisher);
+  StateMachineDefinition(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
+                         std::shared_ptr<PositionControllerInterface> controller);
 
   template<class Event, class FSM>
-  void on_entry(Event const&, FSM&)
+  void on_entry(Event const&, FSM& fsm)
   {
-    std::cout << "entering StateMachine" << std::endl;
+    fsm.PublishStateInfo("entering StateMachine");
   }
 
   template<class Event, class FSM>
-  void on_exit(Event const&, FSM&)
+  void on_exit(Event const&, FSM& fsm)
   {
-    std::cout << "leaving StateMachine" << std::endl;
+    fsm.PublishStateInfo("leaving StateMachine");
   }
 
-  bool GetVerbose() const;
-  void SetVerbose(bool verbose);
   void SetParameters(const Parameters& parameters);
 
 private:
   bool verbose_;
   std::shared_ptr<PositionControllerInterface> controller_;
   ros::Publisher command_publisher_;
+  ros::Publisher state_info_publisher_;
   Parameters parameters_;
   mav_msgs::EigenOdometry current_state_;
   mav_msgs::EigenTrajectoryPointDeque current_reference_queue_;
 
   void PublishAttitudeCommand(const mav_msgs::EigenRollPitchYawrateThrust& command) const;
+  void PublishStateInfo(const std::string& info);
 
   // Implementation of state machine:
 
@@ -197,8 +198,7 @@ private:
     template<class Event, class FSM>
     void on_entry(Event const& evt, FSM& fsm)
     {
-      if (fsm.GetVerbose())
-        std::cout << "[State]: Inactive" << std::endl;
+      fsm.PublishStateInfo("Inactive");
     }
   };
 
@@ -207,8 +207,7 @@ private:
     template<class Event, class FSM>
     void on_entry(Event const& evt, FSM& fsm)
     {
-      if (fsm.GetVerbose())
-        std::cout << "[State]: RemoteControl" << std::endl;
+      fsm.PublishStateInfo("RemoteControl");
     }
   };
 
@@ -217,8 +216,7 @@ private:
     template<class Event, class FSM>
     void on_entry(Event const& evt, FSM& fsm)
     {
-      if (fsm.GetVerbose())
-        std::cout << "[State]: RemoteControlReadyForOdometry" << std::endl;
+      fsm.PublishStateInfo("RemoteControlReadyForOdometry");
     }
   };
 
@@ -227,17 +225,16 @@ private:
     template<class Event, class FSM>
     void on_entry(Event const& evt, FSM& fsm)
     {
-      if (fsm.GetVerbose())
-        std::cout << "[State]: HaveOdometry" << std::endl;
+      fsm.PublishStateInfo("HaveOdometry");
     }
   };
+
   struct PositionHold : public msm_front::state<>
   {
     template<class Event, class FSM>
     void on_entry(Event const& evt, FSM& fsm)
     {
-      if (fsm.GetVerbose())
-        std::cout << "[State]: PositionHold" << std::endl;
+      fsm.PublishStateInfo("PositionHold");
     }
   };
 
@@ -247,20 +244,9 @@ private:
     void on_entry(const RcUpdate& evt, FSM& fsm)
     {
       last_iteration_time_ = evt.rc_data.timestamp;
-      if (fsm.GetVerbose())
-        std::cout << "[State]: RcTeleOp" << std::endl;
+      fsm.PublishStateInfo("RcTeleOp");
     }
     ros::Time last_iteration_time_;
-  };
-
-  struct ExternalReferenceMode : public msm_front::state<>
-  {
-    template<class Event, class FSM>
-    void on_entry(Event const& evt, FSM& fsm)
-    {
-      if (fsm.GetVerbose())
-        std::cout << "[State]: ExternalReferenceMode" << std::endl;
-    }
   };
 
   // Actions
@@ -328,6 +314,21 @@ private:
   struct SetReferenceFromRc
   {
     template<class FSM>
+    void operator()(const RcUpdate& evt, FSM& fsm, HaveOdometry& src_state, RcTeleOp&)
+    {
+      const Parameters& p = fsm.parameters_;
+      const RcData& rc_data = evt.rc_data;
+      mav_msgs::EigenTrajectoryPoint new_reference;
+      new_reference.position_W = fsm.current_state_.position_W;
+      new_reference.setFromYaw(mav_msgs::yawFromQuaternion(fsm.current_state_.orientation_W_B));
+      new_reference.position_W.z() += p.stick_deadzone_(rc_data.left_up_down);
+
+      fsm.current_reference_queue_.clear();
+      fsm.current_reference_queue_.push_back(new_reference);
+      fsm.controller_->setReference(new_reference);
+    }
+
+    template<class FSM>
     void operator()(const RcUpdate& evt, FSM& fsm, RcTeleOp& src_state, RcTeleOp&)
     {
       const double dt = (evt.rc_data.timestamp - src_state.last_iteration_time_).toSec();
@@ -379,6 +380,60 @@ private:
       fsm.controller_->setReference(new_reference);
 
       src_state.last_iteration_time_ = evt.rc_data.timestamp;
+    }
+  };
+
+  struct SetTakeoffCommands
+  {
+    template<class FSM>
+    void operator()(const Takeoff& evt, FSM& fsm, RcTeleOp& src_state, PositionHold&)
+    {
+      constexpr double dt = 0.01;  // TODDO(acmarkus): FIX!!!!!!
+      constexpr double seconds_to_ns = 1.0e9;
+      const int64_t dt_ns = static_cast<int64_t>(dt * seconds_to_ns);
+
+      const Parameters& p = fsm.parameters_;
+      mav_msgs::EigenOdometry& current_state = fsm.current_state_;
+      mav_msgs::EigenTrajectoryPointDeque& current_reference_queue = fsm.current_reference_queue_;
+      current_reference_queue.clear();
+
+//      mav_msgs::EigenTrajectoryPoint trajectory_point;
+//      trajectory_point.time_from_start_ns = 0;
+//      trajectory_point.position_W = current_state.position_W;
+//
+//      constexpr double negative_distance_z = 0.5;
+//      trajectory_point.position_W.z() -= negative_distance_z;
+//      trajectory_point.setFromYaw(mav_msgs::yawFromQuaternion(current_state.orientation_W_B));
+//      current_reference_queue.push_back(trajectory_point);
+//
+//      const int64_t takeoff_time_below_ground_ns = static_cast<int64_t>(p.takeoff_time_ * 0.5 * seconds_to_ns);
+//      double increment_z = negative_distance_z / (p.takeoff_time_ * 0.5 / dt);
+//      for (int64_t t_ns = 0; t_ns < takeoff_time_below_ground_ns; t_ns += dt_ns) {
+//        trajectory_point.position_W.z() += increment_z;
+//        trajectory_point.time_from_start_ns = t_ns;
+//        current_reference_queue.push_back(trajectory_point);
+//      }
+//
+//      const int64_t takeoff_time_ns = static_cast<int64_t>(p.takeoff_time_ * seconds_to_ns);
+//      increment_z = p.takeoff_distance_ / (p.takeoff_time_ / dt);
+//      for (int64_t t_ns = trajectory_point.time_from_start_ns;
+//          t_ns < takeoff_time_below_ground_ns + takeoff_time_ns; t_ns += dt_ns) {
+//        trajectory_point.position_W.z() += increment_z;
+//        trajectory_point.time_from_start_ns = t_ns;
+//        current_reference_queue.push_back(trajectory_point);
+//      }
+
+
+      mav_msgs::EigenTrajectoryPoint trajectory_point;
+      trajectory_point.time_from_start_ns = 0;
+      trajectory_point.position_W = current_state.position_W;
+      trajectory_point.position_W.z() += p.takeoff_distance_;
+      trajectory_point.setFromYaw(mav_msgs::yawFromQuaternion(current_state.orientation_W_B));
+      current_reference_queue.push_back(trajectory_point);
+
+      ROS_INFO_STREAM("final take off position: " << trajectory_point.position_W.transpose());
+      //fsm.controller_->setReferenceArray(current_reference_queue);
+      fsm.controller_->setReference(trajectory_point);
     }
   };
 

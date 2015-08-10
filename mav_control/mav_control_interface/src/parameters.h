@@ -31,13 +31,17 @@ class Parameters {
   static constexpr double kDefaultRcTeleopMaxVelocity = 1.0;
   static constexpr double kDefaultRcMaxRollPitchCommand = 45.0 / 180.0 * M_PI;
   static constexpr double kDefaultRcMaxYawRateCommand = 45.0 / 180.0 * M_PI;
+  static constexpr double kDefaultTakeoffDistance = 1.0;
+  static constexpr double kDefaultTakeoffTime = 5.0;
 
   Parameters()
       : stick_deadzone_(kDefaultStickDeadzone),
         rc_teleop_max_carrot_distance_(kDefaultRcTeleopMaxCarrotDistance),
         rc_teleop_max_velocity_(kDefaultRcTeleopMaxVelocity),
         rc_max_roll_pitch_command_(kDefaultRcMaxRollPitchCommand),
-        rc_max_yaw_rate_command_(kDefaultRcMaxYawRateCommand)
+        rc_max_yaw_rate_command_(kDefaultRcMaxYawRateCommand),
+        takeoff_distance_(kDefaultTakeoffDistance),
+        takeoff_time_(kDefaultTakeoffTime)
   {
   }
 
@@ -46,6 +50,8 @@ class Parameters {
   double rc_teleop_max_velocity_;
   double rc_max_roll_pitch_command_;
   double rc_max_yaw_rate_command_;
+  double takeoff_distance_;
+  double takeoff_time_;
 };
 
 } // end namespace mav_control_interface

@@ -39,6 +39,8 @@ class DummyController : public PositionControllerInterface{
 
   virtual bool setReference(const mav_msgs::EigenTrajectoryPoint& reference){
     ROS_INFO_STREAM("got reference: position=" << reference.position_W.transpose() << " yaw=" << reference.getYaw());
+    reference_array_.clear();
+    reference_array_.push_back(reference);
     return true;
   }
 
@@ -46,6 +48,7 @@ class DummyController : public PositionControllerInterface{
     ROS_INFO_STREAM("got reference array:");
     for(const auto& reference : reference_array)
       ROS_INFO_STREAM("    position=" << reference.position_W.transpose() << " yaw=" << reference.getYaw());
+    reference_array_ = reference_array;
     return true;
   }
 
@@ -61,10 +64,24 @@ class DummyController : public PositionControllerInterface{
     return true;
   }
 
+  virtual bool getCurrentReference(mav_msgs::EigenTrajectoryPoint* reference) const {
+    assert(reference != nullptr);
+
+    if(reference_array_.empty())
+      return false;
+
+    *reference = reference_array_.front();
+    return true;
+  }
+
+
   virtual bool calculateAttitudeThrustCommand(mav_msgs::EigenAttitudeThrust* attitude_thrust_command){
     ROS_INFO("calculateAttitudeThrustCommand");
     return true;
   }
+
+ private:
+  mav_msgs::EigenTrajectoryPointDeque reference_array_;
 
 };
 

@@ -5,7 +5,6 @@
       <remap from="odometry" to="msf_core/odometry" />
       <rosparam file="$(find mav_linear_mpc)/parameters/linear_mpc.yaml" />
       <param name="verbose" value="true" />
-      <param name="control_interface/verbose" value="false" />
       <param name="controller/mass" value="1.56" />
     </node>
 
