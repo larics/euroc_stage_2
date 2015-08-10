@@ -1,13 +1,13 @@
 <launch>
   <arg name="mav_name" default="euroc6"/>
   <arg name="namespace" default="$(arg mav_name)" />
-
     <group ns="$(arg namespace)" >
       <node name="okvis_node" pkg="okvis_node" type="okvis_node" output="screen">
         <param name="config_filename" value="$(find euroc_launch)/parameters/$(arg mav_name)/okvis_cameras.yaml" />
         <remap from="/camera0" to="cam2/image_raw" />
         <remap from="/camera1" to="cam0/image_raw" />
         <remap from="/imu" to="imu0" />
+        <remap from="/get_camera_calibration" to="get_camera_calibration" />
       </node>
   </group>
 </launch>
