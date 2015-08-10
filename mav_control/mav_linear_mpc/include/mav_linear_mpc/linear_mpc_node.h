@@ -79,6 +79,8 @@ class LinearModelPredictiveControllerNode: public mav_control_interface::Positio
 
   virtual bool calculateAttitudeThrustCommand(mav_msgs::EigenAttitudeThrust* attitude_thrust_command);
 
+  virtual bool getCurrentReference(mav_msgs::EigenTrajectoryPoint* reference) const;
+
 };
 
 }

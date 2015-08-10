@@ -25,8 +25,10 @@ LinearModelPredictiveController::LinearModelPredictiveController(ros::NodeHandle
       gravity_(9.81),
       sampling_time_(0.01),
       height_error_integrator_(0.0),
-      initialized_params_(false)
-
+      initialized_params_(false),
+      command_roll_pitch_yaw_thrust_(0,0,0,0),
+      linearized_command_roll_pitch_thrust_(0,0,0),
+      SolveTime_avg(0)
 {
   this->InitializeParams();
 }
@@ -250,7 +252,7 @@ void LinearModelPredictiveController::SetCommandTrajectory(
     return;
   }
 
-  command_trajectory_ = command_trajectory_array.back();
+  command_trajectory_ = command_trajectory_array.front();
 
   position_command_queue_.clear();
   velocity_command_queue_.clear();
@@ -273,8 +275,18 @@ void LinearModelPredictiveController::SetCommandTrajectory(
 
 void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_disturbances)
 {
-  if (position_command_queue_.size() < 1) {
+  if (position_command_queue_.empty()) {
+    ROS_WARN("Update queue empty");
     return;
+  }
+
+  const Eigen::Vector3d last_position_in_queue = position_command_queue_.back();
+  const Eigen::Vector3d last_velocity_in_queue = velocity_command_queue_.back();
+  const double last_yaw_in_queue = yaw_command_queue_.back();
+  while (position_command_queue_.size() < PREDICTION_HORIZON) {
+    position_command_queue_.push_back(last_position_in_queue);
+    velocity_command_queue_.push_back(last_velocity_in_queue);
+    yaw_command_queue_.push_back(last_yaw_in_queue);
   }
 
   Eigen::VectorXd target_state(state_size_);
@@ -330,22 +342,22 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
     z_ss_final << target_state, Eigen::VectorXd::Zero(disturbance_size_ + input_size_);
     f_final = -cost_Hessian_final_.transpose() * z_ss_final;
 
-    if (position_command_queue_.size() < 2) {
-      FORCES_queue_.clear();
-      for (int i = 0; i < PREDICTION_HORIZON - 1; i++) {
-        Eigen::VectorXd tmp_vector(state_size_ + disturbance_size_ + 2 * input_size_);
-        tmp_vector = -cost_Hessian_.transpose() * z_ss;
-        FORCES_queue_.push_back(tmp_vector);
-      }
-
-    } else {
+//    if (position_command_queue_.size() < 2) {
+//      FORCES_queue_.clear();
+//      for (int i = 0; i < PREDICTION_HORIZON - 1; i++) {
+//        Eigen::VectorXd tmp_vector(state_size_ + disturbance_size_ + 2 * input_size_);
+//        tmp_vector = -cost_Hessian_.transpose() * z_ss;
+//        FORCES_queue_.push_back(tmp_vector);
+//      }
+//
+//    }
+//    else {
 
       Eigen::VectorXd tmp_vector(state_size_ + disturbance_size_ + 2 * input_size_);
       FORCES_queue_.push_back(tmp_vector);
       FORCES_queue_.back() = -cost_Hessian_.transpose() * z_ss;
-      ;
       FORCES_queue_.pop_front();
-    }
+//    }
   }
   //For different prediction horizon, change this accordingly!
   Eigen::Map<Eigen::VectorXd>(const_cast<double*>(FORCES_params_.f_1),
@@ -437,17 +449,17 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
     steady_state_calculation_->ComputeSteadyState(estimated_disturbances, reference,
         &target_state, &target_input);
 
-    if(position_command_queue_.size() < 2) {
-      CVXGEN_queue_.clear();
-      for(int i=0; i<PREDICTION_HORIZON; i++) {
-        CVXGEN_queue_.push_back(target_state);
-      }
-
-    } else {
+//    if(position_command_queue_.size() < 2) {
+//      CVXGEN_queue_.clear();
+//      for(int i=0; i<PREDICTION_HORIZON; i++) {
+//        CVXGEN_queue_.push_back(target_state);
+//      }
+//
+//    } else {
 
       CVXGEN_queue_.push_back(target_state);
       CVXGEN_queue_.pop_front();
-    }
+//    }
   }
   for (int i = 0; i < PREDICTION_HORIZON; i++) {
     Eigen::Map<Eigen::VectorXd>(const_cast<double*>(params.x_ss[i]), state_size_, 1) = CVXGEN_queue_[i];
@@ -456,7 +468,6 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
 
   yaw_command_ = yaw_command_queue_.front();
   yaw_command_queue_.pop_front();
-
 }
 
 void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *ref_attitude_thrust)
@@ -466,9 +477,8 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
   ros::WallTime starting_time = ros::WallTime::now();
 
   //Declare variables
-  static Eigen::Vector4d command_roll_pitch_yaw_thrust;  //actual roll, pitch, yaw, thrust command
-  static Eigen::Vector3d linearized_roll_pitch_thrust_cmd;
-  static double SolveTime_avg = 0.0;
+
+
   Eigen::VectorXd reference(6);
 
   reference << command_trajectory_.position_W, command_trajectory_.velocity_W;
@@ -499,7 +509,7 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
 
   Eigen::Vector3d velocity_W = R_rot * odometry_.velocity_B;
 
-  state_observer_->FeedAttitudeCommand(command_roll_pitch_yaw_thrust);
+  state_observer_->FeedAttitudeCommand(command_roll_pitch_yaw_thrust_);
   state_observer_->FeedPositionMeasurement(odometry_.position_W);
   state_observer_->FeedVelocityMeasurement(velocity_W);
   state_observer_->FeedRotationMatrix(R_rot);
@@ -563,7 +573,7 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
 #ifdef UseForcesSolver
   //Solve using FORCES
 
-  z1 << x_0, estimated_disturbances, linearized_roll_pitch_thrust_cmd, Eigen::VectorXd::Zero(
+  z1 << x_0, estimated_disturbances, linearized_command_roll_pitch_thrust_, Eigen::VectorXd::Zero(
       state_size_ + disturbance_size_ + input_size_, 1);
 
   Eigen::Map<Eigen::VectorXd>(const_cast<double*>(FORCES_params_.z1),
@@ -572,7 +582,7 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
   FireFlyOffsetFreeMPC_solve(const_cast<FireFlyOffsetFreeMPC_params*>(&FORCES_params_), &output,
                              &info);
 
-  linearized_roll_pitch_thrust_cmd << output.output_1[0], output.output_1[1], output.output_1[2];
+  linearized_command_roll_pitch_thrust_ << output.output_1[0], output.output_1[1], output.output_1[2];
 
   SolveTime_avg += info.solvetime;
 
@@ -586,7 +596,7 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
 
   Eigen::Map<Eigen::VectorXd>(const_cast<double*>(params.d), disturbance_size_, 1) = estimated_disturbances;
   Eigen::Map<Eigen::VectorXd>(const_cast<double*>(params.u_prev), input_size_, 1) =
-  linearized_roll_pitch_thrust_cmd;
+  linearized_command_roll_pitch_thrust_;
   Eigen::Map<Eigen::VectorXd>(const_cast<double*>(params.x_0), state_size_, 1) = x_0;
   Eigen::Map<Eigen::VectorXd>(const_cast<double*>(params.u_ss), input_size_, 1) = target_input;
 
@@ -594,25 +604,25 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
   int iteration_number = solve();
   SolveTime_avg += tocq();
 
-  linearized_roll_pitch_thrust_cmd << vars.u_0[0], vars.u_0[1], vars.u_0[2];
+  linearized_command_roll_pitch_thrust_ << vars.u_0[0], vars.u_0[1], vars.u_0[2];
 
 #endif
 
   if (iteration_number < 0) {  //Other ways to check solver failure??
 //   = false;
-    linearized_roll_pitch_thrust_cmd = LQR_K_ * (target_state - x_0);
-    linearized_roll_pitch_thrust_cmd = linearized_roll_pitch_thrust_cmd.cwiseMax(u_min_);
-    linearized_roll_pitch_thrust_cmd = linearized_roll_pitch_thrust_cmd.cwiseMin(u_max_);
+    linearized_command_roll_pitch_thrust_ = LQR_K_ * (target_state - x_0);
+    linearized_command_roll_pitch_thrust_ = linearized_command_roll_pitch_thrust_.cwiseMax(u_min_);
+    linearized_command_roll_pitch_thrust_ = linearized_command_roll_pitch_thrust_.cwiseMin(u_max_);
   }
 
-  command_roll_pitch_yaw_thrust(3) = (linearized_roll_pitch_thrust_cmd(2) + gravity_
+  command_roll_pitch_yaw_thrust_(3) = (linearized_command_roll_pitch_thrust_(2) + gravity_
       + Ki_height_ * height_error_integrator_) / (cos(roll) * cos(pitch));
-  double ux = linearized_roll_pitch_thrust_cmd(1) * (gravity_ / command_roll_pitch_yaw_thrust(3));
-  double uy = linearized_roll_pitch_thrust_cmd(0) * (gravity_ / command_roll_pitch_yaw_thrust(3));
+  double ux = linearized_command_roll_pitch_thrust_(1) * (gravity_ / command_roll_pitch_yaw_thrust_(3));
+  double uy = linearized_command_roll_pitch_thrust_(0) * (gravity_ / command_roll_pitch_yaw_thrust_(3));
 
-  command_roll_pitch_yaw_thrust(0) = ux * sin(yaw) + uy * cos(yaw);
-  command_roll_pitch_yaw_thrust(1) = ux * cos(yaw) - uy * sin(yaw);
-  command_roll_pitch_yaw_thrust(2) = yaw_command_;
+  command_roll_pitch_yaw_thrust_(0) = ux * sin(yaw) + uy * cos(yaw);
+  command_roll_pitch_yaw_thrust_(1) = ux * cos(yaw) - uy * sin(yaw);
+  command_roll_pitch_yaw_thrust_(2) = yaw_command_;
 
   int n_rotations = (int) (yaw / (2.0 * M_PI));
   yaw = yaw - 2.0 * M_PI * n_rotations;
@@ -620,7 +630,7 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
   if (yaw > M_PI)
     yaw = M_PI - yaw;
 
-  double yaw_error = command_roll_pitch_yaw_thrust(2) - yaw;
+  double yaw_error = command_roll_pitch_yaw_thrust_(2) - yaw;
 
   if (std::abs(yaw_error) > M_PI) {
     if (yaw_error > 0.0)
@@ -637,7 +647,7 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
   if (yaw_rate_cmd < -M_PI_2)
     yaw_rate_cmd = -M_PI_2;
 
-  *ref_attitude_thrust << command_roll_pitch_yaw_thrust(0), command_roll_pitch_yaw_thrust(1), yaw_rate_cmd, command_roll_pitch_yaw_thrust(
+  *ref_attitude_thrust << command_roll_pitch_yaw_thrust_(0), command_roll_pitch_yaw_thrust_(1), yaw_rate_cmd, command_roll_pitch_yaw_thrust_(
       3) * mass_;  //[N]
 
   double diff_time = (ros::WallTime::now() - starting_time).toSec();
@@ -653,10 +663,10 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
 
       std::cout << "Controller loop time : " << diff_time << " sec" << std::endl;
 
-      std::cout << "roll ref : \t" << command_roll_pitch_yaw_thrust(0) << "\t" << "pitch ref : \t"
-          << command_roll_pitch_yaw_thrust(1) << "\t" << "yaw ref : \t"
-          << command_roll_pitch_yaw_thrust(2) << "\t" << "thrust ref : \t"
-          << command_roll_pitch_yaw_thrust(3) << "\t" << "yawrate ref : \t" << yaw_rate_cmd
+      std::cout << "roll ref : \t" << command_roll_pitch_yaw_thrust_(0) << "\t" << "pitch ref : \t"
+          << command_roll_pitch_yaw_thrust_(1) << "\t" << "yaw ref : \t"
+          << command_roll_pitch_yaw_thrust_(2) << "\t" << "thrust ref : \t"
+          << command_roll_pitch_yaw_thrust_(3) << "\t" << "yawrate ref : \t" << yaw_rate_cmd
           << std::endl;
       counter = 0;
     }
@@ -691,6 +701,13 @@ void LinearModelPredictiveController::SetMaximumCommand(double max_roll, double 
 
   u_max_ << max_roll, max_pitch, max_thrust;
   u_min_ << -max_roll, -max_pitch, -max_thrust;
+}
+
+bool LinearModelPredictiveController::GetCurrentReference(mav_msgs::EigenTrajectoryPoint* reference) const
+{
+  assert(reference != nullptr);
+  *reference = command_trajectory_;
+  return true;
 }
 
 }

@@ -28,7 +28,10 @@ void VehicleMonitorObserver::Update(const std::map<std::string, std::map<std::st
 MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh): vehicle_id_("MAV1"),
     frame_number_(0),
     take_control_flag_(false),
-    emergency_button_pressed_prev_(false) {
+    emergency_button_pressed_prev_(false),
+    enable_collision_constraint_(true),
+    enable_bounding_volume_constraint_(true),
+    enable_attitude_constraint_(true) {
 
   safety_pose_publisher_.reset(new SafetyPosePublisher(nh, private_nh));
 
@@ -42,6 +45,9 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh): vehicle_id
   private_nh.param("motion_capture_frequency", motion_capture_frequency_, kDefaultMotionCaptureFrequency);
   private_nh.param("max_roll", max_roll_, kDefaultMaxRoll);
   private_nh.param("max_pitch", max_pitch_, kDefaultMaxPitch);
+  private_nh.param("enable_collision_constraint", enable_collision_constraint_, kDefaultEnableCollisionConstraint);
+  private_nh.param("enable_bounding_volume_constraint", enable_bounding_volume_constraint_, kDefaultEnableBoundingVolumeConstraint);
+  private_nh.param("enable_attitude_constraint", enable_attitude_constraint_, kDefaultEnableAttitudeConstraint);
   private_nh.param("kill_switch_port_name", kill_switch_port_name_, kDefaultKillSwitchPort);
   private_nh.param("kill_switch_check_rate", kill_switch_check_rate_, kDefaultKillSwitchCheckRate);
   private_nh.param("kill_switch_baudrate_", kill_switch_baudrate_, kDefaultKillSwitchBaudrate);
@@ -98,40 +104,44 @@ void MavSaver::RegisterConstraintCheckers() {
 
   using namespace VehicleMonitorLibrary;
 
-  std::shared_ptr<SimpleVelocityEstimator> velocity_estimator_collision_checker =
-      std::make_shared<SimpleVelocityEstimator>(motion_capture_frequency_);
+  if(enable_collision_constraint_) {
+    std::shared_ptr<SimpleVelocityEstimator> velocity_estimator_collision_checker =
+        std::make_shared<SimpleVelocityEstimator>(motion_capture_frequency_);
 
-  std::shared_ptr<CollisionConstraintChecker> collisionChecker =
-      std::make_shared<CollisionConstraintChecker>(vehicle_monitor_->GetOcTreePtr(),
-                                                   vehicle_monitor_->GetEnvironmentBoundingVolume(),
-                                                   max_dist_to_check_collision_, // max distance to check for collisions
-                                                   collision_threshold_in_bounding_sphere_radius_, // we consider a collision when the distance is <= 2*radius
-                                                   projection_window_,
-                                                   motion_capture_frequency_,
-                                                   velocity_estimator_collision_checker
-      );
+    std::shared_ptr<CollisionConstraintChecker> collisionChecker =
+        std::make_shared<CollisionConstraintChecker>(vehicle_monitor_->GetOcTreePtr(),
+                                                     vehicle_monitor_->GetEnvironmentBoundingVolume(),
+                                                     max_dist_to_check_collision_, // max distance to check for collisions
+                                                     collision_threshold_in_bounding_sphere_radius_, // we consider a collision when the distance is <= 2*radius
+                                                     projection_window_,
+                                                     motion_capture_frequency_,
+                                                     velocity_estimator_collision_checker
+        );
 
-//  vehicle_monitor_->RegisterChecker(collisionChecker);
+    vehicle_monitor_->RegisterChecker(collisionChecker);
+  }
 
-  // the vehicle monitor library needs a new velocity estimator for every constraint!!!
-  // TODO(burrimi): delete vehicle monitor library and write a new one.
-  std::shared_ptr<SimpleVelocityEstimator> velocity_estimator_attitude_constraint =
-      std::make_shared<SimpleVelocityEstimator>(motion_capture_frequency_);
+  if(enable_attitude_constraint_) {
+    std::shared_ptr<SimpleVelocityEstimator> velocity_estimator_attitude_constraint =
+        std::make_shared<SimpleVelocityEstimator>(motion_capture_frequency_);
 
-  std::shared_ptr<AttitudeConstraintChecker> attitudeChecker =
-      std::make_shared<AttitudeConstraintChecker>(max_roll_,
-                                                  max_pitch_,
-                                                  projection_window_,
-                                                  motion_capture_frequency_,
-                                                  velocity_estimator_attitude_constraint
-      );
+    std::shared_ptr<AttitudeConstraintChecker> attitudeChecker =
+        std::make_shared<AttitudeConstraintChecker>(max_roll_,
+                                                    max_pitch_,
+                                                    projection_window_,
+                                                    motion_capture_frequency_,
+                                                    velocity_estimator_attitude_constraint
+        );
 
-  vehicle_monitor_->RegisterChecker(attitudeChecker);
+    vehicle_monitor_->RegisterChecker(attitudeChecker);
+  }
 
-  std::shared_ptr<OutOfSpaceConstraintChecker> outOfSpaceChecker(
-      new OutOfSpaceConstraintChecker(vehicle_monitor_->GetEnvironmentBoundingVolume()));
+  if(enable_bounding_volume_constraint_) {
+    std::shared_ptr<OutOfSpaceConstraintChecker> outOfSpaceChecker(
+        new OutOfSpaceConstraintChecker(vehicle_monitor_->GetEnvironmentBoundingVolume()));
 
-  vehicle_monitor_->RegisterChecker(outOfSpaceChecker);
+    vehicle_monitor_->RegisterChecker(outOfSpaceChecker);
+  }
 }
 
 

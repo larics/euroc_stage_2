@@ -14,4 +14,6 @@
   <depend>roscpp</depend>
   <depend>mav_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
 </package>

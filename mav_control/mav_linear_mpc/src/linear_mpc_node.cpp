@@ -109,6 +109,12 @@ bool LinearModelPredictiveControllerNode::calculateAttitudeThrustCommand(
   return false;
 }
 
+bool LinearModelPredictiveControllerNode::getCurrentReference(mav_msgs::EigenTrajectoryPoint* reference) const
+{
+  assert(reference != nullptr);
+  return linear_mpc_.GetCurrentReference(reference);
+}
+
 } // end namespace mav_control
 
 int main(int argc, char** argv)

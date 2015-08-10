@@ -15,29 +15,24 @@
 * limitations under the License.
 */
 
+#include <mav_msgs/default_topics.h>
+#include <std_msgs/String.h>
+
 #include "state_machine.h"
 
 namespace mav_control_interface {
 
 namespace state_machine {
 
-StateMachineDefinition::StateMachineDefinition(std::shared_ptr<PositionControllerInterface> controller,
-                                               ros::Publisher& command_publisher)
+StateMachineDefinition::StateMachineDefinition(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
+                                               std::shared_ptr<PositionControllerInterface> controller)
     : verbose_(false),
-      controller_(controller),
-      command_publisher_(command_publisher)
+      controller_(controller)
 {
+  command_publisher_ = nh.advertise<mav_msgs::RollPitchYawrateThrust>(
+      mav_msgs::default_topics::COMMAND_ROLL_PITCH_YAWRATE_THRUST, 1);
 
-}
-
-bool StateMachineDefinition::GetVerbose() const
-{
-  return verbose_;
-}
-
-void StateMachineDefinition::SetVerbose(bool verbose)
-{
-  verbose_ = verbose;
+  state_info_publisher_ = nh.advertise<std_msgs::String>("state_machine/state_info", 1, true);
 }
 
 void StateMachineDefinition::SetParameters(const Parameters& parameters)
@@ -50,9 +45,23 @@ void StateMachineDefinition::PublishAttitudeCommand (
 {
   mav_msgs::RollPitchYawrateThrustPtr msg(new mav_msgs::RollPitchYawrateThrust);
 
+  mav_msgs::EigenRollPitchYawrateThrust tmp_command = command;
+  tmp_command.thrust.x() = 0;
+  tmp_command.thrust.y() = 0;
+  tmp_command.thrust.z() = std::max(0.0, command.thrust.z());
+
   msg->header.stamp = ros::Time::now();  // TODO(acmarkus): get from msg
   mav_msgs::msgRollPitchYawrateThrustFromEigen(command, msg.get());
   command_publisher_.publish(msg);
+}
+
+void StateMachineDefinition::PublishStateInfo(const std::string& info)
+{
+  if (state_info_publisher_.getNumSubscribers() > 0) {
+    std_msgs::StringPtr msg(new std_msgs::String);
+    msg->data = info;
+    state_info_publisher_.publish(msg);
+  }
 }
 
 } // end namespace state_machine
