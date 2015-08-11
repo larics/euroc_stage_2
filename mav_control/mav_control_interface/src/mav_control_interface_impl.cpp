@@ -127,7 +127,6 @@ void MavControlInterfaceImpl::OdometryCallback(const nav_msgs::OdometryConstPtr&
 
 void MavControlInterfaceImpl::OdometryWatchdogCallback(const ros::TimerEvent& e)
 {
-  ROS_WARN("odometry watchdog triggered");
   state_machine_->process_event(state_machine::OdometryWatchdog());
 }
 
