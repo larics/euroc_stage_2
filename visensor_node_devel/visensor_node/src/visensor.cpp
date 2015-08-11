@@ -46,10 +46,10 @@ ViSensor::ViSensor(ros::NodeHandle& nh, std::string sensor_ip,
                    const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
                    const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
                    const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
-                   bool use_time_sync)
+                   bool stereo_flip_disable, bool use_time_sync)
                    : nh_(nh),
                    use_time_sync_(use_time_sync) {
-  init(sensor_ip, slot_ids, is_flipped, lens_types, projection_types, stereo_left_cam, stereo_right_cam);
+  init(sensor_ip, slot_ids, is_flipped, lens_types, projection_types, stereo_left_cam, stereo_right_cam, stereo_flip_disable);
 }
 
 ViSensor::~ViSensor() {
@@ -59,7 +59,8 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
                     const std::map<SensorId::SensorId, int>& is_flipped,
                     const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
                     const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
-                    const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam) {
+                    const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
+                    bool stereo_flip_disable) {
   try {
     // ip not specified, use autodiscovery to find sensor
     if (sensor_ip == "0.0.0.0")
@@ -73,7 +74,7 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
 
 #ifndef EXPERT_MODE
   // swap left/right camera topic names if cameras are flipped
-  if (drv_.isStereoCameraFlipped()){
+  if (drv_.isStereoCameraFlipped() && !stereo_flip_disable){
     const std::map<SensorId::SensorId, std::string>::iterator cam0 = ROS_CAMERA_NAMES.find(stereo_left_cam);
     const std::map<SensorId::SensorId, std::string>::iterator cam1 = ROS_CAMERA_NAMES.find(stereo_right_cam);
     if ((cam0 != ROS_CAMERA_NAMES.end()) && (cam1 != ROS_CAMERA_NAMES.end()))
@@ -144,7 +145,7 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
   //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
   if(std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_left_cam)!=list_of_camera_ids_.end()
       && std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_right_cam)!=list_of_camera_ids_.end()) {
-    if (!drv_.isStereoCameraFlipped()){
+    if (!drv_.isStereoCameraFlipped() || stereo_flip_disable){
       //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
       if (getRosStereoCameraConfig(stereo_left_cam, cinfo_.at(stereo_left_cam),
                                    stereo_right_cam, cinfo_.at(stereo_right_cam)))
