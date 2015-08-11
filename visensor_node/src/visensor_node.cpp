@@ -56,7 +56,7 @@ int main(int argc, char** argv)
   private_nh.param("useTimeSync", use_time_sync, false);
 
   XmlRpc::XmlRpcValue my_list;
-  if (nh.getParam("/cameras", my_list)){
+  if (nh.getParam("cameras", my_list)){
     // check for sanity - there must be at least one entry
     ROS_ASSERT(my_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
     ROS_ASSERT(my_list.size()>0);
@@ -119,6 +119,7 @@ int main(int argc, char** argv)
   visensor::SensorId::SensorId stereo_right_cam = visensor::SensorId::CAM1;
 
   // These settings only make sense in expert mode.
+  bool stereo_flip_disable = false;
   #ifdef EXPERT_MODE
   std::string left_name, right_name;
   if (private_nh.getParam("stereo_left_cam", left_name) &&
@@ -136,10 +137,11 @@ int main(int argc, char** argv)
     ROS_INFO_STREAM("Setting left camera to " << left_name
                     << " and right camera to " << right_name);
   }
+  private_nh.param("stereo_flip_disable", stereo_flip_disable, stereo_flip_disable);
   #endif
 
   visensor::ViSensor vi_sensor(nh, sensor_ip, slot_ids, is_flipped, lens_types, projection_types,
-                               stereo_left_cam, stereo_right_cam, use_time_sync);
+                               stereo_left_cam, stereo_right_cam, stereo_flip_disable, use_time_sync);
   vi_sensor.startSensors(cam_rates, cam_rate_global, imu_rate, trigger_rate);
 
   ros::spin();
