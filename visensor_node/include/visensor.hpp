@@ -134,6 +134,7 @@ class ViSensor {
            const std::map<SensorId::SensorId, int>& is_flipped,
            const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
            const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
+           const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
            bool use_time_sync);
   ~ViSensor();
   void startSensors( std::map<SensorId::SensorId, int>& cam_rate, const int com_rate_global,
@@ -155,7 +156,8 @@ class ViSensor {
   void init(const std::string& sensor_ip, const std::map<SensorId::SensorId, int>& slot_ids,
             const std::map<SensorId::SensorId, int>& is_flipped,
             const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
-            const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types);
+            const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
+            const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam);
   bool getRosCameraConfig(const SensorId::SensorId& camera_id, sensor_msgs::CameraInfo& cam_info);
   bool getRosStereoCameraConfig(const SensorId::SensorId& camera_id_0, sensor_msgs::CameraInfo& cam_info_0,
                                 const SensorId::SensorId& camera_id_1, sensor_msgs::CameraInfo& cam_info_1);
