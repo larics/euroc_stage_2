@@ -1,0 +1,12 @@
+cameras:
+  - camera_number: 0
+    slot_id: 0
+    lens_type: equidistant
+    projection_type: pinhole
+  - camera_number: 2
+    slot_id: 0
+    lens_type: equidistant
+    projection_type: pinhole
+visensor_node/stereo_left_cam: cam2
+visensor_node/stereo_right_cam: cam0
+visensor_node/stereo_flip_disable: true

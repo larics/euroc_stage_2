@@ -1,0 +1,11 @@
+<launch>
+  <arg name="mav_name" default="euroc6"/>
+  <arg name="namespace" default="$(arg mav_name)" />
+
+  <group ns="$(arg namespace)" >
+    <rosparam file="$(find euroc_launch)/parameters/common/visensor.yaml"/>
+
+    <node name="visensor_node" pkg="visensor_node" type="visensor_node" output="screen">
+    </node>
+  </group>
+</launch>
