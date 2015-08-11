@@ -110,6 +110,7 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
   struct ComputeCommand;
   struct SetReferenceFromRc;
   struct SetTakeoffCommands;
+  struct PrintOdometryWatchdogWarning;
 
   // Guards
   struct RcModeManual;
@@ -147,7 +148,7 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
       //  +---------+-------------+---------+---------------------------+----------------------+
       msm_front::Row<HaveOdometry, RcUpdate, InternalTransition, SetReferenceAttitude, RcModeManual >,
       msm_front::Row<HaveOdometry, OdometryUpdate, InternalTransition, SetOdometry, NoGuard >,
-      msm_front::Row<HaveOdometry, OdometryWatchdog, RemoteControl, NoAction, NoGuard >,
+      msm_front::Row<HaveOdometry, OdometryWatchdog, RemoteControl, PrintOdometryWatchdogWarning, NoGuard >,
       msm_front::Row<HaveOdometry, RcUpdate, PositionHold, SetReferenceToCurrentPosition, RcInactivePosition >,
       msm_front::Row<HaveOdometry, RcUpdate, RcTeleOp, SetReferenceFromRc, RcActivePosition >,
       //  +---------+-------------+---------+---------------------------+----------------------+
@@ -440,6 +441,15 @@ private:
       ROS_INFO_STREAM("final take off position: " << trajectory_point.position_W.transpose());
       //fsm.controller_->setReferenceArray(current_reference_queue);
       fsm.controller_->setReference(trajectory_point);
+    }
+  };
+
+  struct PrintOdometryWatchdogWarning
+  {
+    template<class FSM>
+    void operator()(const OdometryWatchdog&, FSM&, HaveOdometry& src_state, RemoteControl&)
+    {
+      ROS_WARN("Odometry watchdog triggered -- going back to manual remote control");
     }
   };
 
