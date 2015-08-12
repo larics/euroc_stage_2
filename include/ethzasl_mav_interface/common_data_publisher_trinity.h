@@ -55,6 +55,7 @@ class CommonDataPublisher {
   ros::Publisher status_pub_;
   ros::Publisher mag_pub_;
   ros::Publisher discharge_current_pub_;
+  ros::Publisher safety_pilot_status_pub_;
 
   aci::Variable<aci::VariableInt64> fcu_time_us_;
 
@@ -88,6 +89,7 @@ class CommonDataPublisher {
   aci::Variable<aci::VariableUint16> cpu_time_;
   aci::Variable<aci::VariableUint16> battery_voltage_;
   aci::Variable<aci::VariableUint16> discharge_current_;
+  aci::Variable<aci::VariableUint8> safety_pilot_status_;
 
   aci::Subscription aci_fast_packet_sub_;
   aci::Subscription aci_medium_packet_sub_;

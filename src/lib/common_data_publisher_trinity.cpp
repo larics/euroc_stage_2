@@ -21,6 +21,7 @@
 #include <sensor_msgs/Joy.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/String.h>
 #include <mav_msgs/default_topics.h>
 #include <mav_msgs/Actuators.h>
 #include <mav_msgs/Status.h>
@@ -57,7 +58,8 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
   gps_pub_ = nh_.advertise<sensor_msgs::NavSatFix>(mav_msgs::default_topics::GPS, 1);
   rc_pub_ = nh_.advertise<sensor_msgs::Joy> (mav_msgs::default_topics::RC, 1);
   status_pub_ = nh_.advertise<mav_msgs::Status> (mav_msgs::default_topics::STATUS, 1);
-  discharge_current_pub_ = nh_.advertise<std_msgs::Float32>(kDefaultDischargeCurrentTopic, 1);
+//  discharge_current_pub_ = nh_.advertise<std_msgs::Float32>(kDefaultDischargeCurrentTopic, 1); //TODO: re-enable, once fully supported.
+  safety_pilot_status_pub_ = nh_.advertise<std_msgs::String>(kDefaultSafetyPilotStatusTopic, 1);
 
   if (publish_commanded_motor_speeds_) {
     motors_cmd_pub_ = nh_.advertise<mav_msgs::Actuators>(
@@ -120,7 +122,6 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
                                                         ACI_USER_VAR_RCDATA_CHANNEL_THRUST);
   rc_mode_ = aci.registerVariable<aci::VariableInt16>(aci::VAR_PACKET_MEDIUM,
                                                       ACI_USER_VAR_RCDATA_CHANNEL_MODE);
-  // serial_enable lies on the poweronoff position in our case.
   rc_power_on_off_ = aci.registerVariable<aci::VariableInt16>(aci::VAR_PACKET_MEDIUM,
                                                               ACI_USER_VAR_RCDATA_CHANNEL_POWERONOFF);
   rc_safety_pilot_switch_ = aci.registerVariable<aci::VariableInt16>(
@@ -135,11 +136,12 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
   gps_status_ = aci.registerVariable<aci::VariableInt32>(aci::VAR_PACKET_SLOW, ACI_USER_VAR_GPS_STATUS);
   cpu_time_ = aci.registerVariable<aci::VariableUint16>(aci::VAR_PACKET_SLOW, ACI_USER_VAR_CPU_TIME);
   battery_voltage_ = aci.registerVariable<aci::VariableUint16>(aci::VAR_PACKET_SLOW, ACI_USER_VAR_VOLTAGE);
+  safety_pilot_status_ = aci.registerVariable<aci::VariableUint8>(aci::VAR_PACKET_SLOW,
+                                                                  ACI_USER_VAR_SAFETY_PILOT_STATE);
 
   aci.updateVariableConfiguration(aci::VAR_PACKET_FAST);
   aci.updateVariableConfiguration(aci::VAR_PACKET_MEDIUM);
   aci.updateVariableConfiguration(aci::VAR_PACKET_SLOW);
-
 
   aci_fast_packet_sub_ = aci.registerVariableCallback(aci::VAR_PACKET_FAST,
                                                       &CommonDataPublisher::fastPacketCallback, this);
@@ -172,7 +174,7 @@ void CommonDataPublisher::fastPacketCallback() {
   if (createHeaderFromFcuTime(fcu_time_us_.value(), &header)) {
     publishImu(header);
     publishMotors(header);
-    publishDischargeCurrent(header);
+//    publishDischargeCurrent(header); //TODO: re-enable, once fully supported.
   }
   else
     ROS_ERROR_STREAM("time conversion from trinity failed. Not publishing");
@@ -313,7 +315,7 @@ void CommonDataPublisher::publishRc(const std_msgs::Header& header) {
 
 void CommonDataPublisher::publishStatus(const std_msgs::Header& header){
   using aci::MavType;
-  if(status_pub_.getNumSubscribers() > 0){
+  if (status_pub_.getNumSubscribers() > 0) {
     mav_msgs::StatusPtr msg(new mav_msgs::Status);
 
     msg->header = header;
@@ -336,6 +338,12 @@ void CommonDataPublisher::publishStatus(const std_msgs::Header& header){
     // TODO(acmarkus): serial interface enabled?
 
     status_pub_.publish(msg);
+  }
+
+  if (safety_pilot_status_pub_.getNumSubscribers() > 0) {
+    std_msgs::StringPtr msg(new std_msgs::String);
+    msg->data = aci::safetyPilotStateToString(safety_pilot_status_.value());
+    safety_pilot_status_pub_.publish(msg);
   }
 }
 
