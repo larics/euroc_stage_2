@@ -89,6 +89,10 @@ const static uint32_t ACI_VEHICLE_TYPE_FIREFLY = 0x02;
 const static uint32_t ACI_VEHICLE_TYPE_HUMMINGBIRD = 0x03;
 const static uint32_t ACI_VEHICLE_TYPE_NEO_6_9 = 0x04;
 const static uint32_t ACI_VEHICLE_TYPE_NEO_6_11 = 0x05;
+const static uint32_t ACI_USER_VAR_SAFETY_PILOT_STATE = 0x714; // VARTYPE_UINT8;
+const static uint32_t ACI_SAFETY_PILOT_ARMED = 0x01; ///< Safety pilot is prepared to take over.
+const static uint32_t ACI_SAFETY_PILOT_ACTIVE = 0x02;  ///< Safety pilot is in control.
+const static uint32_t ACI_SAFETY_PILOT_STICKS_ACTIVE = 0x04; ///< RC stick inputs are active, such that the MAV can be landed.
 
 const static uint32_t ACI_USER_VAR_VOLTAGE = 0x711; //VARTYPE_UINT16; in mV
 const static uint32_t ACI_USER_VAR_CURRENT = 0x712; //VARTYPE_UINT16; in mA
