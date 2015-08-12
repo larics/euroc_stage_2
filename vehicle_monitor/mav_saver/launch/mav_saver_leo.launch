@@ -2,10 +2,10 @@
   <arg name="mav_name" default="euroc6" />
 
   <group ns="$(arg mav_name)">
-    <node name="mav_saver" pkg="mav_saver" type="mav_saver_node" clear_params="true" output="screen" >
+    <node name="mav_saver_$(arg mav_name)" pkg="mav_saver" type="mav_saver_node" clear_params="true" output="screen" >
       <remap from="transform" to="vrpn_client/pose" />
       <param name="measurement_divisor" value="10" />
-      <param name="obstacle_octomap_path" value="res/leoC6_no_floor.bt" />
+      <param name="obstacle_octomap_path" value="res/LeoC6_no_floor.bt" />
       <param name="enable_collision_constraint" value="false" />
       <param name="kill_switch_port_name" value="/dev/ttyUSB_kill_switch" />
       <param name="serial_port" value="/dev/ttyUSB_$(arg mav_name)" />
