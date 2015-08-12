@@ -9,6 +9,7 @@
         <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/mav_interface.yaml"/>
       </node>
 
+      <rosparam file="$(find euroc_launch)/parameters/common/visensor.yaml"/>
       <node name="visensor_node" pkg="visensor_node" type="visensor_node" output="screen" />
 
       <node name="pose_sensor_okvis" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">

@@ -44,12 +44,22 @@ ViSensor::ViSensor(ros::NodeHandle& nh, std::string sensor_ip,
                    const std::map<SensorId::SensorId, int>& slot_ids,
                    const std::map<SensorId::SensorId, int>& is_flipped,
                    const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
-                   const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types, 
+                   const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
                    bool use_time_sync)
+  : ViSensor(nh, sensor_ip, slot_ids, is_flipped, lens_types, projection_types,
+             SensorId::CAM0, SensorId::CAM1, false, use_time_sync) {
+}
+
+ViSensor::ViSensor(ros::NodeHandle& nh, std::string sensor_ip,
+                   const std::map<SensorId::SensorId, int>& slot_ids,
+                   const std::map<SensorId::SensorId, int>& is_flipped,
+                   const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
+                   const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
+                   const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
+                   bool stereo_flip_disable, bool use_time_sync)
                    : nh_(nh),
-                   use_time_sync_(use_time_sync) 
-                   {
-  init(sensor_ip, slot_ids, is_flipped, lens_types, projection_types);
+                   use_time_sync_(use_time_sync) {
+  init(sensor_ip, slot_ids, is_flipped, lens_types, projection_types, stereo_left_cam, stereo_right_cam, stereo_flip_disable);
 }
 
 ViSensor::~ViSensor() {
@@ -58,7 +68,9 @@ ViSensor::~ViSensor() {
 void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::SensorId, int>& slot_ids,
                     const std::map<SensorId::SensorId, int>& is_flipped,
                     const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
-                    const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types) {
+                    const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
+                    const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
+                    bool stereo_flip_disable) {
   try {
     // ip not specified, use autodiscovery to find sensor
     if (sensor_ip == "0.0.0.0")
@@ -73,8 +85,8 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
 #ifndef EXPERT_MODE
   // swap left/right camera topic names if cameras are flipped
   if (drv_.isStereoCameraFlipped()){
-    const std::map<SensorId::SensorId, std::string>::iterator cam0 = ROS_CAMERA_NAMES.find(SensorId::CAM0);
-    const std::map<SensorId::SensorId, std::string>::iterator cam1 = ROS_CAMERA_NAMES.find(SensorId::CAM1);
+    const std::map<SensorId::SensorId, std::string>::iterator cam0 = ROS_CAMERA_NAMES.find(stereo_left_cam);
+    const std::map<SensorId::SensorId, std::string>::iterator cam1 = ROS_CAMERA_NAMES.find(stereo_right_cam);
     if ((cam0 != ROS_CAMERA_NAMES.end()) && (cam1 != ROS_CAMERA_NAMES.end()))
         std::swap(cam0->second, cam1->second);
   }
@@ -141,23 +153,26 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
   }
 
   //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
-  if(std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), SensorId::CAM0)!=list_of_camera_ids_.end()
-      && std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), SensorId::CAM1)!=list_of_camera_ids_.end()) {
-    if (!drv_.isStereoCameraFlipped()){
+  if(std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_left_cam)!=list_of_camera_ids_.end()
+      && std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_right_cam)!=list_of_camera_ids_.end()) {
+    if (!drv_.isStereoCameraFlipped() || stereo_flip_disable){
       //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
-      if (getRosStereoCameraConfig(SensorId::CAM0, cinfo_.at(SensorId::CAM0),
-                                   SensorId::CAM1, cinfo_.at(SensorId::CAM1)))
-        ROS_INFO("Generated ROS Stereo Calibration, assuming cam0 (left) and cam1 (right) are a stereo pair.");
+      if (getRosStereoCameraConfig(stereo_left_cam, cinfo_.at(stereo_left_cam),
+                                   stereo_right_cam, cinfo_.at(stereo_right_cam)))
+        ROS_INFO("Generated ROS Stereo Calibration, assuming %s (left) and %s (right) are a stereo pair.",
+                 ROS_CAMERA_NAMES[stereo_left_cam].c_str(), ROS_CAMERA_NAMES[stereo_right_cam].c_str());
       else
-        ROS_WARN("Could not read stereo calibration for cam0 and cam1.");
-    }
-    else{
+        ROS_WARN("Could not read stereo calibration for %s and %s.",
+                 ROS_CAMERA_NAMES[stereo_left_cam].c_str(), ROS_CAMERA_NAMES[stereo_right_cam].c_str());
+    } else {
       //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
-      if (getRosStereoCameraConfig(SensorId::CAM1, cinfo_.at(SensorId::CAM1),
-                                   SensorId::CAM0, cinfo_.at(SensorId::CAM0)))
-        ROS_INFO("Generated ROS Stereo Calibration, assuming cam1 (left) and cam0 (right) are a stereo pair.");
+      if (getRosStereoCameraConfig(stereo_right_cam, cinfo_.at(stereo_right_cam),
+                                   stereo_left_cam, cinfo_.at(stereo_left_cam)))
+        ROS_INFO("Generated ROS Stereo Calibration, assuming %s (left) and %s (right) are a stereo pair.",
+                 ROS_CAMERA_NAMES[stereo_right_cam].c_str(), ROS_CAMERA_NAMES[stereo_left_cam].c_str());
       else
-        ROS_WARN("Could not read stereo calibration for cam0 and cam1.");
+        ROS_WARN("Could not read stereo calibration for %s and %s.",
+                 ROS_CAMERA_NAMES[stereo_right_cam].c_str(), ROS_CAMERA_NAMES[stereo_left_cam].c_str());
     }
   }
 

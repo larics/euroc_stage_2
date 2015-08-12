@@ -56,7 +56,7 @@ int main(int argc, char** argv)
   private_nh.param("useTimeSync", use_time_sync, false);
 
   XmlRpc::XmlRpcValue my_list;
-  if (nh.getParam("/cameras", my_list)){
+  if (nh.getParam("cameras", my_list)){
     // check for sanity - there must be at least one entry
     ROS_ASSERT(my_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
     ROS_ASSERT(my_list.size()>0);
@@ -113,7 +113,35 @@ int main(int argc, char** argv)
     }
   }
 
-  visensor::ViSensor vi_sensor(nh, sensor_ip, slot_ids, is_flipped, lens_types, projection_types, use_time_sync);
+  // Get the names of the left and right stereo pair - if no parameters
+  // specified, default to cam0 (left) and cam1 (right).
+  visensor::SensorId::SensorId stereo_left_cam = visensor::SensorId::CAM0;
+  visensor::SensorId::SensorId stereo_right_cam = visensor::SensorId::CAM1;
+
+  // These settings only make sense in expert mode.
+  bool stereo_flip_disable = false;
+  #ifdef EXPERT_MODE
+  std::string left_name, right_name;
+  if (private_nh.getParam("stereo_left_cam", left_name) &&
+      private_nh.getParam("stereo_right_cam", right_name)) {
+
+    for (const std::pair<const visensor::SensorId::SensorId, std::string>& cam_name_pair : visensor::ROS_CAMERA_NAMES) {
+      if (cam_name_pair.second == left_name) {
+        stereo_left_cam = cam_name_pair.first;
+      }
+      if (cam_name_pair.second == right_name) {
+        stereo_right_cam = cam_name_pair.first;
+      }
+    }
+    stereo_flip_disable = true;
+    // Will default to cam0, cam1 if the names are never found.
+    ROS_INFO_STREAM("Setting left camera to " << left_name
+                    << " and right camera to " << right_name);
+  }
+  #endif
+
+  visensor::ViSensor vi_sensor(nh, sensor_ip, slot_ids, is_flipped, lens_types, projection_types,
+                               stereo_left_cam, stereo_right_cam, stereo_flip_disable, use_time_sync);
   vi_sensor.startSensors(cam_rates, cam_rate_global, imu_rate, trigger_rate);
 
   ros::spin();
