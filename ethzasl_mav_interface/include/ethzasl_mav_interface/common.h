@@ -20,6 +20,6 @@
 
 static constexpr char kDefaultFrameId[] = "fcu";
 static constexpr char kDefaultDischargeCurrentTopic[] = "discharge_current";
-
+static constexpr char kDefaultSafetyPilotStatusTopic[] = "safety_pilot_status";
 
 #endif /* COMMON_H_ */
