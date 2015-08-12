@@ -776,8 +776,39 @@ std::string flightModeToStringTrinity(uint32_t flight_mode) {
   if(flight_mode & ACI_FLIGHTMODE_HOVER_CALIB)
     ss << "hover calibration running, ";
 
+  if (ss.str().empty()) {
+    ss << "unknown";
+  }
+
   std::string ret_string = ss.str();
-  ret_string.erase(ret_string.find_last_of(","), 1);
+  const size_t last_comma_pos = ret_string.find_last_of(",");
+  if (last_comma_pos != std::string::npos) {
+    ret_string.erase(ret_string.find_last_of(","), 1);
+  }
+
+  return ret_string;
+}
+
+std::string safetyPilotStateToString(uint32_t safety_pilot_mode) {
+  std::stringstream ss;
+
+  if (safety_pilot_mode & ACI_SAFETY_PILOT_ARMED)
+    ss << "armed, ";
+  if (safety_pilot_mode & ACI_SAFETY_PILOT_ACTIVE)
+    ss << "active, ";
+  if (safety_pilot_mode & ACI_SAFETY_PILOT_STICKS_ACTIVE)
+    ss << "sticks active, ";
+
+  if (safety_pilot_mode == 0) {
+    ss.clear();
+    ss << "inactive";
+  }
+
+  std::string ret_string = ss.str();
+  const size_t last_comma_pos = ret_string.find_last_of(",");
+  if (last_comma_pos != std::string::npos) {
+    ret_string.erase(ret_string.find_last_of(","), 1);
+  }
 
   return ret_string;
 }

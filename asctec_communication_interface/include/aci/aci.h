@@ -64,6 +64,7 @@ enum class MavType {
 
 std::string mavTypeToString(const MavType& type);
 std::string flightModeToStringTrinity(uint32_t flight_mode);
+std::string safetyPilotStateToString(uint32_t safety_pilot_mode);
 
 static constexpr double kDefaultTrinityRate = 500.0;
 static constexpr double kDefaultAutoPilotRate = 1000.0;
