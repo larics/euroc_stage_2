@@ -45,6 +45,16 @@ ViSensor::ViSensor(ros::NodeHandle& nh, std::string sensor_ip,
                    const std::map<SensorId::SensorId, int>& is_flipped,
                    const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
                    const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
+                   bool use_time_sync)
+  : ViSensor(nh, sensor_ip, slot_ids, is_flipped, lens_types, projection_types,
+             SensorId::CAM0, SensorId::CAM1, false, use_time_sync) {
+}
+
+ViSensor::ViSensor(ros::NodeHandle& nh, std::string sensor_ip,
+                   const std::map<SensorId::SensorId, int>& slot_ids,
+                   const std::map<SensorId::SensorId, int>& is_flipped,
+                   const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
+                   const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
                    const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
                    bool stereo_flip_disable, bool use_time_sync)
                    : nh_(nh),
@@ -74,7 +84,7 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
 
 #ifndef EXPERT_MODE
   // swap left/right camera topic names if cameras are flipped
-  if (drv_.isStereoCameraFlipped() && !stereo_flip_disable){
+  if (drv_.isStereoCameraFlipped()){
     const std::map<SensorId::SensorId, std::string>::iterator cam0 = ROS_CAMERA_NAMES.find(stereo_left_cam);
     const std::map<SensorId::SensorId, std::string>::iterator cam1 = ROS_CAMERA_NAMES.find(stereo_right_cam);
     if ((cam0 != ROS_CAMERA_NAMES.end()) && (cam1 != ROS_CAMERA_NAMES.end()))
@@ -154,8 +164,7 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
       else
         ROS_WARN("Could not read stereo calibration for %s and %s.",
                  ROS_CAMERA_NAMES[stereo_left_cam].c_str(), ROS_CAMERA_NAMES[stereo_right_cam].c_str());
-    }
-    else{
+    } else {
       //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
       if (getRosStereoCameraConfig(stereo_right_cam, cinfo_.at(stereo_right_cam),
                                    stereo_left_cam, cinfo_.at(stereo_left_cam)))

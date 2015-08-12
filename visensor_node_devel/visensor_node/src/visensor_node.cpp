@@ -133,11 +133,11 @@ int main(int argc, char** argv)
         stereo_right_cam = cam_name_pair.first;
       }
     }
+    stereo_flip_disable = true;
     // Will default to cam0, cam1 if the names are never found.
     ROS_INFO_STREAM("Setting left camera to " << left_name
                     << " and right camera to " << right_name);
   }
-  private_nh.param("stereo_flip_disable", stereo_flip_disable, stereo_flip_disable);
   #endif
 
   visensor::ViSensor vi_sensor(nh, sensor_ip, slot_ids, is_flipped, lens_types, projection_types,
