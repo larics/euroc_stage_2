@@ -13,7 +13,7 @@
     </node>
   </group>
 
-  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
+  <include file="$(find euroc_launch)/launch/vicon.launch">
     <arg name="object_name" value="$(arg mav_name)" />
   </include>
 
