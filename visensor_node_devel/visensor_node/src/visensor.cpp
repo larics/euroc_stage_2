@@ -117,12 +117,12 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
   for (auto camera_id : list_of_camera_ids_) {
     try {
       if (slot_ids.count(camera_id)) {
-        drv_.setCameraCalibrationToUse(camera_id, slot_ids.at(camera_id), is_flipped.at(camera_id),
-                                       lens_types.at(camera_id), projection_types.at(camera_id));  // set camera calibration under the assumtion there is exactly one. Otherwise the exact calibration has specified.
+        drv_.selectCameraCalibration(camera_id, slot_ids.at(camera_id), is_flipped.at(camera_id),
+                                     lens_types.at(camera_id), projection_types.at(camera_id));  // set camera calibration under the assumtion there is exactly one. Otherwise the exact calibration has specified.
       } else {
-        drv_.setCameraCalibrationToUse(camera_id, -1, -1,
-                                       ViCameraLensModel::LensModelTypes::UNKNOWN,
-                                       ViCameraProjectionModel::ProjectionModelTypes::UNKNOWN);
+        drv_.selectCameraCalibration(camera_id, -1, -1,
+                                     ViCameraLensModel::LensModelTypes::UNKNOWN,
+                                     ViCameraProjectionModel::ProjectionModelTypes::UNKNOWN);
       }
 
     } catch (visensor::exceptions const &ex) {
@@ -1086,11 +1086,11 @@ bool ViSensor::getRosCameraConfig(const SensorId::SensorId& camera_id, sensor_ms
     ViCameraCalibration tmp;
     std::vector<ViCameraCalibration> calibrations;
     drv_.getSelectedCameraCalibration(&tmp, camera_id);
-    if (tmp.lens_model_->type_ != ViCameraLensModel::LensModelTypes::RADIAL ||
+    if (tmp.lens_model_->type_ != ViCameraLensModel::LensModelTypes::RADTAN ||
         tmp.projection_model_->type_ != ViCameraProjectionModel::ProjectionModelTypes::PINHOLE) {
       ROS_WARN("No radtan and pinhole calibration specified. Therefore the factory calibration is choosen for the ROS sensor message.\n");
       calibrations = drv_.getCameraCalibrations(camera_id, 0, tmp.is_flipped_,
-                                                ViCameraLensModel::LensModelTypes::RADIAL, ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
+                                                ViCameraLensModel::LensModelTypes::RADTAN, ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
       if (calibrations.size() == 0) {
         ROS_ERROR("No corresponding Factory Calibration found\n");
         return false;
@@ -1160,11 +1160,11 @@ bool ViSensor::getRosStereoCameraConfig(const SensorId::SensorId& camera_id_0,
     ViCameraCalibration tmp;
     std::vector<ViCameraCalibration> calibrations;
     drv_.getSelectedCameraCalibration(&tmp, camera_id_0);
-    if (tmp.lens_model_->type_ != ViCameraLensModel::LensModelTypes::RADIAL ||
+    if (tmp.lens_model_->type_ != ViCameraLensModel::LensModelTypes::RADTAN ||
         tmp.projection_model_->type_ != ViCameraProjectionModel::ProjectionModelTypes::PINHOLE) {
       ROS_WARN("No radtan and pinhole calibration specified. Therefore the factory calibration is choosen for the ROS sensor message.\n");
       calibrations = drv_.getCameraCalibrations(camera_id_0, 0, tmp.is_flipped_,
-                                                ViCameraLensModel::LensModelTypes::RADIAL, ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
+                                                ViCameraLensModel::LensModelTypes::RADTAN, ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
       if (calibrations.size() == 0) {
         ROS_ERROR("No corresponding Factory Calibration for cam left found\n");
         return false;
@@ -1175,11 +1175,11 @@ bool ViSensor::getRosStereoCameraConfig(const SensorId::SensorId& camera_id_0,
       camera_calibration_0 = tmp;
     }
     drv_.getSelectedCameraCalibration(&tmp, camera_id_1);
-    if (tmp.lens_model_->type_ != ViCameraLensModel::LensModelTypes::RADIAL ||
+    if (tmp.lens_model_->type_ != ViCameraLensModel::LensModelTypes::RADTAN ||
         tmp.projection_model_->type_ != ViCameraProjectionModel::ProjectionModelTypes::PINHOLE) {
       ROS_WARN("No radtan and pinhole calibration specified. Therefore the factory calibration is choosen for the ROS sensor message.\n");
       calibrations = drv_.getCameraCalibrations(camera_id_1, 0, tmp.is_flipped_,
-                                                ViCameraLensModel::LensModelTypes::RADIAL, ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
+                                                ViCameraLensModel::LensModelTypes::RADTAN, ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
       if (calibrations.size() == 0) {
         ROS_ERROR("No corresponding Factory Calibration for cam right found\n");
         return false;
@@ -1389,7 +1389,7 @@ bool ViSensor::precacheViCalibration(const SensorId::SensorId& camera_id) {
 
   calibration.dist_coeff = camera_calibration.lens_model_->getCoefficients();
   switch (camera_calibration.lens_model_->type_) {
-    case ViCameraLensModel::LensModelTypes::RADIAL:
+    case ViCameraLensModel::LensModelTypes::RADTAN:
       calibration.dist_model = std::string("plumb_bob");
       break;
     case ViCameraLensModel::LensModelTypes::EQUIDISTANT:
