@@ -34,6 +34,7 @@
 #include <mav_msgs/conversions.h>
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <ros/ros.h>
+#include <tf/transform_broadcaster.h>
 
 #include <mav_control_interface/position_controller_interface.h>
 #include <mav_control_interface/rc_interface.h>
@@ -117,6 +118,7 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
   struct RcModePosition;
   struct RcActive;
   struct RcOn;
+  struct OdometryOutdated;
 
  public:
   // Define initial state. Boost looks for "initial_state".
@@ -148,7 +150,7 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
       //  +---------+-------------+---------+---------------------------+----------------------+
       msm_front::Row<HaveOdometry, RcUpdate, InternalTransition, SetReferenceAttitude, RcModeManual >,
       msm_front::Row<HaveOdometry, OdometryUpdate, InternalTransition, SetOdometry, NoGuard >,
-      msm_front::Row<HaveOdometry, OdometryWatchdog, RemoteControl, PrintOdometryWatchdogWarning, NoGuard >,
+      msm_front::Row<HaveOdometry, OdometryWatchdog, RemoteControl, PrintOdometryWatchdogWarning, OdometryOutdated >,
       msm_front::Row<HaveOdometry, RcUpdate, PositionHold, SetReferenceToCurrentPosition, RcInactivePosition >,
       msm_front::Row<HaveOdometry, RcUpdate, RcTeleOp, SetReferenceFromRc, RcActivePosition >,
       //  +---------+-------------+---------+---------------------------+----------------------+
@@ -186,16 +188,21 @@ class StateMachineDefinition : public msm_front::state_machine_def<StateMachineD
   void SetParameters(const Parameters& parameters);
 
 private:
+  static constexpr int64_t kOdometryOutdated_ns = 1000000000;
   bool verbose_;
   std::shared_ptr<PositionControllerInterface> controller_;
   ros::Publisher command_publisher_;
   ros::Publisher state_info_publisher_;
+
+  tf::TransformBroadcaster transform_broadcaster_;
+  ros::Publisher current_reference_publisher_;
   Parameters parameters_;
   mav_msgs::EigenOdometry current_state_;
   mav_msgs::EigenTrajectoryPointDeque current_reference_queue_;
 
   void PublishAttitudeCommand(const mav_msgs::EigenRollPitchYawrateThrust& command) const;
   void PublishStateInfo(const std::string& info);
+  void PublishCurrentReference();
 
   // Implementation of state machine:
 
@@ -315,6 +322,7 @@ private:
       mav_msgs::EigenRollPitchYawrateThrust command;
       fsm.controller_->calculateRollPitchYawrateThrustCommand(&command);
       fsm.PublishAttitudeCommand(command);
+      fsm.PublishCurrentReference();
     }
   };
 
@@ -489,6 +497,15 @@ private:
     bool operator()(const RcUpdate& evt, FSM& fsm, SourceState&, TargetState&)
     {
       return evt.is_on;
+    }
+  };
+
+  struct OdometryOutdated
+  {
+    template<class FSM, class SourceState, class TargetState>
+    bool operator()(const OdometryWatchdog& evt, FSM& fsm, SourceState&, TargetState&)
+    {
+      return (ros::Time::now().toNSec() - fsm.current_state_.timestamp_ns) > kOdometryOutdated_ns;
     }
   };
 
