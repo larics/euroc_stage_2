@@ -1,4 +1,5 @@
 // Bring in my package's API, which is what I'm testing
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <sys/time.h>
