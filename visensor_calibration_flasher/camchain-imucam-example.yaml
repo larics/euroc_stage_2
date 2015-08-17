@@ -1,0 +1,28 @@
+cam0:
+  T_cam_imu:
+  - [1.0, 0.0, 0.0, 0.0]
+  - [0.0, 1.0, 0.0, 0.0]
+  - [0.0, 0.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0, 1.0]
+  cam_overlaps: [1]
+  camera_model: pinhole
+  distortion_coeffs: [0.0, 0.0, 0.0, 0.0] # [k1, k2, p1, p2]
+  distortion_model: radtan
+  intrinsics: [0.0, 0.0, 0.0, 0.0] # [f_x, f_y, c_x, c_y] 
+  resolution: [752, 480]
+  rostopic: /cam0/image_raw
+  flip_camera: true
+cam1:
+  T_cam_imu:
+  - [1.0, 0.0, 0.0, 1.0]
+  - [0.0, 1.0, 0.0, 1.0]
+  - [0.0, 0.0, 1.0, 1.0]
+  - [0.0, 0.0, 0.0, 1.0]
+  cam_overlaps: [0]
+  camera_model: pinhole
+  distortion_coeffs: [0.0, 0.0, 0.0, 0.0] # [k1, k2, p1, p2]
+  distortion_model: radtan
+  intrinsics: [0.0, 0.0, 0.0, 0.0] # [f_x, f_y, c_x, c_y]
+  resolution: [752, 480]
+  rostopic: /cam1/image_raw
+  flip_camera: true
