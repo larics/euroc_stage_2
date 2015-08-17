@@ -285,7 +285,7 @@ int Uart::readBuffer(uint8_t* data, int size, int timeout_ms)
     const int bytes_received = read(fd_rx_, data, size);
     return bytes_received;
   } else if (res == 0) {
-    ROS_INFO_STREAM("No data read within the last " << timeout_ms / 1000.0f << "s");
+    // ROS_INFO_STREAM("No data read within the last " << timeout_ms / 1000.0f << "s");
     return 0;
   } else {
     ROS_ERROR_STREAM("read error:" << res << " " << errno << " " << strerror(errno));

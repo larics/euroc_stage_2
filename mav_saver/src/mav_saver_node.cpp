@@ -32,7 +32,10 @@ void MavSaverNode::TransformCallback(const geometry_msgs::TransformStampedConstP
 }
 
 void MavSaverNode::TakeControlCallback(const std_msgs::BoolConstPtr& msg) {
-  mav_saver_->SetTakeControlFlag(msg->data);
+  if(msg->data) {
+    mav_saver_->SetTakeControlFlag(true);
+    ROS_WARN_THROTTLE(1, "[MAV_SAVER]: EXTERNAL MAV RESCUE REQUESTED, TAKING OVER !!!");
+  }
 }
 
 
