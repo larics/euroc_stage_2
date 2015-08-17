@@ -295,15 +295,6 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
   Eigen::Vector3d position = position_command_queue_.front();
   double yaw = yaw_command_queue_.front();
 
-  static tf::TransformBroadcaster br;
-  tf::Transform transform;
-  transform.setOrigin(tf::Vector3(position.x(), position.y(), position.z()));
-  tf::Quaternion q;
-  q.setRPY(0, 0, yaw);
-  transform.setRotation(q);
-  br.sendTransform(
-      tf::StampedTransform(transform, ros::Time::now(), "world", "controller_reference"));
-
 #ifdef UseForcesSolver
   Eigen::VectorXd z_ss(state_size_ + disturbance_size_ + 2 * input_size_);
   Eigen::VectorXd z_ss_final(state_size_ + disturbance_size_ + input_size_);
