@@ -222,7 +222,7 @@ class CopterPlugin(Plugin):
         status_topic = self.namespace + '/status'
         safety_pilot_status_topic = self.namespace + '/safety_pilot_status'
         odometry_topic = self.namespace + '/msf_core/odometry'
-        trajectory_topic = self.namespace + '/command/trajectory'
+        trajectory_topic = self.namespace + '/command/current_reference'
         print "Subscribing to", state_topic
         print "Subscribing to", status_topic
         print "Subscribing to", safety_pilot_status_topic
