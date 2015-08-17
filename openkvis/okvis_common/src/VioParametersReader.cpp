@@ -543,7 +543,7 @@ bool VioParametersReader::getCalibrationViaVisensorAPI(
 
     // We prefer equidistant, therefore we only try to load a radial model if no equidistant is found.
     if(calibrations.empty()) {
-      calibration_list = viSensor->getCameraCalibrations(*it, slot_number, is_flipped, visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+      calibration_list = viSensor->getCameraCalibrations(*it, slot_number, is_flipped, visensor::ViCameraLensModel::LensModelTypes::RADTAN,
                                                          visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
     }
 
@@ -591,7 +591,7 @@ bool VioParametersReader::getCalibrationViaVisensorAPI(
           lens_coefficients[2],
           lens_coefficients[3];
       calibration.distortionType = "equdistant";
-    } else if(calibrationFromAPI.lens_model_->type_ != visensor::ViCameraLensModel::LensModelTypes::RADIAL) {
+    } else if(calibrationFromAPI.lens_model_->type_ != visensor::ViCameraLensModel::LensModelTypes::RADTAN) {
       std::vector<double> lens_coefficients = calibrationFromAPI.projection_model_->getCoefficients();
 
       calibration.distortionCoefficients << lens_coefficients[0],

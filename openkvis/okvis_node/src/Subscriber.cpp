@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -169,7 +169,7 @@ void Subscriber::initialiseDriverCallbacks()
       // TODO(burrimi): move this to some sort of configuration file.
       const int is_flipped = 1;
       const int slot_number = 0; // 0 is factory calibration
-      sensor_->setCameraCalibrationToUse(*it, slot_number, is_flipped,
+      sensor_->selectCameraCalibration(*it, slot_number, is_flipped,
                                          visensor::ViCameraLensModel::LensModelTypes::UNKNOWN, // TODO(burrimi): which one to select?
                                          visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
     }
