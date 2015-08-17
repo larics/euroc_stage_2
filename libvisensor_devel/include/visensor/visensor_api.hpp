@@ -299,12 +299,12 @@ class DSO_EXPORT ViSensorDriver {
    *
    * @return copy of a vector of matching calibrations
    */
-  void setCameraCalibrationToUse(const SensorId::SensorId cam_id,
+  void selectCameraCalibration(const SensorId::SensorId cam_id,
                                  const int slot_id,
                                  const int is_flipped,
                                  const ViCameraLensModel::LensModelTypes lens_model_type,
                                  const ViCameraProjectionModel::ProjectionModelTypes projection_model_type);
-  void setCameraCalibrationToUse();
+  void selectCameraCalibration();
 
   /**
    * returns the configured/ used calibration for the camera

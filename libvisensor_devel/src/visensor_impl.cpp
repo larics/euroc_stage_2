@@ -391,7 +391,7 @@ void ViSensorDriver::Impl::setDenseMatcherCallback(
   }
 }
 
-void ViSensorDriver::Impl::setCameraCalibrationToUse(const SensorId::SensorId cam_id,
+void ViSensorDriver::Impl::selectCameraCalibration(const SensorId::SensorId cam_id,
                                                      const int slot_id,
                                                      const int is_flipped,
                                                      const ViCameraLensModel::LensModelTypes lens_model_type,
@@ -415,7 +415,7 @@ void ViSensorDriver::Impl::setCameraCalibrationToUse(const SensorId::SensorId ca
   config_->selectCameraCalibration(calibrations.front(), cam_id);
 }
 
-void ViSensorDriver::Impl::setCameraCalibrationToUse(const int slot_id,
+void ViSensorDriver::Impl::selectCameraCalibration(const int slot_id,
                                                      const int is_flipped,
                                                      const ViCameraLensModel::LensModelTypes lens_model_type,
                                                      const ViCameraProjectionModel::ProjectionModelTypes projection_model_type) {
@@ -423,7 +423,7 @@ void ViSensorDriver::Impl::setCameraCalibrationToUse(const int slot_id,
   for (Sensor::IdMap::const_iterator it = sensors_.begin();
       it != sensors_.end(); ++it) {
     if (it->second->type() == SensorType::CAMERA_MT9V034){
-      setCameraCalibrationToUse(static_cast<SensorId::SensorId>(it->first), slot_id, is_flipped, lens_model_type, projection_model_type);
+      selectCameraCalibration(static_cast<SensorId::SensorId>(it->first), slot_id, is_flipped, lens_model_type, projection_model_type);
     }
   }
 
@@ -440,8 +440,8 @@ void ViSensorDriver::Impl::setCameraCalibrationToUse(const int slot_id,
   }
 }
 
-void ViSensorDriver::Impl::setCameraCalibrationToUse() {
-  setCameraCalibrationToUse(-1, -1, ViCameraLensModel::LensModelTypes::UNKNOWN, ViCameraProjectionModel::ProjectionModelTypes::UNKNOWN);
+void ViSensorDriver::Impl::selectCameraCalibration() {
+  selectCameraCalibration(-1, -1, ViCameraLensModel::LensModelTypes::UNKNOWN, ViCameraProjectionModel::ProjectionModelTypes::UNKNOWN);
 }
 
 void ViSensorDriver::Impl::getSelectedCameraCalibration(ViCameraCalibration* usedCalibration, const SensorId::SensorId camera_id) const {

@@ -37,8 +37,8 @@
 namespace visensor {
 
 static const unsigned int LIBRARY_VERSION_MAJOR = 2;  ///< The major version is changed if the libvisensor API is changed.
-static const unsigned int LIBRARY_VERSION_MINOR = 2;  ///< The minor version is changed if the libvisensor API is extended.
-static const unsigned int LIBRARY_VERSION_PATCH = 4;
+static const unsigned int LIBRARY_VERSION_MINOR = 3;  ///< The minor version is changed if the libvisensor API is extended.
+static const unsigned int LIBRARY_VERSION_PATCH = 0;
 
 static const unsigned int SUPPORTED_FIRMWARE_VERSION_MAJOR = 2; ///< The major firmware version is changed if interface between ViSensor firmware and libvisensor is changed
 static const unsigned int SUPPORTED_FIRMWARE_VERSION_MINOR = 0; ///< The minor firmware version is changed if interface between ViSensor firmware and libvisensor is extended

@@ -169,16 +169,16 @@ void ViSensorDriver::setDenseMatcherCallback(boost::function<void(ViFrame::Ptr, 
   pImpl_->setDenseMatcherCallback(callback);
 }
 
-void ViSensorDriver::setCameraCalibrationToUse(const SensorId::SensorId cam_id,
+void ViSensorDriver::selectCameraCalibration(const SensorId::SensorId cam_id,
                                                const int slot_id,
                                                const int is_flipped,
                                                const ViCameraLensModel::LensModelTypes lens_model_type,
                                                const ViCameraProjectionModel::ProjectionModelTypes projection_model_type) {
-  pImpl_->setCameraCalibrationToUse(cam_id, slot_id, is_flipped, lens_model_type, projection_model_type);
+  pImpl_->selectCameraCalibration(cam_id, slot_id, is_flipped, lens_model_type, projection_model_type);
 }
 
-void ViSensorDriver::setCameraCalibrationToUse() {
-  pImpl_->setCameraCalibrationToUse();
+void ViSensorDriver::selectCameraCalibration() {
+  pImpl_->selectCameraCalibration();
 }
 
 void ViSensorDriver::getSelectedCameraCalibration(ViCameraCalibration* usedCalibration, const SensorId::SensorId camera_id) const {

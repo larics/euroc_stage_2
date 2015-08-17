@@ -128,7 +128,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationInitConfigClass)
   EXPECT_EQ(projection_model->mirror_xi_, 100.9);
 
   visensor::ViCameraCalibration calibration2(
-      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADTAN,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE, 101.1, 101.2, 101.3, 101.4,
       101.5, 101.6, 101.7, 101.8);
 
@@ -137,7 +137,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationInitConfigClass)
   EXPECT_EQ(calibration2.is_flipped_, IS_FLIPPED);
   EXPECT_EQ(static_cast<long long int>(calibration2.resolution_[0]), 1000);
   EXPECT_EQ(static_cast<long long int>(calibration2.resolution_[1]), 200);
-  EXPECT_EQ(calibration2.lens_model_->type_, visensor::ViCameraLensModel::LensModelTypes::RADIAL);
+  EXPECT_EQ(calibration2.lens_model_->type_, visensor::ViCameraLensModel::LensModelTypes::RADTAN);
   visensor::ViCameraLensModelEquidistant::Ptr lens_model2 = std::static_pointer_cast<
       visensor::ViCameraLensModelEquidistant>(calibration2.lens_model_);
   EXPECT_EQ(lens_model2->k1_, 101.1);
@@ -164,10 +164,10 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationWriteReadNew)
       visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL, 100.1, 100.2, 100.3,
       100.4, 100.5, 100.6, 100.7, 100.8, 100.9);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration.t_.push_back(120 + i);
   }
   config_->setCameraCalibration(calibration);
@@ -212,7 +212,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationWriteReadNew)
   for (double i = 0; i < 9; i++) {
     EXPECT_EQ(camera_config.R_[i], calibration.R_[i]);
   }
-  for (int i = 0; i < 3; i++) {
+  for (uint i = 0; i < 3; i++) {
     EXPECT_EQ(camera_config.t_[i], calibration.t_[i]);
   }
 }
@@ -241,9 +241,9 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadConfigAndCheckOne)
   EXPECT_EQ(projection_model->principal_point_u_, 2.1);
   EXPECT_EQ(projection_model->principal_point_v_, 3.1);
 
-  EXPECT_EQ(camera_config.lens_model_->type_, visensor::ViCameraLensModel::LensModelTypes::RADIAL);
-  visensor::ViCameraLensModelRadial::Ptr lens_model = std::static_pointer_cast<
-      visensor::ViCameraLensModelRadial>(camera_config.lens_model_);
+  EXPECT_EQ(camera_config.lens_model_->type_, visensor::ViCameraLensModel::LensModelTypes::RADTAN);
+  visensor::ViCameraLensModelRadtan::Ptr lens_model = std::static_pointer_cast<
+      visensor::ViCameraLensModelRadtan>(camera_config.lens_model_);
   EXPECT_EQ(lens_model->k1_, 0.2);
   EXPECT_EQ(lens_model->k2_, 1.2);
   EXPECT_EQ(lens_model->r1_, 2.2);
@@ -252,7 +252,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadConfigAndCheckOne)
   for (double i = 0; i < 9; i++) {
     EXPECT_EQ(camera_config.R_[i], (i + 1) / 10);
   }
-  for (int i = 0; i < 3; i++) {
+  for (uint i = 0; i < 3; i++) {
     EXPECT_EQ(camera_config.t_[i], (i + 1) * 10);
   }
 }
@@ -263,13 +263,13 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadAndChange)
   const int SLOT_ID = 0;
   const bool IS_FLIPPED = 0;
   visensor::ViCameraCalibration calibration(
-      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADTAN,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE, 100.1, 100.2, 100.3, 100.4,
       100.5, 100.6, 100.7, 100.8);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration.t_.push_back(120 + i);
   }
 
@@ -290,7 +290,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadAndChange)
             static_cast<long long int>(calibration.resolution_[0]));
   EXPECT_EQ(static_cast<long long int>(camera_config.resolution_[1]),
             static_cast<long long int>(calibration.resolution_[1]));
-  EXPECT_EQ(camera_config.lens_model_->type_, visensor::ViCameraLensModel::LensModelTypes::RADIAL);
+  EXPECT_EQ(camera_config.lens_model_->type_, visensor::ViCameraLensModel::LensModelTypes::RADTAN);
   visensor::ViCameraLensModelEquidistant::Ptr lens_model = std::static_pointer_cast<
       visensor::ViCameraLensModelEquidistant>(camera_config.lens_model_);
   visensor::ViCameraLensModelEquidistant::Ptr lens_model_orig = std::static_pointer_cast<
@@ -313,7 +313,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadAndChange)
   for (double i = 0; i < 9; i++) {
     EXPECT_EQ(camera_config.R_[i], calibration.R_[i]);
   }
-  for (int i = 0; i < 3; i++) {
+  for (uint i = 0; i < 3; i++) {
     EXPECT_EQ(camera_config.t_[i], calibration.t_[i]);
   }
 }
@@ -328,10 +328,10 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadAndAddOne)
       visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL, 100.1, 100.2, 100.3,
       100.4, 100.5, 100.6, 100.7, 100.8, 100.9);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration.t_.push_back(120 + i);
   }
 
@@ -380,7 +380,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadAndAddOne)
   for (double i = 0; i < 9; i++) {
     EXPECT_EQ(camera_config.R_[i], calibration.R_[i]);
   }
-  for (int i = 0; i < 3; i++) {
+  for (uint i = 0; i < 3; i++) {
     EXPECT_EQ(camera_config.t_[i], calibration.t_[i]);
   }
 }
@@ -395,10 +395,10 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadBackNonMatchingSlot)
       visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL, 100.1, 100.2, 100.3,
       100.4, 100.5, 100.6, 100.7, 100.8, 100.9);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration.t_.push_back(120 + i);
   }
 
@@ -422,10 +422,10 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadBackNonMatchingLensM
       visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL, 100.1, 100.2, 100.3,
       100.4, 100.5, 100.6, 100.7, 100.8, 100.9);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration.t_.push_back(120 + i);
   }
 
@@ -436,7 +436,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadBackNonMatchingLensM
 
   std::vector<visensor::ViCameraCalibration> calibration_back = config_->getCameraCalibrations(
       static_cast<visensor::SensorId::SensorId>(CAM_ID), SLOT_ID, IS_FLIPPED,
-      visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+      visensor::ViCameraLensModel::LensModelTypes::RADTAN,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL);
   EXPECT_EQ(calibration_back.size(), 0);
 }
@@ -451,20 +451,20 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadBackGetMultiple)
       visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL, 100.1, 100.2, 100.3,
       100.4, 100.5, 100.6, 100.7, 100.8, 100.9);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration.t_.push_back(120 + i);
   }
   visensor::ViCameraCalibration calibration2(
-      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADTAN,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL, 100.1, 100.2, 100.3,
       100.4, 100.5, 100.6, 100.7, 100.8, 100.9);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration2.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration2.t_.push_back(120 + i);
   }
   visensor::ViCameraCalibration calibration3(
@@ -472,20 +472,20 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadBackGetMultiple)
       visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE, 100.1, 100.2, 100.3, 100.4,
       100.5, 100.6, 100.7, 100.8);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration3.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration3.t_.push_back(120 + i);
   }
   visensor::ViCameraCalibration calibration4(
-      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+      CAM_ID, SLOT_ID, 1000, 200, IS_FLIPPED, visensor::ViCameraLensModel::LensModelTypes::RADTAN,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::PINHOLE, 100.1, 100.2, 100.3, 100.4,
       100.5, 100.6, 100.7, 100.8);
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_R; i++) {
     calibration4.R_.push_back(110 + i);
   }
-  for (int i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
+  for (uint i = 0; i < visensor::ViCameraCalibration::NUMBER_OF_T; i++) {
     calibration4.t_.push_back(120 + i);
   }
 
@@ -502,7 +502,7 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadBackGetMultiple)
   EXPECT_EQ(calibration_back.size(), 4);
   calibration_back = config_->getCameraCalibrations(
       static_cast<visensor::SensorId::SensorId>(CAM_ID), SLOT_ID, IS_FLIPPED,
-      visensor::ViCameraLensModel::LensModelTypes::RADIAL,
+      visensor::ViCameraLensModel::LensModelTypes::RADTAN,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL);
   EXPECT_EQ(calibration_back.size(), 1);
 }

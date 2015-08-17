@@ -121,9 +121,9 @@ StereoHomography::StereoHomography(const visensor::ViCameraCalibration& calib_ca
   else {
     VISENSOR_DEBUG("current projection model not supported");
   }
-  if (calib_cam0.lens_model_->type_ == visensor::ViCameraLensModel::LensModelTypes::RADIAL){
-    visensor::ViCameraLensModelRadial::Ptr cam0_lens_model = calib_cam0.getLensModel<visensor::ViCameraLensModelRadial>();
-    visensor::ViCameraLensModelRadial::Ptr cam1_lens_model = calib_cam1.getLensModel<visensor::ViCameraLensModelRadial>();
+  if (calib_cam0.lens_model_->type_ == visensor::ViCameraLensModel::LensModelTypes::RADTAN){
+    visensor::ViCameraLensModelRadtan::Ptr cam0_lens_model = calib_cam0.getLensModel<visensor::ViCameraLensModelRadtan>();
+    visensor::ViCameraLensModelRadtan::Ptr cam1_lens_model = calib_cam1.getLensModel<visensor::ViCameraLensModelRadtan>();
     d0_[0] = cam0_lens_model->k1_;
     d0_[1] = cam0_lens_model->k2_;
     d0_[2] = cam0_lens_model->r1_;

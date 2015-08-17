@@ -258,7 +258,7 @@ class DSO_EXPORT ViSensorConfiguration
   bool emitCameraCalibration();
   bool emitCameraCalibration(YAML::Node* node, const ViCameraCalibration& calibration);
   bool emitCameraCalibration(YAML::Node* node, const ViCameraLensModel::Ptr lens_model);
-  bool emitCameraCalibration(YAML::Node* node, const ViCameraLensModelRadial::Ptr lens_model);
+  bool emitCameraCalibration(YAML::Node* node, const ViCameraLensModelRadtan::Ptr lens_model);
   bool emitCameraCalibration(YAML::Node* node, const ViCameraLensModelEquidistant::Ptr lens_model);
   bool emitCameraCalibration(YAML::Node* node, const ViCameraProjectionModel::Ptr projection_model);
   bool emitCameraCalibration(YAML::Node* node,
@@ -273,7 +273,7 @@ class DSO_EXPORT ViSensorConfiguration
    */
   std::vector<ViCameraCalibration> parseYaml(const YAML::Node& config_nodes);
   void parseYaml(const YAML::Node& node, ViCameraCalibration* calibration, int camera_number);
-  void parseYaml(const YAML::Node& node, ViCameraLensModelRadial::Ptr lens_model);
+  void parseYaml(const YAML::Node& node, ViCameraLensModelRadtan::Ptr lens_model);
   void parseYaml(const YAML::Node& node, ViCameraLensModelEquidistant::Ptr lens_model);
   void parseYaml(const YAML::Node& node,
                  ViCameraProjectionModelOmnidirectional::Ptr projection_model);
@@ -318,7 +318,7 @@ static const std::map<ViSensorConfiguration::ConfigYamlCamera_e, std::string> ya
     { ViSensorConfiguration::ConfigYamlCamera_e::CAM_NUMBER, "cam_number" } };
 
 static const std::map<ViCameraLensModel::LensModelTypes, std::string> yaml_camera_calibration_lensmodel_type_ = {
-    { ViCameraLensModel::LensModelTypes::RADIAL, "radial" },
+    { ViCameraLensModel::LensModelTypes::RADTAN, "radial" },
     { ViCameraLensModel::LensModelTypes::EQUIDISTANT, "equidistant" } };
 
 static const std::map<ViSensorConfiguration::ConfigYamlLensModelStruct_e, std::string> yaml_camera_calibration_lensmodel_ = {
