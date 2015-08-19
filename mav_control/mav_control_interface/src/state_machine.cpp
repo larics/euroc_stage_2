@@ -17,6 +17,7 @@
 
 #include <mav_msgs/default_topics.h>
 #include <std_msgs/String.h>
+#include <tf_conversions/tf_eigen.h>
 
 #include "state_machine.h"
 
@@ -31,6 +32,9 @@ StateMachineDefinition::StateMachineDefinition(ros::NodeHandle& nh, ros::NodeHan
 {
   command_publisher_ = nh.advertise<mav_msgs::RollPitchYawrateThrust>(
       mav_msgs::default_topics::COMMAND_ROLL_PITCH_YAWRATE_THRUST, 1);
+
+  current_reference_publisher_ = nh.advertise<trajectory_msgs::MultiDOFJointTrajectory>(
+      "command/current_reference", 1);
 
   state_info_publisher_ = nh.advertise<std_msgs::String>("state_machine/state_info", 1, true);
 }
@@ -61,6 +65,33 @@ void StateMachineDefinition::PublishStateInfo(const std::string& info)
     std_msgs::StringPtr msg(new std_msgs::String);
     msg->data = info;
     state_info_publisher_.publish(msg);
+  }
+}
+
+void StateMachineDefinition::PublishCurrentReference()
+{
+  ros::Time time_now = ros::Time::now();
+  mav_msgs::EigenTrajectoryPoint current_reference;
+  controller_->getCurrentReference(&current_reference);
+
+  tf::Quaternion q;
+  tf::Vector3 p;
+  tf::vectorEigenToTF(current_reference.position_W, p);
+  tf::quaternionEigenToTF(current_reference.orientation_W_B, q);
+
+  tf::Transform transform;
+  transform.setOrigin(p);
+  transform.setRotation(q);
+
+  transform_broadcaster_.sendTransform(
+      tf::StampedTransform(transform, time_now, "odom", "current_reference"));
+
+  if (current_reference_publisher_.getNumSubscribers() > 0) {
+    trajectory_msgs::MultiDOFJointTrajectoryPtr msg(new trajectory_msgs::MultiDOFJointTrajectory);
+    mav_msgs::msgMultiDofJointTrajectoryFromEigen(current_reference, msg.get());
+    msg->header.stamp = time_now;
+    msg->header.frame_id = "odom";
+    current_reference_publisher_.publish(msg);
   }
 }
 

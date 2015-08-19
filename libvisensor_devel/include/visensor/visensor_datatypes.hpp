@@ -341,7 +341,7 @@ namespace visensor {
     enum class LensModelTypes
     {
       UNKNOWN,
-      RADIAL,
+      RADTAN,
       EQUIDISTANT
     };
 
@@ -411,11 +411,11 @@ namespace visensor {
     double k4_;
   };
 
-  class ViCameraLensModelRadial : public ViCameraLensModel
+  class ViCameraLensModelRadtan : public ViCameraLensModel
   {
    public:
-    typedef std::shared_ptr<ViCameraLensModelRadial> Ptr;
-    enum class RadialCoefficients
+    typedef std::shared_ptr<ViCameraLensModelRadtan> Ptr;
+    enum class RadtanCoefficients
     {
       K1,
       K2,
@@ -423,8 +423,8 @@ namespace visensor {
       R2
     };
 
-    ViCameraLensModelRadial()
-        : ViCameraLensModel(LensModelTypes::RADIAL, "radial"),
+    ViCameraLensModelRadtan()
+        : ViCameraLensModel(LensModelTypes::RADTAN, "radtan"),
           k1_(0.0),
           k2_(0.0),
           r1_(0.0),
@@ -432,8 +432,8 @@ namespace visensor {
     {
     }
 
-    ViCameraLensModelRadial(double k1, double k2, double r1, double r2)
-        : ViCameraLensModel(LensModelTypes::RADIAL, "radial"),
+    ViCameraLensModelRadtan(double k1, double k2, double r1, double r2)
+        : ViCameraLensModel(LensModelTypes::RADTAN, "radtan"),
           k1_(k1),
           k2_(k2),
           r1_(r1),
@@ -483,11 +483,11 @@ namespace visensor {
         case ViCameraLensModel::LensModelTypes::EQUIDISTANT:
           lens_model_ = std::make_shared<ViCameraLensModelEquidistant>();
           break;
-        case ViCameraLensModel::LensModelTypes::RADIAL:
-          lens_model_ = std::make_shared<ViCameraLensModelRadial>();
+        case ViCameraLensModel::LensModelTypes::RADTAN:
+          lens_model_ = std::make_shared<ViCameraLensModelRadtan>();
           break;
         default:
-          lens_model_ = std::make_shared<ViCameraLensModelRadial>();
+          lens_model_ = std::make_shared<ViCameraLensModelRadtan>();
       }
       switch (type_projection_model) {
         case ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL:
@@ -515,11 +515,11 @@ namespace visensor {
         case ViCameraLensModel::LensModelTypes::EQUIDISTANT:
           lens_model_ = std::make_shared<ViCameraLensModelEquidistant>(k1, k2, k3, k4);
           break;
-        case ViCameraLensModel::LensModelTypes::RADIAL:
-          lens_model_ = std::make_shared<ViCameraLensModelRadial>(k1, k2, k3, k4);
+        case ViCameraLensModel::LensModelTypes::RADTAN:
+          lens_model_ = std::make_shared<ViCameraLensModelRadtan>(k1, k2, k3, k4);
           break;
         default:
-          lens_model_ = std::make_shared<ViCameraLensModelRadial>(k1, k2, k3, k4);
+          lens_model_ = std::make_shared<ViCameraLensModelRadtan>(k1, k2, k3, k4);
       }
       switch (type_projection_model) {
         case ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL:
@@ -550,15 +550,15 @@ namespace visensor {
             std::make_shared<ViCameraLensModelEquidistant>(tmp.at(0), tmp.at(1), tmp.at(2),
                                                            tmp.at(3)));
         break;
-      case ViCameraLensModel::LensModelTypes::RADIAL:
-        tmp = std::static_pointer_cast<ViCameraLensModelRadial>(obj.lens_model_)->getCoefficients();
+      case ViCameraLensModel::LensModelTypes::RADTAN:
+        tmp = std::static_pointer_cast<ViCameraLensModelRadtan>(obj.lens_model_)->getCoefficients();
         lens_model_ = std::static_pointer_cast<ViCameraLensModel>(
-            std::make_shared<ViCameraLensModelRadial>(tmp.at(0), tmp.at(1), tmp.at(2), tmp.at(3)));
+            std::make_shared<ViCameraLensModelRadtan>(tmp.at(0), tmp.at(1), tmp.at(2), tmp.at(3)));
         break;
       default:
-        tmp = std::static_pointer_cast<ViCameraLensModelRadial>(obj.lens_model_)->getCoefficients();
+        tmp = std::static_pointer_cast<ViCameraLensModelRadtan>(obj.lens_model_)->getCoefficients();
         lens_model_ = std::static_pointer_cast<ViCameraLensModel>(
-            std::make_shared<ViCameraLensModelRadial>(tmp.at(0), tmp.at(1), tmp.at(2), tmp.at(3)));
+            std::make_shared<ViCameraLensModelRadtan>(tmp.at(0), tmp.at(1), tmp.at(2), tmp.at(3)));
     }
     switch (obj.projection_model_->type_) {
       case ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL:

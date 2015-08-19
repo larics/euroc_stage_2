@@ -113,8 +113,8 @@ void DenseMatcher::setCalibration(ViCameraCalibration& calib_cam0, ViCameraCalib
 
   const ConfigConnection::Ptr& con = getConfigConnection();
 
-  ViCameraLensModelRadial::Ptr cam0_lens_model = calib_cam0.getLensModel<ViCameraLensModelRadial>();
-  ViCameraLensModelRadial::Ptr cam1_lens_model = calib_cam1.getLensModel<ViCameraLensModelRadial>();
+  ViCameraLensModelRadtan::Ptr cam0_lens_model = calib_cam0.getLensModel<ViCameraLensModelRadtan>();
+  ViCameraLensModelRadtan::Ptr cam1_lens_model = calib_cam1.getLensModel<ViCameraLensModelRadtan>();
 
   // cam0
   con->writeConfig(config_.sensor_id_, 0, R_DENSE_CAM0_CCX, static_cast<uint32_t>(p0[0]*256.0), ViComType::FPGA_32);

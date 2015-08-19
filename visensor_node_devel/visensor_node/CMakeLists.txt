@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 # check libvisensor version, flags not used later
-find_package(libvisensor 2.2.0 REQUIRED)
+find_package(libvisensor 2.3.0 REQUIRED)
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${libvisensor_INCLUDE_DIRS})
 

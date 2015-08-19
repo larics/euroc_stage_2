@@ -6,6 +6,9 @@ import rosservice
 from functools import partial
 
 from asctec_hl_comm.msg import mav_status
+
+from mav_msgs.msg import Status
+
 from std_msgs.msg import String
 from sensor_fusion_comm.msg import ExtEkf
 from sensor_fusion_comm.msg import DoubleArrayStamped
@@ -25,28 +28,50 @@ from std_srvs.srv import Empty
 
 import tf
 
+
+
+
 # Main widget for the copter GUI
 # TODO: Move the subscribers to seperate class?
 class CopterPlugin(Plugin):
 
     namespace = ''
 
-    plot_start_time = -1
+    # Time parameters
+    # TODO(millanea): Currently we have two different times for status and state.
+    #                 Whether this is required should be rechecked.
+    state_plot_start_time = -1
+    status_plot_start_time = -1
     status_time = 0
     state_time = 0
+
+    # Control Flags
     pause = 0
 
-    # Observed parameters
-    voltage = 10
-    cpu_load = 0
-    flight_mode_ll = 'flight_mode'
-    state_estimation = 'state_estimate'
-    position_control = 'position_control'
-    motor_status = 'motor_status'
+    # Status Parameters
+    vehicle_name = ''
+    vehicle_type = 'unspecified'
+    battery_voltage = 0
     flight_time = 0
-    gps_status = 'gps_status'
+    system_uptime = ''
+    cpu_load = 0.0
+    motor_status = ''
+    gps_status = ''
     gps_num_satellites = 0
-    safety_pilot_status = 'armed'
+    safety_pilot_status = ''
+
+    # TODO(millanea): The following are not used at the moment. Implement or remove.
+    # flight_mode_ll = ''#'flight_mode'
+    # state_estimation = ''#'state_estimate'
+    # position_control = ''#'position_control'
+
+    # A dictionary specifying the low voltage levels for vehicle type
+    kLowVoltageDefault = 10.0
+    kLowVoltageNeo = 14.3
+    kLowVoltageFirefly = 10.7
+    low_votage_threshold_dictionary = { 'unspecified': kLowVoltageDefault,
+                                        'neo': kLowVoltageNeo,
+                                        'firefly': kLowVoltageFirefly }
 
     def __init__(self, context):
         super(CopterPlugin, self).__init__(context)
@@ -89,6 +114,13 @@ class CopterPlugin(Plugin):
         self._create_plots()
         self._get_init_services()
 
+        # Disabling the unneeded text boxes
+        self._widget.position_control_textbox.setDisabled(True)
+        self._widget.gps_status_textbox.setDisabled(True)
+        self._widget.gps_num_satellites_box.setDisabled(True)
+        self._widget.flight_mode_ll_textbox.setDisabled(True)
+        self._widget.state_estimation_textbox.setDisabled(True)
+
         # Add event functions
         self._widget.start_reset_plot_button_state.clicked.connect(self._reset_plots)
         self._widget.pause_resume_plot_button_state.clicked.connect(self._pause_resume_plots)
@@ -104,29 +136,38 @@ class CopterPlugin(Plugin):
 
     # Update the displayed data in the widget
     def _timer_update(self):
-        # Check if Voltage low
-        if self.voltage < 10:
+        # Determininging low voltage threshold from the vehicle type
+        if self.vehicle_type in self.low_votage_threshold_dictionary:
+            self.lowVoltageThreshold = self.low_votage_threshold_dictionary[self.vehicle_type]
+        else:
+            self.lowVoltageThreshold = self.low_votage_threshold_dictionary['unspecified']
+        # Checking if the voltage is low
+        if self.battery_voltage < self.lowVoltageThreshold:
             self._widget.battery_alert.setVisible(1)
         else:
             self._widget.battery_alert.setVisible(0)
 
         # Updates common to all tabs
-        self._widget.battery_voltage_display.setValue(self.voltage)
+        self._widget.vehicle_type_textbox.setText(self.vehicle_type)
+        self._widget.battery_voltage_display.setValue(self.battery_voltage)
         self._widget.safety_pilot_status_textbox.setText(self.safety_pilot_status)
 
         # Only update the current tab
         tab = self._widget.tab_widget.currentIndex()
         # This is the status tab update
         if tab is 0:
+            # Updating the status message boxes
             self.plot_battery_voltage.rescale_axis_y()
-            self._widget.cpu_load_bar.setValue(self.cpu_load)
-            self._widget.flight_mode_ll_textbox.setText(self.flight_mode_ll)
-            self._widget.state_estimation_textbox.setText(self.state_estimation)
-            self._widget.position_control_textbox.setText(self.position_control)
+            self._widget.flight_time_textbox.setText(str(self.flight_time))
+            self._widget.cpu_load_bar.setValue(self.cpu_load*100.0) # Converting to percent and displaying
             self._widget.motor_status_textbox.setText(self.motor_status)
-            self._widget.flight_time_box.setValue(self.flight_time)
             self._widget.gps_status_textbox.setText(self.gps_status)
             self._widget.gps_num_satellites_box.setValue(self.gps_num_satellites)
+            # TODO(millanea): The following are not used at the moment. Implement or remove.
+            # self._widget.flight_mode_ll_textbox.setText(self.flight_mode_ll)
+            # self._widget.state_estimation_textbox.setText(self.state_estimation)
+            # self._widget.position_control_textbox.setText(self.position_control)
+
         # This is the state-plot tab
         if tab is 1 and not self.pause:
             self.plot_position.rescale_axis_y()
@@ -178,12 +219,12 @@ class CopterPlugin(Plugin):
         self.namespace = self._widget.copter_namespace_textbox.text()
 
         state_topic = self.namespace + '/msf_core/state_out'
-        status_topic = self.namespace + '/fcu/status'
+        status_topic = self.namespace + '/status'
         safety_pilot_status_topic = self.namespace + '/safety_pilot_status'
         odometry_topic = self.namespace + '/msf_core/odometry'
-        trajectory_topic = self.namespace + '/command/trajectory'
+        trajectory_topic = self.namespace + '/command/current_reference'
         print "Subscribing to", state_topic
-        print "Subscribing to", state_topic
+        print "Subscribing to", status_topic
         print "Subscribing to", safety_pilot_status_topic
         print "Subscribing to", odometry_topic
         print "Subscribing to", trajectory_topic
@@ -200,7 +241,7 @@ class CopterPlugin(Plugin):
             self._trajectory_subscriber.unregister()
 
         self._state_subscriber = rospy.Subscriber(state_topic, DoubleArrayStamped, self._state_subscriber_callback)
-        self._status_subscriber = rospy.Subscriber(status_topic, mav_status, self._status_subscriber_callback)
+        self._status_subscriber = rospy.Subscriber(status_topic, Status, self._status_subscriber_callback)
         self._safety_pilot_status_subscriber = rospy.Subscriber(safety_pilot_status_topic, String, self._safety_pilot_status_subscriber_callback)
         self._odometry_subscriber = rospy.Subscriber(odometry_topic, Odometry, self._odometry_subscriber_callback)
         self._trajectory_subscriber = rospy.Subscriber(trajectory_topic, MultiDOFJointTrajectory, self._trajectory_subscriber_callback)
@@ -224,10 +265,12 @@ class CopterPlugin(Plugin):
             print "Unable to setup service proxy: " + str(exc)
 
     def _state_subscriber_callback(self, input):
-        if self.plot_start_time is -1:
-            self.plot_start_time = input.header.stamp.to_sec()
+        # Initializing plot start time on first call
+        if self.state_plot_start_time is -1:
+            self.state_plot_start_time = input.header.stamp.to_sec()
 
-        self.state_time = input.header.stamp.to_sec() - self.plot_start_time
+        # Extracting time of current message
+        self.state_time = input.header.stamp.to_sec() - self.state_plot_start_time
 
         #if self.plot_position is not None:
         self.plot_position.update_value('x', self.state_time, input.data[0])
@@ -251,25 +294,40 @@ class CopterPlugin(Plugin):
         self.safety_pilot_status = input.data
 
     def _status_subscriber_callback(self, input):
-        self.status_time = input.header.stamp.to_sec() - self.plot_start_time
-        self.voltage = input.battery_voltage
-        self.cpu_load = input.cpu_load
-        self.flight_mode_ll = input.flight_mode_ll
-        self.state_estimation = input.state_estimation
-        self.position_control = input.position_control
-        self.motor_status = input.motor_status
-        self.flight_time = input.flight_time
-        self.gps_status = input.gps_status
-        self.gps_num_satellites = input.gps_num_satellites
+        # Initializing plot start time on first call
+        if self.status_plot_start_time is -1:
+            self.status_plot_start_time = input.header.stamp.to_sec()
+
+        # Extracting time of current message
+        self.status_time = input.header.stamp.to_sec() - self.status_plot_start_time
+
+        # Saving contents of the status message
+        self.vehicle_name = input.vehicle_name
+        self.vehicle_type = input.vehicle_type
+        self.battery_voltage = input.battery_voltage        # Battery voltage in V.
+        self.flight_time = input.flight_time                # Flight time in s.
+        self.system_uptime = input.system_uptime            # MAV uptime in s.
+        self.cpu_load = input.cpu_load                      # MAV CPU load: 0.0 ... 1.0
+        self.motor_status = input.motor_status              # Current motor status: running, stopped, starting, stopping.
+        self.gps_status = input.gps_status                  # GPS status: lock, no_lock
+        self.gps_num_satellites = input.gps_num_satellites  # Number of visible satellites
+
+        # TODO(millanea): Used to be used. Reimpliment or remove.
+        # self.status_time = input.header.stamp.to_sec() - self.state_plot_start_time
+        # self.flight_mode_ll = input.flight_mode_ll
+        # self.state_estimation = input.state_estimation
+        # self.position_control = input.position_control
 
         #if self.plot_battery_voltage is not None:
         self.plot_battery_voltage.update_value('voltage', self.status_time, input.battery_voltage)
 
     def _odometry_subscriber_callback(self, input):
-        if self.plot_start_time is -1:
-            self.plot_start_time = input.header.stamp.to_sec()
+        # Initializing plot start time on first call
+        if self.state_plot_start_time is -1:
+            self.state_plot_start_time = input.header.stamp.to_sec()
 
-        self.state_time = input.header.stamp.to_sec() - self.plot_start_time
+        # Extracting time of current message
+        self.state_time = input.header.stamp.to_sec() - self.state_plot_start_time
 
         self.plot_odometry_position.update_value('x', self.state_time, input.pose.pose.position.x)
         self.plot_odometry_position.update_value('y', self.state_time, input.pose.pose.position.y)
@@ -308,10 +366,10 @@ class CopterPlugin(Plugin):
     def _trajectory_subscriber_callback(self, input):
         # TODO(millanea): Trajectories are not time stamped. Current plotting with last state time. 
 
-        # if self.plot_start_time is -1:
-        #     self.plot_start_time = input.header.stamp.to_sec()
+        # if self.state_plot_start_time is -1:
+        #     self.state_plot_start_time = input.header.stamp.to_sec()
 
-        #self.state_time = input.header.stamp.to_sec() - self.plot_start_time
+        #self.state_time = input.header.stamp.to_sec() - self.state_plot_start_time
         # self.trajectory_time = input.points[0].time_from_start.to_sec() - self.plot_trajectory_start_time
 
         self.plot_odometry_position.update_value('x_ref', self.state_time, input.points[0].transforms[0].translation.x)
@@ -333,7 +391,7 @@ class CopterPlugin(Plugin):
         self.plot_odometry_rate.update_value('z_ref', self.state_time, input.points[0].velocities[0].angular.z)
 
     def _create_plots(self):
-        self.plot_start_time = -1
+        self.state_plot_start_time = -1
 
         self.plot_battery_voltage = QwtDataPlot(self._widget)
         self._widget.plot_battery_voltage_layout.addWidget(self.plot_battery_voltage)

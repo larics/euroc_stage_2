@@ -89,8 +89,8 @@ int main(int argc, char** argv)
         lens_type.assign(my_list[i]["lens_type"]);
         if (lens_type == std::string("equidistant")) {
           lens_types[camera_number] = visensor::ViCameraLensModel::LensModelTypes::EQUIDISTANT;
-        } else if (lens_type == std::string("radial")) {
-          lens_types[camera_number] = visensor::ViCameraLensModel::LensModelTypes::RADIAL;
+        } else if (lens_type == std::string("radtan")) {
+          lens_types[camera_number] = visensor::ViCameraLensModel::LensModelTypes::RADTAN;
         } else {
           ROS_WARN("Lens Model is not supported");
           return 0;

@@ -12,6 +12,7 @@
 #include "yaml-cpp/node/type.h"
 #include <boost/utility.hpp>
 #include <list>
+#include <string>
 #include <utility>
 #include <vector>
 

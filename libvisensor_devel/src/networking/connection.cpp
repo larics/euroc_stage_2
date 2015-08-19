@@ -343,9 +343,6 @@ void IpConnection::read_handler(const boost::system::error_code& error,
 
         processPackage(static_cast<SensorId::SensorId>(header.data_id), measurement);
       }
-      else {
-        VISENSOR_DEBUG("ignore first packages because of inaccurately\n");
-      }
     }
     // ready to receive a new data header
     async_read(data_socket_, boost::asio::buffer(data_header_payload_), boost::asio::transfer_all(),
@@ -436,9 +433,6 @@ void IpConnection::imu_read_handler(const boost::system::error_code& error,
                       + std::to_string(measurement->timestamp)  + "; "
                       + std::to_string(measurement->timestamp_synchronized) + " \n");
         processPackage(static_cast<SensorId::SensorId>(header.data_id), measurement);
-      }
-      else {
-        VISENSOR_DEBUG("ignore first packages because of inaccurately\n");
       }
     }
     async_read(imu_socket_, boost::asio::buffer(imu_header_payload_), boost::asio::transfer_all(),

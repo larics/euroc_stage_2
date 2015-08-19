@@ -301,9 +301,9 @@ bool ViSensorConfiguration::emitCameraCalibration(YAML::Node* node,
       yaml_camera_calibration_lensmodel_type_.at(lens_model->type_);
   YAML::Node node_coefficients;
   switch (lens_model->type_) {
-    case ViCameraLensModel::LensModelTypes::RADIAL:
+    case ViCameraLensModel::LensModelTypes::RADTAN:
       emitCameraCalibration(&node_coefficients,
-                            std::static_pointer_cast<ViCameraLensModelRadial>(lens_model));
+                            std::static_pointer_cast<ViCameraLensModelRadtan>(lens_model));
       break;
     case ViCameraLensModel::LensModelTypes::EQUIDISTANT:
       emitCameraCalibration(&node_coefficients,
@@ -311,7 +311,7 @@ bool ViSensorConfiguration::emitCameraCalibration(YAML::Node* node,
       break;
     default:
       emitCameraCalibration(&node_coefficients,
-                            std::static_pointer_cast<ViCameraLensModelRadial>(lens_model));
+                            std::static_pointer_cast<ViCameraLensModelRadtan>(lens_model));
       VISENSOR_DEBUG("Projection Model not known");
   }
   (*node)[yaml_camera_calibration_lensmodel_.at(ConfigYamlLensModelStruct_e::COEFFICIENTS)] =
@@ -321,12 +321,12 @@ bool ViSensorConfiguration::emitCameraCalibration(YAML::Node* node,
 }
 
 bool ViSensorConfiguration::emitCameraCalibration(YAML::Node* node,
-                                                  const ViCameraLensModelRadial::Ptr lens_model)
+                                                  const ViCameraLensModelRadtan::Ptr lens_model)
 {
-  (*node)[static_cast<int>(ViCameraLensModelRadial::RadialCoefficients::K1)] = lens_model->k1_;
-  (*node)[static_cast<int>(ViCameraLensModelRadial::RadialCoefficients::K2)] = lens_model->k2_;
-  (*node)[static_cast<int>(ViCameraLensModelRadial::RadialCoefficients::R1)] = lens_model->r1_;
-  (*node)[static_cast<int>(ViCameraLensModelRadial::RadialCoefficients::R2)] = lens_model->r2_;
+  (*node)[static_cast<int>(ViCameraLensModelRadtan::RadtanCoefficients::K1)] = lens_model->k1_;
+  (*node)[static_cast<int>(ViCameraLensModelRadtan::RadtanCoefficients::K2)] = lens_model->k2_;
+  (*node)[static_cast<int>(ViCameraLensModelRadtan::RadtanCoefficients::R1)] = lens_model->r1_;
+  (*node)[static_cast<int>(ViCameraLensModelRadtan::RadtanCoefficients::R2)] = lens_model->r2_;
   return true;
 }
 
@@ -535,25 +535,25 @@ void ViSensorConfiguration::parseYaml(const YAML::Node& node,
 }
 
 void ViSensorConfiguration::parseYaml(const YAML::Node& node,
-                                      ViCameraLensModelRadial::Ptr lens_model)
+                                      ViCameraLensModelRadtan::Ptr lens_model)
 {
   for (unsigned short i = 0; i < node.size(); ++i) {
-    switch (static_cast<ViCameraLensModelRadial::RadialCoefficients>(i)) {
-      case ViCameraLensModelRadial::RadialCoefficients::K1:
+    switch (static_cast<ViCameraLensModelRadtan::RadtanCoefficients>(i)) {
+      case ViCameraLensModelRadtan::RadtanCoefficients::K1:
         lens_model->k1_ = node[i].as<double>();
         break;
-      case ViCameraLensModelRadial::RadialCoefficients::K2:
+      case ViCameraLensModelRadtan::RadtanCoefficients::K2:
         lens_model->k2_ = node[i].as<double>();
         break;
-      case ViCameraLensModelRadial::RadialCoefficients::R1:
+      case ViCameraLensModelRadtan::RadtanCoefficients::R1:
         lens_model->r1_ = node[i].as<double>();
         break;
-      case ViCameraLensModelRadial::RadialCoefficients::R2:
+      case ViCameraLensModelRadtan::RadtanCoefficients::R2:
         lens_model->r2_ = node[i].as<double>();
         break;
       default:
         throw visensor::exceptions::ConfigException(
-            "could not parse ViCameraLensModelRadial coefficient, size mismatch:  " + node.size());
+            "could not parse ViCameraLensModelRadTan coefficient, size mismatch:  " + node.size());
     }
   }
 }
@@ -576,17 +576,17 @@ void ViSensorConfiguration::parseYaml(const YAML::Node& node, ViCameraCalibratio
                 lens_model_node[yaml_camera_calibration_projectionmodel_.at(ConfigYamlCameraProjectionModelStruct_e::COEFFICIENTS)],
                 std::static_pointer_cast<ViCameraLensModelEquidistant>(calibration->lens_model_));
             break;
-          case ViCameraLensModel::LensModelTypes::RADIAL:
-            calibration->lens_model_ = std::make_shared<visensor::ViCameraLensModelRadial>();
+          case ViCameraLensModel::LensModelTypes::RADTAN:
+            calibration->lens_model_ = std::make_shared<visensor::ViCameraLensModelRadtan>();
             parseYaml(
                 lens_model_node[yaml_camera_calibration_projectionmodel_.at(ConfigYamlCameraProjectionModelStruct_e::COEFFICIENTS)],
-                std::static_pointer_cast<ViCameraLensModelRadial>(calibration->lens_model_));
+                std::static_pointer_cast<ViCameraLensModelRadtan>(calibration->lens_model_));
             break;
           default:
-            calibration->lens_model_ = std::make_shared<visensor::ViCameraLensModelRadial>();
+            calibration->lens_model_ = std::make_shared<visensor::ViCameraLensModelRadtan>();
             parseYaml(
                 lens_model_node[yaml_camera_calibration_projectionmodel_.at(ConfigYamlCameraProjectionModelStruct_e::COEFFICIENTS)],
-                std::static_pointer_cast<ViCameraLensModelRadial>(calibration->lens_model_));
+                std::static_pointer_cast<ViCameraLensModelRadtan>(calibration->lens_model_));
             VISENSOR_DEBUG("Lens model not known");
         }
         break;
