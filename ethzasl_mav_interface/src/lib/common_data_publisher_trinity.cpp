@@ -40,7 +40,10 @@ constexpr int CommonDataPublisher::kNumberOfRotors;
 CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
     : nh_(nh),
       private_nh_(private_nh),
-      publish_commanded_motor_speeds_(false) {
+      publish_commanded_motor_speeds_(false),
+      publish_raw_imu_(false),
+      publish_nav1_imu_(false)
+{
 
   private_nh_.param("frame_id", frame_id_, std::string("fcu"));
   double angular_velocity_standard_deviation;
@@ -52,6 +55,8 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
       * linear_acceleration_standard_deviation;
 
   private_nh_.param("publish_commanded_motor_speeds", publish_commanded_motor_speeds_, false);
+  private_nh_.param("publish_raw_imu", publish_raw_imu_, publish_raw_imu_);
+  private_nh_.param("publish_nav1_imu", publish_nav1_imu_, publish_nav1_imu_);
 
   imu_pub_ = nh_.advertise<sensor_msgs::Imu>(mav_msgs::default_topics::IMU, 1);
   motors_pub_ = nh_.advertise<mav_msgs::Actuators>(mav_msgs::default_topics::MOTOR_MEASUREMENT, 1);
@@ -65,10 +70,27 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
     motors_cmd_pub_ = nh_.advertise<mav_msgs::Actuators>(
         std::string(mav_msgs::default_topics::MOTOR_MEASUREMENT) + "_commanded", 1);
     ROS_INFO("Will publish commanded motor speeds.");
-  }
-  else {
+  } else {
     ROS_INFO("Will NOT publish commanded motor speeds. "
              "To change, set \"~/publish_commanded_motor_speeds\" to true.");
+  }
+
+  if (publish_raw_imu_) {
+    ROS_INFO("Will publish raw IMU measurements");
+    imu_pub_raw_ = nh_.advertise<sensor_msgs::Imu>(std::string(mav_msgs::default_topics::IMU) + "_raw", 1);
+  }
+  else {
+    ROS_INFO("Will NOT publish raw IMU measurements"
+             "To change, set \"~/publish_raw_imu\" to true.");
+  }
+
+  if (publish_nav1_imu_) {
+    ROS_INFO("Will publish nav1 IMU measurements");
+    imu_pub_nav1_ = nh_.advertise<sensor_msgs::Imu>(std::string(mav_msgs::default_topics::IMU) + "_nav1", 1);
+  }
+  else {
+    ROS_INFO("Will NOT publish nav1 IMU measurements"
+             "To change, set \"~/publish_nav1_imu\" to true.");
   }
 
 //  mag_pub_ = nh_.advertise<geometry_msgs::Vector3Stamped>("mag", 1);
@@ -82,6 +104,20 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
 
   angular_velocity_ = aci.registerVariable<aci::VariableVector3f>(aci::VAR_PACKET_FAST, ACI_USER_VAR_IMU_W);
   acceleration_ = aci.registerVariable<aci::VariableVector3f>(aci::VAR_PACKET_FAST, ACI_USER_VAR_IMU_ACC);
+
+  if (publish_raw_imu_) {
+    angular_velocity_raw_ = aci.registerVariable<aci::VariableVector3i>(aci::VAR_PACKET_FAST,
+                                                                        ACI_USER_VAR_IMU_RAW_GYRO);
+    acceleration_raw_ = aci.registerVariable<aci::VariableVector3i>(aci::VAR_PACKET_FAST,
+                                                                    ACI_USER_VAR_IMU_RAW_ACC);
+  }
+
+  if (publish_nav1_imu_) {
+    angular_velocity_nav1_ = aci.registerVariable<aci::VariableVector3f>(aci::VAR_PACKET_FAST,
+                                                                         ACI_USER_VAR_IMU_W_NAV1);
+    acceleration_nav1_ = aci.registerVariable<aci::VariableVector3f>(aci::VAR_PACKET_FAST,
+                                                                     ACI_USER_VAR_IMU_ACC_NAV1);
+  }
 
   motor_speed_measured_[0] = aci.registerVariable<aci::VariableUint16>(aci::VAR_PACKET_FAST,
                                                                        ACI_USER_VAR_MOTOR0_RPM);
@@ -231,6 +267,62 @@ void CommonDataPublisher::publishImu(const std_msgs::Header& header) {
     helper::setDiagonal3dCovariance(linear_acceleration_variance_, &(msg->linear_acceleration_covariance));
 
     imu_pub_.publish(msg);
+  }
+
+  const size_t n_imu_raw_subscribers = imu_pub_raw_.getNumSubscribers();
+
+  if (n_imu_raw_subscribers > 0 && publish_raw_imu_) {
+    sensor_msgs::ImuPtr msg(new sensor_msgs::Imu);
+    msg->header = header;
+
+    const vector3i angular_velocity = angular_velocity_raw_.value();
+    constexpr double angvel_max_sensor_range = 2000.0;
+    constexpr double guessed_scaling_factor = 50.0;
+    constexpr double raw_angvel_to_si = 1.0 / angvel_max_sensor_range * M_PI / 180.0 * guessed_scaling_factor;
+
+    // Asctec uses x:front y:right z:down, we use x:front, y:left, z:up.
+    msg->angular_velocity.x = static_cast<double>(angular_velocity.x) * raw_angvel_to_si;
+    msg->angular_velocity.y = -static_cast<double>(angular_velocity.y) * raw_angvel_to_si;
+    msg->angular_velocity.z = -static_cast<double>(angular_velocity.z) * raw_angvel_to_si;
+
+    const vector3i acceleration = acceleration_raw_.value();
+    constexpr double acc_max_sensor_range = 2.0 * 9.81;
+    constexpr double raw_acc_to_si = 1.0 / acc_max_sensor_range / 10.0;
+    // Asctec uses x:front y:right z:down, we use x:front, y:left, z:up.
+    msg->linear_acceleration.x = static_cast<double>(acceleration.x) * raw_acc_to_si;
+    msg->linear_acceleration.y = -static_cast<double>(acceleration.y) * raw_acc_to_si;
+    msg->linear_acceleration.z = -static_cast<double>(acceleration.z) * raw_acc_to_si;
+
+    msg->orientation_covariance[0] = -1.0;  // Attitude not available.
+    helper::setDiagonal3dCovariance(0.0, &(msg->angular_velocity_covariance)); // We don't know the covariance.
+    helper::setDiagonal3dCovariance(0.0, &(msg->linear_acceleration_covariance));  // We don't know the covariance.
+
+    imu_pub_raw_.publish(msg);
+  }
+
+  const size_t n_imu_nav1_subscribers = imu_pub_nav1_.getNumSubscribers();
+
+  if (n_imu_nav1_subscribers > 0 && publish_nav1_imu_) {
+    sensor_msgs::ImuPtr msg(new sensor_msgs::Imu);
+    msg->header = header;
+
+    const vector3f angular_velocity = angular_velocity_nav1_.value();
+    // Asctec uses x:front y:right z:down, we use x:front, y:left, z:up.
+    msg->angular_velocity.x = angular_velocity.x;
+    msg->angular_velocity.y = -angular_velocity.y;
+    msg->angular_velocity.z = -angular_velocity.z;
+
+    const vector3f acceleration = acceleration_nav1_.value();
+    // Asctec uses x:front y:right z:down, we use x:front, y:left, z:up.
+    msg->linear_acceleration.x = acceleration.x;
+    msg->linear_acceleration.y = -acceleration.y;
+    msg->linear_acceleration.z = -acceleration.z;
+
+    msg->orientation_covariance[0] = -1.0;  // Attitude not available.
+    helper::setDiagonal3dCovariance(0.0, &(msg->angular_velocity_covariance)); // We don't know the covariance.
+    helper::setDiagonal3dCovariance(0.0, &(msg->linear_acceleration_covariance));  // We don't know the covariance.
+
+    imu_pub_nav1_.publish(msg);
   }
 }
 
