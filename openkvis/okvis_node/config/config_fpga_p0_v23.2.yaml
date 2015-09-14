@@ -10,7 +10,7 @@ cameras:
           -0.0065192608272690395, -0.005350327049364372, 0.9999644359869655, 0.010564158428968145,
            0.0, 0.0, 0.0, 1.0],
        image_dimension: [752, 480],
-       distortion_coefficients: [-0.3091674142711387, 0.10905899434862235, 9.527033720237582e-05, -0.0005776582308113238, 0.0],
+       distortion_coefficients: [-0.3091674142711387, 0.10905899434862235, 9.527033720237582e-05, -0.0005776582308113238],
        distortion_type: radialtangential,
        focal_length: [465.2005090331355, 465.4821196969644],
        principal_point: [407.7552059925612, 244.36152062408814]}
@@ -20,15 +20,15 @@ cameras:
           -0.008875910631247201, -0.0033145275256320035, 0.9999551150515444, 0.00973189255368364,
            0.0, 0.0, 0.0, 1.0],
        image_dimension: [752, 480],
-       distortion_coefficients: [-0.30098670704037306, 0.09347840167059357, 0.00020272056432327966, -0.000576898338628004, 0.0],
+       distortion_coefficients: [-0.30098670704037306, 0.09347840167059357, 0.00020272056432327966, -0.000576898338628004],
        distortion_type: radialtangential,
        focal_length: [466.13901328497104, 466.5291851440462],
        principal_point: [358.83335820698255, 250.4603569874057]}
 
 camera_params:
     camera_rate: 20
-    sigma_absolute_translation: 1.0e-10
-    sigma_absolute_orientation: 1.0e-3
+    sigma_absolute_translation: 0.0 #1.0e-10
+    sigma_absolute_orientation: 0.0 #1.0e-3
     sigma_c_relative_translation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
     sigma_c_relative_orientation: 0.0 #1.0e-6 # below 1.0e-6 ruines numerics...
     timestamp_tolerance: 0.005 # seconds

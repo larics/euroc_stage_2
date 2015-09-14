@@ -279,6 +279,7 @@ struct VioParameters {
   ImuParameters imu;  ///< IMU parameters
   MagnetometerParameters magnetometer;  ///< Magnetometer parameters.
   PositionSensorParameters position;  ///< Position sensor parameters.
+  GpsParameters gps; ///< GPS parameters
   MagneticEnuZParameters magnetic_enu_z;  ///< Dynamics of magnetic ENU z component variation.
   BarometerParameters barometer;  ///< Barometer parameters.
   QffParameters qff;  ///< QFF parameters.

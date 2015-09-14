@@ -148,6 +148,7 @@ ThreadedKFVio::~ThreadedKFVio() {
   optimizationResults_.Shutdown();
   visualizationData_.Shutdown();
   imuFrameSynchronizer_.shutdown();
+  positionMeasurementsReceived_.Shutdown();
 
   // consumer threads
   for (size_t i = 0; i < numCameras_; ++i) {
@@ -249,11 +250,24 @@ bool ThreadedKFVio::addImuMeasurement(const okvis::Time & stamp,
 }
 
 // Add a position measurement.
-void ThreadedKFVio::addPositionMeasurement(const okvis::Time &,
-                                           const Eigen::Vector3d &,
-                                           const Eigen::Vector3d &,
-                                           const Eigen::Matrix3d &) {
-  OKVIS_THROW(Exception, "Position measurements not supported")
+void ThreadedKFVio::addPositionMeasurement(const okvis::Time & stamp,
+                                           const Eigen::Vector3d & position,
+                                           const Eigen::Vector3d & positionOffset,
+                                           const Eigen::Matrix3d & positionCovariance) {
+  okvis::PositionMeasurement position_measurement;
+  position_measurement.measurement.position = position;
+  position_measurement.measurement.positionOffset = positionOffset;
+  position_measurement.measurement.positionCovariance = positionCovariance;
+  position_measurement.timeStamp = stamp;
+
+  if (blocking_) {
+    positionMeasurementsReceived_.PushBlockingIfFull(position_measurement, 1);
+    return;
+  } else {
+    positionMeasurementsReceived_.PushNonBlockingDroppingIfFull(
+        position_measurement, maxPositionInputQueueSize_);
+    return;
+  }
 }
 
 // Add a GPS measurement.
@@ -310,8 +324,9 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
 
   for (;;) {
     // get data and check for termination request
-    if (cameraMeasurementsReceived_[cameraIndex]->PopBlocking(&frame) == false)
+    if (cameraMeasurementsReceived_[cameraIndex]->PopBlocking(&frame) == false) {
       return;
+    }
     beforeDetectTimer.start();
     {  // lock the frame synchronizer
       waitForFrameSynchronizerMutexTimer.start();
@@ -344,8 +359,9 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
 
     // wait until all relevant imu messages have arrived and check for termination request
     if (imuFrameSynchronizer_.waitForUpToDateImuData(
-        okvis::Time(imuDataEndTime)) == false)
+      okvis::Time(imuDataEndTime)) == false)  {
       return;
+    }
     OKVIS_ASSERT_TRUE_DBG(Exception,
                           imuDataEndTime < imuMeasurements_.back().timeStamp,
                           "Waiting for up to date imu data seems to have failed!");
@@ -417,8 +433,9 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
       // use queue size 1 to propagate a congestion to the _cameraMeasurementsReceived queue
       // and check for termination request
       waitForMatchingThreadTimer.start();
-      if (keypointMeasurements_.PushBlockingIfFull(multiFrame, 1) == false)
+      if (keypointMeasurements_.PushBlockingIfFull(multiFrame, 1) == false) {
         return;
+      }
       waitForMatchingThreadTimer.stop();
     }
   }
@@ -485,6 +502,7 @@ void ThreadedKFVio::matchingLoop() {
         addStateTimer.stop();
         continue;
       }
+
       // -- matching keypoints, initialising landmarks etc.
       okvis::kinematics::Transformation T_WS;
       estimator_.get_T_WS(frame->id(), T_WS);
@@ -573,6 +591,17 @@ void ThreadedKFVio::imuConsumerLoop() {
 
 // Loop to process position measurements.
 void ThreadedKFVio::positionConsumerLoop() {
+  okvis::PositionMeasurement data;
+  for (;;) {
+    // get data and check for termination request
+    if (positionMeasurementsReceived_.PopBlocking(&data) == false)
+      return;
+    // collect
+    {
+      std::lock_guard<std::mutex> positionLock(positionMeasurements_mutex_);
+      positionMeasurements_.push_back(data);
+    }
+  }
 }
 
 // Loop to process GPS measurements.

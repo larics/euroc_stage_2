@@ -345,6 +345,9 @@ class ThreadedKFVio : public VioInterface {
   /// IMU measurement input queue.
   okvis::threadsafe::ThreadSafeQueue<okvis::ImuMeasurement> imuMeasurementsReceived_;
 
+  /// Position measurement input queue.
+  okvis::threadsafe::ThreadSafeQueue<okvis::PositionMeasurement> positionMeasurementsReceived_;
+
   /// @}
   /// @name Measurement operation queues.
   /// @{
@@ -356,6 +359,9 @@ class ThreadedKFVio : public VioInterface {
   /// \brief The IMU measurements.
   /// \warning Lock with imuMeasurements_mutex_.
   okvis::ImuMeasurementDeque imuMeasurements_;
+  /// \brief The Position measurements.
+  /// \warning Lock with positionMeasurements_mutex_.
+  okvis::PositionMeasurementDeque positionMeasurements_;
   /// The queue containing the results of the optimization or IMU propagation ready for publishing.
   okvis::threadsafe::ThreadSafeQueue<OptimizationResults> optimizationResults_;
   /// The queue containing visualization data that is ready to be displayed.
@@ -366,6 +372,7 @@ class ThreadedKFVio : public VioInterface {
   /// @{
 
   std::mutex imuMeasurements_mutex_;      ///< Lock when accessing imuMeasurements_
+  std::mutex positionMeasurements_mutex_;      ///< Lock when accessing imuMeasurements_
   std::mutex frameSynchronizer_mutex_;    ///< Lock when accessing the frameSynchronizer_.
   std::mutex estimator_mutex_;            ///< Lock when accessing the estimator_.
   ///< Condition variable to signalise that optimization is done.
@@ -420,6 +427,9 @@ class ThreadedKFVio : public VioInterface {
   /// depending on the ratio between IMU and camera rate.
   const size_t maxImuInputQueueSize_;
 
+  /// Max position measurements before dropping.
+  const size_t maxPositionInputQueueSize_ = 10;
+  
 };
 
 }  // namespace okvis

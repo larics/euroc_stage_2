@@ -46,6 +46,7 @@
 #include <okvis/cameras/PinholeCamera.hpp>
 #include <okvis/cameras/EquidistantDistortion.hpp>
 #include <okvis/cameras/RadialTangentialDistortion.hpp>
+#include <okvis/cameras/RadialTangentialDistortion8.hpp>
 
 // Constructor.
 opengv::relative_pose::FrameRelativeAdapter::FrameRelativeAdapter(
@@ -58,50 +59,73 @@ opengv::relative_pose::FrameRelativeAdapter::FrameRelativeAdapter(
   std::shared_ptr<okvis::MultiFrame> frameBPtr = estimator.multiFrame(
       multiFrameIdB);
 
-  bool frameARadialTangential = nCameraSystem.distortionType(camIdA)
-      == okvis::cameras::NCameraSystem::RadialTangential;
-  bool frameAEquidistant = nCameraSystem.distortionType(camIdA)
-      == okvis::cameras::NCameraSystem::Equidistant;
-  bool frameBRadialTangential = nCameraSystem.distortionType(camIdB)
-      == okvis::cameras::NCameraSystem::RadialTangential;
-  bool frameBEquidistant = nCameraSystem.distortionType(camIdB)
-      == okvis::cameras::NCameraSystem::Equidistant;
-
-  if ((!frameARadialTangential && !frameAEquidistant)
-      || (!frameBRadialTangential && !frameBEquidistant))
-    OKVIS_THROW(Exception, "unsupported frame type");
+  // determine type
+  okvis::cameras::NCameraSystem::DistortionType distortionTypeA = nCameraSystem.distortionType(camIdA);
+  okvis::cameras::NCameraSystem::DistortionType distortionTypeB = nCameraSystem.distortionType(camIdB);
 
   double fu1 = 0;
   size_t numKeypointsA = frameAPtr->numKeypoints(camIdA);
-  if (frameARadialTangential) {
-    fu1 = frameAPtr
-        ->geometryAs<
-            okvis::cameras::PinholeCamera<
-                okvis::cameras::RadialTangentialDistortion> >(camIdA)
-        ->focalLengthU();
-  } else if (frameAEquidistant) {
-    fu1 =
-        frameAPtr
-            ->geometryAs<
-                okvis::cameras::PinholeCamera<
-                    okvis::cameras::EquidistantDistortion> >(camIdA)
-            ->focalLengthU();
+  switch (distortionTypeA) {
+    case okvis::cameras::NCameraSystem::RadialTangential: {
+      fu1 = frameAPtr
+          ->geometryAs<
+              okvis::cameras::PinholeCamera<
+                  okvis::cameras::RadialTangentialDistortion> >(camIdA)
+          ->focalLengthU();
+      break;
+    }
+    case okvis::cameras::NCameraSystem::Equidistant: {
+      fu1 =
+          frameAPtr
+              ->geometryAs<
+                  okvis::cameras::PinholeCamera<
+                      okvis::cameras::EquidistantDistortion> >(camIdA)
+              ->focalLengthU();
+      break;
+    }
+    case okvis::cameras::NCameraSystem::RadialTangential8: {
+      fu1 = frameAPtr
+          ->geometryAs<
+              okvis::cameras::PinholeCamera<
+                  okvis::cameras::RadialTangentialDistortion8> >(camIdA)
+          ->focalLengthU();
+      break;
+    }
+    default:
+      OKVIS_THROW(Exception, "Unsupported distortion type")
+      break;
   }
   double fu2 = 0.0;
   size_t numKeypointsB = frameBPtr->numKeypoints(camIdB);
-  if (frameBRadialTangential) {
-    fu2 = frameBPtr
-        ->geometryAs<
-            okvis::cameras::PinholeCamera<
-                okvis::cameras::RadialTangentialDistortion> >(camIdB)
-        ->focalLengthU();
-  } else if (frameBEquidistant) {
-    fu2 =
-        frameAPtr
-            ->geometryAs<
-                okvis::cameras::PinholeCamera<
-                    okvis::cameras::EquidistantDistortion> >(camIdB)
-            ->focalLengthU();
+  switch (distortionTypeB) {
+    case okvis::cameras::NCameraSystem::RadialTangential: {
+      fu2 = frameAPtr
+          ->geometryAs<
+              okvis::cameras::PinholeCamera<
+                  okvis::cameras::RadialTangentialDistortion> >(camIdB)
+          ->focalLengthU();
+      break;
+    }
+    case okvis::cameras::NCameraSystem::Equidistant: {
+      fu2 =
+          frameAPtr
+              ->geometryAs<
+                  okvis::cameras::PinholeCamera<
+                      okvis::cameras::EquidistantDistortion> >(camIdB)
+              ->focalLengthU();
+      break;
+    }
+    case okvis::cameras::NCameraSystem::RadialTangential8: {
+      fu2 = frameAPtr
+          ->geometryAs<
+              okvis::cameras::PinholeCamera<
+                  okvis::cameras::RadialTangentialDistortion8> >(camIdB)
+          ->focalLengthU();
+      break;
+    }
+    default:
+      OKVIS_THROW(Exception, "Unsupported distortion type")
+      break;
   }
 
   // resize members
@@ -151,42 +175,72 @@ opengv::relative_pose::FrameRelativeAdapter::FrameRelativeAdapter(
     keypointStdDev = 0.8 * keypointStdDev / 12.0;
     sigmaAngles1_[idx1] = sqrt(2) * keypointStdDev * keypointStdDev
         / (fu1 * fu1);
-    if (frameARadialTangential) {
-      frameAPtr
+    switch (distortionTypeA) {
+      case okvis::cameras::NCameraSystem::RadialTangential: {
+        frameAPtr
           ->geometryAs<
               okvis::cameras::PinholeCamera<
                   okvis::cameras::RadialTangentialDistortion> >(camIdA)
           ->backProject(keypoint, &bearingVectors1_[idx1]);
-      bearingVectors1_[idx1].normalize();
-    } else if (frameAEquidistant) {
-      frameAPtr
+        break;
+      }
+      case okvis::cameras::NCameraSystem::Equidistant: {
+        frameAPtr
+            ->geometryAs<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::EquidistantDistortion> >(camIdA)->backProject(
+            keypoint, &bearingVectors1_[idx1]);
+        break;
+      }
+      case okvis::cameras::NCameraSystem::RadialTangential8: {
+        frameAPtr
           ->geometryAs<
               okvis::cameras::PinholeCamera<
-                  okvis::cameras::EquidistantDistortion> >(camIdA)->backProject(
-          keypoint, &bearingVectors1_[idx1]);
-      bearingVectors1_[idx1].normalize();
+                  okvis::cameras::RadialTangentialDistortion8> >(camIdA)
+          ->backProject(keypoint, &bearingVectors1_[idx1]);
+        break;
+      }
+      default:
+        OKVIS_THROW(Exception, "Unsupported distortion type")
+        break;
     }
+    bearingVectors1_[idx1].normalize();
 
     frameBPtr->getKeypoint(camIdB, idx2, keypoint);
     frameBPtr->getKeypointSize(camIdB, idx2, keypointStdDev);
     keypointStdDev = 0.8 * keypointStdDev / 12.0;
     sigmaAngles2_[idx2] = sqrt(2) * keypointStdDev * keypointStdDev
         / (fu2 * fu2);
-    if (frameBRadialTangential) {
-      frameBPtr
-          ->geometryAs<
-              okvis::cameras::PinholeCamera<
-                  okvis::cameras::RadialTangentialDistortion> >(camIdB)
-          ->backProject(keypoint, &bearingVectors2_[idx2]);
-      bearingVectors2_[idx2].normalize();
-    } else if (frameBEquidistant) {
-      frameBPtr
-          ->geometryAs<
-              okvis::cameras::PinholeCamera<
-                  okvis::cameras::EquidistantDistortion> >(camIdB)->backProject(
-          keypoint, &bearingVectors2_[idx2]);
-      bearingVectors2_[idx2].normalize();
+    switch (distortionTypeB) {
+      case okvis::cameras::NCameraSystem::RadialTangential: {
+        frameAPtr
+            ->geometryAs<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::RadialTangentialDistortion> >(camIdB)
+            ->backProject(keypoint, &bearingVectors2_[idx2]);
+        break;
+      }
+      case okvis::cameras::NCameraSystem::Equidistant: {
+        frameAPtr
+            ->geometryAs<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::EquidistantDistortion> >(camIdB)
+            ->backProject(keypoint, &bearingVectors2_[idx2]);
+        break;
+      }
+      case okvis::cameras::NCameraSystem::RadialTangential8: {
+        frameAPtr
+            ->geometryAs<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::RadialTangentialDistortion8> >(camIdB)
+            ->backProject(keypoint, &bearingVectors2_[idx2]);
+        break;
+      }
+      default:
+        OKVIS_THROW(Exception, "Unsupported distortion type")
+        break;
     }
+    bearingVectors2_[idx2].normalize();
   }
 }
 
