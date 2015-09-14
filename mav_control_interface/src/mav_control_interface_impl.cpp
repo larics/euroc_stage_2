@@ -61,10 +61,17 @@ MavControlInterfaceImpl::MavControlInterfaceImpl(ros::NodeHandle& nh, ros::NodeH
   state_machine_.reset(new state_machine::StateMachine(nh_, private_nh_, controller));
 
   Parameters p;
-  interface_nh.param("rc_teleop_max_carrot_distance", p.rc_teleop_max_carrot_distance_,
-                     Parameters::kDefaultRcTeleopMaxCarrotDistance);
-  interface_nh.param("rc_teleop_max_velocity", p.rc_teleop_max_velocity_,
-                     Parameters::kDefaultRcTeleopMaxVelocity);
+  interface_nh.param("rc_teleop_max_carrot_distance_position", p.rc_teleop_max_carrot_distance_position_,
+                     Parameters::kDefaultRcTeleopMaxCarrotDistancePosition);
+
+  interface_nh.param("rc_teleop_max_carrot_distance_yaw", p.rc_teleop_max_carrot_distance_yaw_,
+                     Parameters::kDefaultRcTeleopMaxCarrotDistanceYaw);
+
+  if (p.rc_teleop_max_carrot_distance_yaw_ > M_PI / 2.0) {
+    p.rc_teleop_max_carrot_distance_yaw_ = M_PI / 2.0;
+    ROS_WARN("rc_teleop_max_carrot_distance_yaw_ was limited to pi/2. This is by far enough.");
+  }
+
   interface_nh.param("rc_max_roll_pitch_command", p.rc_max_roll_pitch_command_,
                      Parameters::kDefaultRcMaxRollPitchCommand);
   interface_nh.param("rc_max_yaw_rate_command", p.rc_max_yaw_rate_command_,

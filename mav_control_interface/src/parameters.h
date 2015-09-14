@@ -27,8 +27,8 @@ namespace mav_control_interface {
 class Parameters {
  public:
   static constexpr double kDefaultStickDeadzone = 0.1;
-  static constexpr double kDefaultRcTeleopMaxCarrotDistance = 1.0;
-  static constexpr double kDefaultRcTeleopMaxVelocity = 1.0;
+  static constexpr double kDefaultRcTeleopMaxCarrotDistancePosition = 1.0;
+  static constexpr double kDefaultRcTeleopMaxCarrotDistanceYaw = M_PI / 4.0;
   static constexpr double kDefaultRcMaxRollPitchCommand = 45.0 / 180.0 * M_PI;
   static constexpr double kDefaultRcMaxYawRateCommand = 45.0 / 180.0 * M_PI;
   static constexpr double kDefaultTakeoffDistance = 1.0;
@@ -36,8 +36,8 @@ class Parameters {
 
   Parameters()
       : stick_deadzone_(kDefaultStickDeadzone),
-        rc_teleop_max_carrot_distance_(kDefaultRcTeleopMaxCarrotDistance),
-        rc_teleop_max_velocity_(kDefaultRcTeleopMaxVelocity),
+        rc_teleop_max_carrot_distance_position_(kDefaultRcTeleopMaxCarrotDistancePosition),
+        rc_teleop_max_carrot_distance_yaw_(kDefaultRcTeleopMaxCarrotDistanceYaw),
         rc_max_roll_pitch_command_(kDefaultRcMaxRollPitchCommand),
         rc_max_yaw_rate_command_(kDefaultRcMaxYawRateCommand),
         takeoff_distance_(kDefaultTakeoffDistance),
@@ -46,8 +46,8 @@ class Parameters {
   }
 
   Deadzone<double> stick_deadzone_;
-  double rc_teleop_max_carrot_distance_;
-  double rc_teleop_max_velocity_;
+  double rc_teleop_max_carrot_distance_position_;
+  double rc_teleop_max_carrot_distance_yaw_;
   double rc_max_roll_pitch_command_;
   double rc_max_yaw_rate_command_;
   double takeoff_distance_;
