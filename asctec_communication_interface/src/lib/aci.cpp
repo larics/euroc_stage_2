@@ -813,4 +813,24 @@ std::string safetyPilotStateToString(uint32_t safety_pilot_mode) {
   return ret_string;
 }
 
+int getNumberOfRotors(const MavType& mav_type) {
+  switch (mav_type) {
+    case MavType::Falcon:
+      return 8;
+    case MavType::Firefly:
+      return 6;
+    case MavType::Hummingbird:
+      return 4;
+    case MavType::Neo_6_9:
+      return 6;
+    case MavType::Neo_6_11:
+      return 6;
+    case MavType::Pelican:
+      return 4;
+    default:
+      return -1;
+  }
+}
+
+
 } // end namespace aci

@@ -72,22 +72,6 @@ ImuError::ImuError(const okvis::ImuMeasurementDeque & imuMeasurements,
                      "Last IMU measurement included in ImuError is not new enough!");
 }
 
-// Right Jacobian, see Forster et al. RSS 2015 eqn. (8)
-__inline__ Eigen::Matrix3d rightJacobian(const Eigen::Vector3d & PhiVec) {
-  const double Phi = PhiVec.norm();
-  Eigen::Matrix3d retMat = Eigen::Matrix3d::Identity();
-  const Eigen::Matrix3d Phi_x = okvis::kinematics::crossMx(PhiVec);
-  const Eigen::Matrix3d Phi_x2 = Phi_x*Phi_x;
-  if(Phi < 1.0e-4) {
-    retMat += -0.5*Phi_x + 1.0/6.0*Phi_x2;
-  } else {
-    const double Phi2 = Phi*Phi;
-    const double Phi3 = Phi2*Phi;
-    retMat += -(1.0-cos(Phi))/(Phi2)*Phi_x + (Phi-sin(Phi))/Phi3*Phi_x2;
-  }
-  return retMat;
-}
-
 // Propagates pose, speeds and biases with given IMU measurements.
 int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS*/,
                                  const okvis::SpeedAndBias & speedAndBiases) const {
@@ -213,9 +197,9 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
         + 0.25 * (C + C_1) * acc_S_true * dt * dt;
 
     // Jacobian parts
-    dalpha_db_g_ += C_1 * rightJacobian(omega_S_true * dt) * dt;
+    dalpha_db_g_ += C_1 * okvis::kinematics::rightJacobian(omega_S_true * dt) * dt;
     const Eigen::Matrix3d cross_1 = dq.inverse().toRotationMatrix() * cross_
-        + rightJacobian(omega_S_true * dt) * dt;
+        + okvis::kinematics::rightJacobian(omega_S_true * dt) * dt;
     const Eigen::Matrix3d acc_S_x = okvis::kinematics::crossMx(acc_S_true);
     Eigen::Matrix3d dv_db_g_1 = dv_db_g_
         + 0.5 * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
@@ -426,7 +410,8 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
 
     // Jacobian parts
     dalpha_db_g += dt*C_1;
-    const Eigen::Matrix3d cross_1 = dq.inverse().toRotationMatrix()*cross + rightJacobian(omega_S_true*dt)*dt;
+    const Eigen::Matrix3d cross_1 = dq.inverse().toRotationMatrix()*cross +
+        okvis::kinematics::rightJacobian(omega_S_true*dt)*dt;
     const Eigen::Matrix3d acc_S_x = okvis::kinematics::crossMx(acc_S_true);
     Eigen::Matrix3d dv_db_g_1 = dv_db_g + 0.5*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
     dp_db_g += dt*dv_db_g + 0.25*dt*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
@@ -554,8 +539,13 @@ bool ImuError::EvaluateWithMinimalJacobians(double const* const * parameters,
 
   // call the propagation
   const double Delta_t = (t1_ - t0_).toSec();
-  Eigen::Matrix<double, 6, 1> Delta_b = speedAndBiases_0.tail<6>()
-      - speedAndBiases_ref_.tail<6>();
+  Eigen::Matrix<double, 6, 1> Delta_b;
+  // ensure unique access
+  {
+    std::lock_guard<std::mutex> lock(preintegrationMutex_);
+    Delta_b = speedAndBiases_0.tail<6>()
+          - speedAndBiases_ref_.tail<6>();
+  }
   redo_ = redo_ || (Delta_b.head<3>().norm() * Delta_t > 0.0001);
   if (redo_) {
     redoPreintegration(T_WS_0, speedAndBiases_0);

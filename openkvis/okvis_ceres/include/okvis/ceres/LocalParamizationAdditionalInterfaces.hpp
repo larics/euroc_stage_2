@@ -40,6 +40,7 @@
 #define INCLUDE_OKVIS_CERES_LOCALPARAMIZATIONADDITIONALINTERFACES_HPP_
 
 #include "ceres/ceres.h"
+#include <okvis/assert_macros.hpp>
 
 /// \brief okvis Main namespace of this package.
 namespace okvis {
@@ -68,6 +69,12 @@ class LocalParamizationAdditionalInterfaces {
   /// @param[out] jacobian the Jacobian (dimension minDim x dim).
   /// \return True on success.
   virtual bool ComputeLiftJacobian(const double* x, double* jacobian) const = 0;
+
+  /// \brief Verifies the correctness of an inplementation by means of numeric Jacobians.
+  /// @param[in] x_raw Linearisation point of the variable.
+  /// @param[in] purturbation_magnitude Magnitude of the delta used for numeric Jacobians.
+  /// \return True on success.
+  virtual bool verify(const double* x_raw, double purturbation_magnitude = 1.0e-6) const ;
 };
 
 }  // namespace ceres

@@ -97,7 +97,7 @@ std::shared_ptr<const GEOMETRY_T> Frame::geometryAs() const
 #ifndef NDEBUG
   OKVIS_ASSERT_TRUE(
       Exception, std::dynamic_pointer_cast<const GEOMETRY_T>(cameraGeometry_),
-      "incorrect pointer cast requested.");
+      "incorrect pointer cast requested. " << cameraGeometry_->distortionType());
   return std::static_pointer_cast<const GEOMETRY_T>(cameraGeometry_);
 #else
   return std::static_pointer_cast<const GEOMETRY_T>(cameraGeometry_);

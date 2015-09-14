@@ -99,7 +99,8 @@ class MultiFrame
   /// \brief Get the extrinsics of a camera
   /// @param[in] cameraIdx The camera index for which the extrinsics are queried.
   /// \return The extrinsics as T_SC.
-  inline std::shared_ptr<const okvis::kinematics::Transformation> T_SC(size_t cameraIdx) const;
+  inline std::shared_ptr<const okvis::kinematics::Transformation> T_SC(
+      size_t cameraIdx) const;
 
   //////////////////////////////////////////////////////////////
   /// \name The following mirror the Frame functionality.
@@ -220,13 +221,14 @@ class MultiFrame
   /// \brief provide keypoints externally
   /// @param[in] cameraIdx The camera index.
   /// @param[in] keypoints A vector of keyoints.
-    /// \return whether or not the operation was successful.
-  inline bool resetKeypoints(size_t cameraIdx, const std::vector<cv::KeyPoint> & keypoints);
+  /// \return whether or not the operation was successful.
+  inline bool resetKeypoints(size_t cameraIdx,
+                             const std::vector<cv::KeyPoint> & keypoints);
 
   /// \brief provide descriptors externally
   /// @param[in] cameraIdx The camera index.
   /// @param[in] descriptors A vector of descriptors.
-   /// \return whether or not the operation was successful.
+  /// \return whether or not the operation was successful.
   inline bool resetDescriptors(size_t cameraIdx, const cv::Mat & descriptors);
 
   /// \brief the number of keypoints
@@ -240,6 +242,26 @@ class MultiFrame
   /// \return The total number of keypoints.
   inline size_t numKeypoints() const;
 
+  /// \brief Get the overlap mask. Sorry for the weird syntax, but remember that
+  /// cv::Mat is essentially a shared pointer.
+  /// @param[in] cameraIndexSeenBy The camera index for one camera.
+  /// @param[in] cameraIndex The camera index for the other camera.
+  /// @return The overlap mask image.
+  inline const cv::Mat overlap(size_t cameraIndexSeenBy,
+                               size_t cameraIndex) const
+  {
+    return cameraSystem_.overlap(cameraIndexSeenBy, cameraIndex);
+  }
+
+  /// \brief Can the first camera see parts of the FOV of the second camera?
+  /// @param[in] cameraIndexSeenBy The camera index for one camera.
+  /// @param[in] cameraIndex The camera index for the other camera.
+  /// @return True, if there is at least one pixel of overlap.
+  inline bool hasOverlap(size_t cameraIndexSeenBy, size_t cameraIndex) const
+  {
+    return cameraSystem_.hasOverlap(cameraIndexSeenBy, cameraIndex);
+  }
+
  protected:
   okvis::Time timestamp_;  ///< the frame timestamp
   uint64_t id_;  ///< the frame id
@@ -247,7 +269,7 @@ class MultiFrame
   cameras::NCameraSystem cameraSystem_;  ///< the camera system
 };
 
-typedef std::shared_ptr<MultiFrame> MultiFramePtr; ///< For convenience.
+typedef std::shared_ptr<MultiFrame> MultiFramePtr;  ///< For convenience.
 
 }  // namespace okvis
 

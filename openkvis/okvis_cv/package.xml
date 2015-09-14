@@ -14,5 +14,4 @@
   <depend>okvis_util</depend>
   <depend>brisk</depend>
   <depend>opencv2_catkin</depend>
-  
 </package>

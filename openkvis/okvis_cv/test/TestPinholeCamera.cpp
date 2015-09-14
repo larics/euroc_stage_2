@@ -37,6 +37,7 @@
 #include "okvis/cameras/PinholeCamera.hpp"
 #include "okvis/cameras/NoDistortion.hpp"
 #include "okvis/cameras/RadialTangentialDistortion.hpp"
+#include "okvis/cameras/RadialTangentialDistortion8.hpp"
 #include "okvis/cameras/EquidistantDistortion.hpp"
 
 TEST(PinholeCamera, functions)
@@ -52,6 +53,8 @@ TEST(PinholeCamera, functions)
           okvis::cameras::RadialTangentialDistortion>::createTestObject());
   cameras.push_back(
       okvis::cameras::PinholeCamera<okvis::cameras::EquidistantDistortion>::createTestObject());
+  cameras.push_back(
+      okvis::cameras::PinholeCamera<okvis::cameras::RadialTangentialDistortion8>::createTestObject());
 
   for (size_t c = 0; c < cameras.size(); ++c) {
     //std::cout << "Testing " << cameras.at(c)->type() << std::endl;

@@ -122,6 +122,7 @@ struct DepthCameraData {
 struct PositionReading {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Eigen::Vector3d position;           ///< Position measurement.
+  Eigen::Vector3d positionOffset;     ///< Position offset.
   Eigen::Matrix3d positionCovariance; ///< Measurement covariance.
 };
 

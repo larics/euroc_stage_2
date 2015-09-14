@@ -110,7 +110,7 @@ class VioParametersReader{
   struct CameraCalibration {
     okvis::kinematics::Transformation T_SC;   ///< Transformation from camera to sensor (IMU) frame.
     Eigen::Vector2d imageDimension;           ///< Image dimension. [pixels]
-    Eigen::Vector4d distortionCoefficients;   ///< Distortion Coefficients.
+    Eigen::VectorXd distortionCoefficients;   ///< Distortion Coefficients.
     Eigen::Vector2d focalLength;              ///< Focal length.
     Eigen::Vector2d principalPoint;           ///< Principal point.
     std::string distortionType;               ///< Distortion type. ('radialtangential' 'plumb_bob' 'equdistant')

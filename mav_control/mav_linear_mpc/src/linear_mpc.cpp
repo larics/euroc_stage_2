@@ -289,6 +289,10 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
     yaw_command_queue_.push_back(last_yaw_in_queue);
   }
 
+  command_trajectory_.position_W = position_command_queue_.front();
+  command_trajectory_.velocity_W = velocity_command_queue_.front();
+  command_trajectory_.setFromYaw(yaw_command_queue_.front());
+
   Eigen::VectorXd target_state(state_size_);
   Eigen::VectorXd target_input(input_size_);
   Eigen::VectorXd reference(6);
@@ -417,7 +421,7 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
 
 #ifdef UseCVXGENSolver
   if(CVXGEN_queue_.empty()) {
-    for (int i = 0; i < PREDICTION_HORIZON; i++) {
+    for (int i = 0; i < PREDICTION_HORIZON - 1; i++) {
       reference << position_command_queue_.front(), velocity_command_queue_.front();
       position_command_queue_.pop_front();
       velocity_command_queue_.pop_front();
@@ -427,6 +431,12 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
 
       CVXGEN_queue_.push_back(target_state);
     }
+    reference << position_command_queue_.front(), velocity_command_queue_.front();
+
+    steady_state_calculation_->ComputeSteadyState(estimated_disturbances, reference,
+        &target_state, &target_input);
+
+    CVXGEN_queue_.push_back(target_state);
   } else {
 
     if(position_command_queue_.size() < 1) {

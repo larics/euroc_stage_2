@@ -48,7 +48,9 @@ class CommonDataPublisher {
   ros::NodeHandle private_nh_;
 
   ros::Publisher gps_pub_;
-  ros::Publisher imu_pub_; ///< publisher for sensor_msgs/Imu message
+  ros::Publisher imu_pub_; ///< publisher for sensor_msgs/Imu message. IMU measurements combined from all 3 trinities.
+  ros::Publisher imu_pub_raw_; ///< publisher for sensor_msgs/Imu message. Raw IMU measurements.
+  ros::Publisher imu_pub_nav1_; ///< publisher for sensor_msgs/Imu message. IMU measurements from NAV1 only.
   ros::Publisher motors_pub_; ///< publisher for motor message
   ros::Publisher motors_cmd_pub_; ///< publisher for commanded motor message
   ros::Publisher rc_pub_;
@@ -62,6 +64,10 @@ class CommonDataPublisher {
   aci::Variable<aci::VariableQuaternion> attitude_;
   aci::Variable<aci::VariableVector3f> angular_velocity_;
   aci::Variable<aci::VariableVector3f> acceleration_;
+  aci::Variable<aci::VariableVector3i> angular_velocity_raw_;
+  aci::Variable<aci::VariableVector3i> acceleration_raw_;
+  aci::Variable<aci::VariableVector3f> angular_velocity_nav1_;
+  aci::Variable<aci::VariableVector3f> acceleration_nav1_;
 
   aci::Variable<aci::VariableFloat> air_pressure_;
   aci::Variable<aci::VariableVector3f> magnetic_field_;
@@ -70,6 +76,8 @@ class CommonDataPublisher {
   aci::Variable<aci::VariableUint16> motor_speed_measured_[kNumberOfRotors];
   aci::Variable<aci::VariableUint16> motor_speed_commanded_[kNumberOfRotors];
   bool publish_commanded_motor_speeds_;
+  bool publish_raw_imu_;
+  bool publish_nav1_imu_;
 
   aci::Variable<aci::VariableUint8> rc_data_lock_;
   aci::Variable<aci::VariableInt16> rc_roll_;

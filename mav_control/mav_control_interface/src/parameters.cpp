@@ -20,8 +20,8 @@
 namespace mav_control_interface {
 
 constexpr double Parameters::kDefaultStickDeadzone;
-constexpr double Parameters::kDefaultRcTeleopMaxCarrotDistance;
-constexpr double Parameters::kDefaultRcTeleopMaxVelocity;
+constexpr double Parameters::kDefaultRcTeleopMaxCarrotDistancePosition;
+constexpr double Parameters::kDefaultRcTeleopMaxCarrotDistanceYaw;
 constexpr double Parameters::kDefaultRcMaxRollPitchCommand;
 constexpr double Parameters::kDefaultRcMaxYawRateCommand;
 constexpr double Parameters::kDefaultTakeoffDistance;

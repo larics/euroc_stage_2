@@ -54,6 +54,7 @@
 #include <okvis/cameras/PinholeCamera.hpp>
 #include <okvis/cameras/EquidistantDistortion.hpp>
 #include <okvis/cameras/RadialTangentialDistortion.hpp>
+#include <okvis/cameras/RadialTangentialDistortion8.hpp>
 
 // Kneip RANSAC
 #include <boost/shared_ptr.hpp>
@@ -125,25 +126,14 @@ bool Frontend::dataAssociationAndInitialization(
   // decide keyframe
   // left-right stereo match & init
 
-  // find distortiontype
-  bool isRadialTangential = false;
-  bool isEquidistant = false;
-  for (size_t i = 0; i < params.nCameraSystem.numCameras(); ++i) {
-    if (params.nCameraSystem.distortionType(i)
-        == okvis::cameras::NCameraSystem::Equidistant) {
-      OKVIS_ASSERT_TRUE(Exception, !isRadialTangential,
-                        "mixed frame types are not supported yet");
-      isEquidistant = true;
-    } else if (params.nCameraSystem.distortionType(i)
-        == okvis::cameras::NCameraSystem::RadialTangential) {
-      OKVIS_ASSERT_TRUE(Exception, !isEquidistant,
-                        "mixed frame types are not supported yet");
-      isRadialTangential = true;
-    } else {
-      OKVIS_THROW(Exception, "Unsupported frame type");
-    }
+  // find distortion type
+  okvis::cameras::NCameraSystem::DistortionType distortionType = params.nCameraSystem
+      .distortionType(0);
+  for (size_t i = 1; i < params.nCameraSystem.numCameras(); ++i) {
+    OKVIS_ASSERT_TRUE(Exception,
+                      distortionType == params.nCameraSystem.distortionType(i),
+                      "mixed frame types are not supported yet");
   }
-
   int num3dMatches = 0;
 
   // first frame? (did do addStates before, so 1 frame minimum in estimator)
@@ -156,20 +146,38 @@ bool Frontend::dataAssociationAndInitialization(
 
     // match to last keyframe
     TimerSwitchable matchKeyframesTimer("2.4.1 matchToKeyframes");
-    if (isRadialTangential)
-      num3dMatches = matchToKeyframes<
-          VioKeyframeWindowMatchingAlgorithm<
-              okvis::cameras::PinholeCamera<
-                  okvis::cameras::RadialTangentialDistortion> > >(
-          estimator, params, framesInOut->id(), rotationOnly, false,
-          &uncertainMatchFraction);
-    else
-      num3dMatches = matchToKeyframes<
-          VioKeyframeWindowMatchingAlgorithm<
-              okvis::cameras::PinholeCamera<
-                  okvis::cameras::EquidistantDistortion> > >(
-          estimator, params, framesInOut->id(), rotationOnly, false,
-          &uncertainMatchFraction);
+    switch (distortionType) {
+      case okvis::cameras::NCameraSystem::RadialTangential: {
+        num3dMatches = matchToKeyframes<
+            VioKeyframeWindowMatchingAlgorithm<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::RadialTangentialDistortion> > >(
+            estimator, params, framesInOut->id(), rotationOnly, false,
+            &uncertainMatchFraction);
+        break;
+      }
+      case okvis::cameras::NCameraSystem::Equidistant: {
+        num3dMatches = matchToKeyframes<
+            VioKeyframeWindowMatchingAlgorithm<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::EquidistantDistortion> > >(
+            estimator, params, framesInOut->id(), rotationOnly, false,
+            &uncertainMatchFraction);
+        break;
+      }
+      case okvis::cameras::NCameraSystem::RadialTangential8: {
+        num3dMatches = matchToKeyframes<
+            VioKeyframeWindowMatchingAlgorithm<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::RadialTangentialDistortion8> > >(
+            estimator, params, framesInOut->id(), rotationOnly, false,
+            &uncertainMatchFraction);
+        break;
+      }
+      default:
+        OKVIS_THROW(Exception, "Unsupported distortion type.")
+        break;
+    }
     matchKeyframesTimer.stop();
     if (!isInitialized_) {
       if (!rotationOnly) {
@@ -187,37 +195,74 @@ bool Frontend::dataAssociationAndInitialization(
 
     // match to last frame
     TimerSwitchable matchToLastFrameTimer("2.4.2 matchToLastFrame");
-    if (isRadialTangential)
-      matchToLastFrame<
-          VioKeyframeWindowMatchingAlgorithm<
-              okvis::cameras::PinholeCamera<
-                  okvis::cameras::RadialTangentialDistortion> > >(
-          estimator, params, framesInOut->id(),
-          false);
-    else
-      matchToLastFrame<
-          VioKeyframeWindowMatchingAlgorithm<
-              okvis::cameras::PinholeCamera<
-                  okvis::cameras::EquidistantDistortion> > >(estimator, params,
-                                                             framesInOut->id(),
-                                                             false);
+    switch (distortionType) {
+      case okvis::cameras::NCameraSystem::RadialTangential: {
+        matchToLastFrame<
+            VioKeyframeWindowMatchingAlgorithm<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::RadialTangentialDistortion> > >(
+            estimator, params, framesInOut->id(),
+            false);
+        break;
+      }
+      case okvis::cameras::NCameraSystem::Equidistant: {
+        matchToLastFrame<
+            VioKeyframeWindowMatchingAlgorithm<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::EquidistantDistortion> > >(
+            estimator, params, framesInOut->id(),
+            false);
+        break;
+      }
+      case okvis::cameras::NCameraSystem::RadialTangential8: {
+        matchToLastFrame<
+            VioKeyframeWindowMatchingAlgorithm<
+                okvis::cameras::PinholeCamera<
+                    okvis::cameras::RadialTangentialDistortion8> > >(
+            estimator, params, framesInOut->id(),
+            false);
+
+        break;
+      }
+      default:
+        OKVIS_THROW(Exception, "Unsupported distortion type.")
+        break;
+    }
     matchToLastFrameTimer.stop();
   } else
     *asKeyframe = true;  // first frame needs to be keyframe
 
   // do stereo match to get new landmarks
   TimerSwitchable matchStereoTimer("2.4.3 matchStereo");
-  if (isRadialTangential)
-    matchStereo<
-        VioKeyframeWindowMatchingAlgorithm<
-            okvis::cameras::PinholeCamera<
-                okvis::cameras::RadialTangentialDistortion> > >(estimator,
-                                                                framesInOut);
-  else
-    matchStereo<
-        VioKeyframeWindowMatchingAlgorithm<
-            okvis::cameras::PinholeCamera<okvis::cameras::EquidistantDistortion> > >(
-        estimator, framesInOut);
+  switch (distortionType) {
+    case okvis::cameras::NCameraSystem::RadialTangential: {
+      matchStereo<
+          VioKeyframeWindowMatchingAlgorithm<
+              okvis::cameras::PinholeCamera<
+                  okvis::cameras::RadialTangentialDistortion> > >(estimator,
+                                                                  framesInOut);
+      break;
+    }
+    case okvis::cameras::NCameraSystem::Equidistant: {
+      matchStereo<
+          VioKeyframeWindowMatchingAlgorithm<
+              okvis::cameras::PinholeCamera<
+                  okvis::cameras::EquidistantDistortion> > >(estimator,
+                                                             framesInOut);
+      break;
+    }
+    case okvis::cameras::NCameraSystem::RadialTangential8: {
+      matchStereo<
+          VioKeyframeWindowMatchingAlgorithm<
+              okvis::cameras::PinholeCamera<
+                  okvis::cameras::RadialTangentialDistortion8> > >(estimator,
+                                                                   framesInOut);
+      break;
+    }
+    default:
+      OKVIS_THROW(Exception, "Unsupported distortion type.")
+      break;
+  }
   matchStereoTimer.stop();
 
   return true;
@@ -481,7 +526,12 @@ void Frontend::matchStereo(okvis::Estimator& estimator,
   for (size_t im0 = 0; im0 < camNumber; im0++) {
     for (size_t im1 = im0 + 1; im1 < camNumber; im1++) {
       // first, check the possibility for overlap
-      // FIXME: implement this in the Multiframe...!! assume overlap for now.
+      // FIXME: implement this in the Multiframe...!!
+
+      // check overlap
+      if(!multiFrame->hasOverlap(im0, im1)){
+        continue;
+      }
 
       MATCHING_ALGORITHM matchingAlgorithm(estimator,
                                            MATCHING_ALGORITHM::Match2D2D,
