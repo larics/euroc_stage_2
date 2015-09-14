@@ -35,6 +35,10 @@ const static uint32_t ACI_USER_VAR_IMU_W = 0x012; //VARTYPE_VECTOR_3F; rotationa
 const static uint32_t ACI_USER_VAR_IMU_ACC = 0x013; //VARTYPE_VECTOR_3F; accelerations im m/s^2 in vehicle frame
 const static uint32_t ACI_USER_VAR_IMU_BAROMETRICHEIGHT = 0x014; //VARTYPE_FLOAT; baro height in m
 const static uint32_t ACI_USER_VAR_IMU_M = 0x015; //VARTYPE_VECTOR_3F; magnetic field. 1.0=48uT
+const static uint32_t ACI_USER_VAR_IMU_W_NAV1 = 0x02C; //VARTYPE_VECTOR_3F; rotational speeds in radians/s
+const static uint32_t ACI_USER_VAR_IMU_ACC_NAV1 = 0x02D; //VARTYPE_VECTOR_3F; accelerations im m/s^2 in vehicle frame
+const static uint32_t ACI_USER_VAR_IMU_BAROMETRICHEIGHT_NAV1 = 0x02E; //VARTYPE_FLOAT; baro height in m
+const static uint32_t ACI_USER_VAR_IMU_M_NAV1 = 0x02F; //VARTYPE_VECTOR_3F; magnetic field. 1.0=48uT
 const static uint32_t ACI_USER_VAR_IMU_RAW_GYRO = 0x016; //VARTYPE_VECTOR_3I; raw gyro values
 const static uint32_t ACI_USER_VAR_IMU_RAW_ACC = 0x017; //VARTYPE_VECTOR_3I; raw acc values
 const static uint32_t ACI_USER_VAR_IMU_RAW_ACC_ALT = 0x018; //VARTYPE_VECTOR_3I; raw alternate acc sensor
