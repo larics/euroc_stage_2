@@ -257,10 +257,8 @@ private:
     template<class FSM>
     void on_entry(const RcUpdate& evt, FSM& fsm)
     {
-      last_iteration_time_ = evt.rc_data.timestamp;
       fsm.PublishStateInfo("RcTeleOp");
     }
-    ros::Time last_iteration_time_;
   };
 
   // Actions
@@ -328,15 +326,60 @@ private:
 
   struct SetReferenceFromRc
   {
+    double YawWrap(double yaw)
+    {
+      if (yaw > M_PI) {
+        return yaw -= 2.0 * M_PI;
+      }
+      else if (yaw < -M_PI) {
+        return yaw += 2.0 * M_PI;
+      }
+      return yaw;
+    }
+
+    template<class FSM>
+    void ComputeStickToCarrotMapping(const FSM& fsm, const RcData& rc_data, mav_msgs::EigenTrajectoryPoint* carrot)
+    {
+      assert(carrot != nullptr);
+
+      const Parameters& p = fsm.parameters_;
+
+      const mav_msgs::EigenOdometry& current_state = fsm.current_state_;
+
+      Eigen::Vector3d stick_position;
+      stick_position.x() = p.stick_deadzone_(rc_data.right_up_down);
+      stick_position.y() = p.stick_deadzone_(-rc_data.right_side);
+      stick_position.z() = p.stick_deadzone_(rc_data.left_up_down);
+      const double stick_yaw = p.stick_deadzone_(-rc_data.left_side);
+
+      const double stick_position_norm = stick_position.norm();
+      if (stick_position_norm > 1.0) {
+        stick_position = stick_position / stick_position_norm;
+      }
+
+      const double yaw = mav_msgs::yawFromQuaternion(current_state.orientation_W_B);
+      Eigen::Vector3d carrot_position = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) * stick_position
+          * p.rc_teleop_max_carrot_distance_position_;
+
+      carrot->position_W = carrot_position;
+      //carrot->velocity_W = carrot_position; // TODO(acmarkus): this may need tuning.
+
+      const double carrot_yaw = stick_yaw * p.rc_teleop_max_carrot_distance_yaw_;
+      carrot->setFromYaw(carrot_yaw);
+    }
+
     template<class FSM>
     void operator()(const RcUpdate& evt, FSM& fsm, HaveOdometry& src_state, RcTeleOp&)
     {
       const Parameters& p = fsm.parameters_;
       const RcData& rc_data = evt.rc_data;
+      const mav_msgs::EigenOdometry& current_state = fsm.current_state_;
+
       mav_msgs::EigenTrajectoryPoint new_reference;
-      new_reference.position_W = fsm.current_state_.position_W;
-      new_reference.setFromYaw(mav_msgs::yawFromQuaternion(fsm.current_state_.orientation_W_B));
-      new_reference.position_W.z() += p.stick_deadzone_(rc_data.left_up_down);
+
+      ComputeStickToCarrotMapping(fsm, rc_data, &new_reference);
+      new_reference.position_W += current_state.position_W;
+      new_reference.setFromYaw(YawWrap(new_reference.getYaw() + current_state.getYaw()));
 
       fsm.current_reference_queue_.clear();
       fsm.current_reference_queue_.push_back(new_reference);
@@ -346,55 +389,42 @@ private:
     template<class FSM>
     void operator()(const RcUpdate& evt, FSM& fsm, RcTeleOp& src_state, RcTeleOp&)
     {
-      const double dt = (evt.rc_data.timestamp - src_state.last_iteration_time_).toSec();
+      if (fsm.current_reference_queue_.empty()){
+        ROS_WARN("[RcTeleOp]: current reference queue is empty, not sending commands.");
+        return;
+      }
 
       const Parameters& p = fsm.parameters_;
       const RcData& rc_data = evt.rc_data;
 
-      mav_msgs::EigenTrajectoryPoint new_reference;
+      const mav_msgs::EigenOdometry& current_state = fsm.current_state_;
+      mav_msgs::EigenTrajectoryPoint new_reference, carrot;
       mav_msgs::EigenTrajectoryPoint current_reference = fsm.current_reference_queue_.front();
 
-      Eigen::Vector3d stick_position;
-      stick_position.x() = p.stick_deadzone_(rc_data.right_up_down);
-      stick_position.y() = p.stick_deadzone_(-rc_data.right_side);
-      stick_position.z() = p.stick_deadzone_(rc_data.left_up_down);
+      ComputeStickToCarrotMapping(fsm, rc_data, &carrot);
 
-      const double yaw = mav_msgs::yawFromQuaternion(fsm.current_state_.orientation_W_B);
-      Eigen::Vector3d desired_velocities = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) * stick_position;
-      desired_velocities *= p.rc_teleop_max_velocity_;
-      const double absolute_velocity = desired_velocities.norm();
-      if (absolute_velocity > p.rc_teleop_max_velocity_) {
-        desired_velocities = desired_velocities / absolute_velocity * p.rc_teleop_max_velocity_;
+      // We only set the new reference for the respective axis, if the stick is outside the deadzone.
+      new_reference.position_W = current_reference.position_W;
+      new_reference.orientation_W_B = current_reference.orientation_W_B;
+      constexpr double eps = 1.0e-6;
+      if (std::abs(carrot.position_W.x()) > eps) {
+        new_reference.position_W.x() = current_state.position_W.x() + carrot.position_W.x();
+        new_reference.velocity_W.x() = carrot.velocity_W.x();
       }
-
-      Eigen::Vector3d candidate_reference_position = current_reference.position_W + desired_velocities * dt;
-      const double distance_to_current_position = (candidate_reference_position
-          - fsm.current_state_.position_W).norm();
-      if (distance_to_current_position > p.rc_teleop_max_carrot_distance_) {
-        new_reference.position_W = current_reference.position_W;
-        ROS_WARN_THROTTLE(1, "New position reference is to far (%f m) away from the current position.",
-                          distance_to_current_position);
+      if (std::abs(carrot.position_W.y()) > eps) {
+        new_reference.position_W.y() = current_state.position_W.y() + carrot.position_W.y();
+        new_reference.velocity_W.y() = carrot.velocity_W.y();
       }
-      else {
-        new_reference.position_W = candidate_reference_position;
+      if (std::abs(carrot.position_W.z()) > eps) {
+        new_reference.position_W.z() = current_state.position_W.z() + carrot.position_W.z();
+        new_reference.velocity_W.z() = carrot.velocity_W.z();
       }
 
-      double new_yaw = current_reference.getYaw()
-          + p.stick_deadzone_(-rc_data.left_side) * p.rc_max_yaw_rate_command_ * dt;
-      if (new_yaw > M_PI) {
-        new_yaw -= 2.0 * M_PI;
-      }
-      else if (new_yaw < -M_PI) {
-        new_yaw += 2.0 * M_PI;
-      }
-
-      new_reference.setFromYaw(new_yaw);
+      new_reference.setFromYaw(YawWrap(carrot.getYaw() + current_state.getYaw()));
 
       fsm.current_reference_queue_.clear();
       fsm.current_reference_queue_.push_back(new_reference);
       fsm.controller_->setReference(new_reference);
-
-      src_state.last_iteration_time_ = evt.rc_data.timestamp;
     }
   };
 
