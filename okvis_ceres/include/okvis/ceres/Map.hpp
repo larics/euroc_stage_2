@@ -97,11 +97,12 @@ class Map {
   typedef std::vector<ResidualBlockSpec> ResidualBlockCollection;
   typedef std::vector<ParameterBlockSpec> ParameterBlockCollection;
 
-  /// @brief The Parameterization enum
+  /// @brief The Parameterisation enum
   enum Parameterization {
     HomogeneousPoint,     ///< Use okvis::ceres::HomogeneousPointLocalParameterization.
     Pose6d,               ///< Use okvis::ceres::PoseLocalParameterization.
-    Pose3d,               ///< Use okvis::ceres::PoseLocalParameterization3d (position varying).
+    Pose3d,               ///< Use okvis::ceres::PoseLocalParameterization3d (orientation varying).
+    Pose4d,               ///< Use okvis::ceres::PoseLocalParameterization4d (position and yaw varying).
     Pose2d,               ///< Use okvis::ceres::PoseLocalParameterization2d (roll/pitch varying).
     Trivial               ///< No local parameterisation.
   };
@@ -411,6 +412,9 @@ class Map {
 
   /// \brief Store parameterisation locally.
   okvis::ceres::PoseLocalParameterization3d poseLocalParameterization3d_;
+
+  /// \brief Store parameterisation locally.
+  okvis::ceres::PoseLocalParameterization4d poseLocalParameterization4d_;
 
 };
 

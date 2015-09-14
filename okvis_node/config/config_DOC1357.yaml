@@ -82,7 +82,7 @@ imageDelay: 0.0 # -0.0055 without Joern's awesome synchronization, 0 otherwise
 displayImages: true
 
 # use direct driver
-useDriver: false
+useDriver: true
 
 # save optimization to disk
 saveGraphs: false

@@ -172,7 +172,7 @@ bool Estimator::addStates(
   if(statesMap_.empty())
   {
     referencePoseId_ = states.id; // set this as reference pose
-    if (!mapPtr_->addParameterBlock(poseParameterBlock,ceres::Map::Pose2d)) {
+    if (!mapPtr_->addParameterBlock(poseParameterBlock,ceres::Map::Pose3d)) {
       return false;
     }
   } else {
@@ -237,6 +237,11 @@ bool Estimator::addStates(
   // depending on whether or not this is the very beginning, we will add priors or relative terms to the last state:
   if (statesMap_.size() == 1) {
     // let's add a prior
+    Eigen::Matrix<double,6,6> information = Eigen::Matrix<double,6,6>::Zero();
+    information(5,5) = 1.0e6;
+    std::shared_ptr<ceres::PoseError > poseError(new ceres::PoseError(T_WS, information));
+    /*auto id2= */ mapPtr_->addResidualBlock(poseError,NULL,poseParameterBlock);
+    //mapPtr_->isJacobianCorrect(id2,1.0e-6);
 
     // sensor states
     for (size_t i = 0; i < extrinsicsEstimationParametersVec_.size(); ++i) {
@@ -559,7 +564,12 @@ bool Estimator::applyMarginalizationStrategy(
     // add remaing error terms
     ceres::Map::ResidualBlockCollection residuals = mapPtr_->residuals(
         it->second.global[GlobalStates::T_WS].id);
+
     for (size_t r = 0; r < residuals.size(); ++r) {
+      if(std::dynamic_pointer_cast<ceres::PoseError>(
+           residuals[r].errorInterfacePtr)){ // avoids linearising initial pose error
+        continue;
+      }
       std::shared_ptr<ceres::ReprojectionErrorBase> reprojectionError =
           std::dynamic_pointer_cast<ceres::ReprojectionErrorBase>(
           residuals[r].errorInterfacePtr);

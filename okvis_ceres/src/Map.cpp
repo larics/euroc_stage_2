@@ -331,6 +331,13 @@ bool Map::addParameterBlock(
       parameterBlock->setLocalParameterizationPtr(&poseLocalParameterization3d_);
       break;
     }
+    case Parameterization::Pose4d: {
+      problem_->AddParameterBlock(parameterBlock->parameters(),
+                                  parameterBlock->dimension(),
+                                  &poseLocalParameterization4d_);
+      parameterBlock->setLocalParameterizationPtr(&poseLocalParameterization4d_);
+      break;
+    }
     case Parameterization::Pose2d: {
       problem_->AddParameterBlock(parameterBlock->parameters(),
                                   parameterBlock->dimension(),
@@ -343,6 +350,14 @@ bool Map::addParameterBlock(
       break;  // just for consistency...
     }
   }
+
+  /*const okvis::ceres::LocalParamizationAdditionalInterfaces* ptr =
+      dynamic_cast<const okvis::ceres::LocalParamizationAdditionalInterfaces*>(
+      parameterBlock->localParameterizationPtr());
+  if(ptr)
+    std::cout<<"verify local size "<< parameterBlock->localParameterizationPtr()->LocalSize() << " = "<<
+            int(ptr->verify(parameterBlock->parameters()))<<
+            std::endl;*/
 
   return true;
 }

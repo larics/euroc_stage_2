@@ -52,6 +52,7 @@
 #include <okvis/cameras/PinholeCamera.hpp>
 #include <okvis/cameras/EquidistantDistortion.hpp>
 #include <okvis/cameras/RadialTangentialDistortion.hpp>
+#include <okvis/cameras/RadialTangentialDistortion8.hpp>
 
 /// \brief okvis Main namespace of this package.
 namespace okvis {
@@ -98,23 +99,13 @@ cv::Mat VioVisualizer::drawMatches(VisualizationData::Ptr& data,
   okvis::kinematics::Transformation lastKeyframeT_CW = parameters_.nCameraSystem
       .T_SC(image_number)->inverse() * data->T_WS_keyFrame.inverse();
 
-  // find distortiontype
-  bool isRadialTangential = false;
-  bool isEquidistant = false;
-  for (size_t i = 0; i < parameters_.nCameraSystem.numCameras(); ++i) {
-    if (parameters_.nCameraSystem.distortionType(i)
-        == okvis::cameras::NCameraSystem::Equidistant) {
-      OKVIS_ASSERT_TRUE(Exception, !isRadialTangential,
-                        "mixed frame types are not supported yet");
-      isEquidistant = true;
-    } else if (parameters_.nCameraSystem.distortionType(i)
-        == okvis::cameras::NCameraSystem::RadialTangential) {
-      OKVIS_ASSERT_TRUE(Exception, !isEquidistant,
-                        "mixed frame types are not supported yet");
-      isRadialTangential = true;
-    } else {
-      OKVIS_THROW(Exception, "Unsupported frame type");
-    }
+  // find distortion type
+  okvis::cameras::NCameraSystem::DistortionType distortionType = parameters_.nCameraSystem
+      .distortionType(0);
+  for (size_t i = 1; i < parameters_.nCameraSystem.numCameras(); ++i) {
+    OKVIS_ASSERT_TRUE(Exception,
+                      distortionType == parameters_.nCameraSystem.distortionType(i),
+                      "mixed frame types are not supported yet");
   }
 
   for (auto it = data->observations.begin(); it != data->observations.end();
@@ -142,22 +133,40 @@ cv::Mat VioVisualizer::drawMatches(VisualizationData::Ptr& data,
       Eigen::Vector2d keyframePt;
       bool isVisibleInKeyframe = false;
       Eigen::Vector4d hP_C = lastKeyframeT_CW * hPoint;
-      if (isRadialTangential) {
-        if (frame
-            ->geometryAs<
-                okvis::cameras::PinholeCamera<
-                    okvis::cameras::RadialTangentialDistortion>>(image_number)
-            ->projectHomogeneous(hP_C, &keyframePt)
-            == okvis::cameras::CameraBase::ProjectionStatus::Successful)
-          isVisibleInKeyframe = true;
-      } else if (isEquidistant) {
-        if (frame
-            ->geometryAs<
-                okvis::cameras::PinholeCamera<
-                    okvis::cameras::EquidistantDistortion>>(image_number)
-            ->projectHomogeneous(hP_C, &keyframePt)
-            == okvis::cameras::CameraBase::ProjectionStatus::Successful)
-          isVisibleInKeyframe = true;
+      switch (distortionType) {
+        case okvis::cameras::NCameraSystem::RadialTangential: {
+          if (frame
+              ->geometryAs<
+                  okvis::cameras::PinholeCamera<
+                      okvis::cameras::RadialTangentialDistortion>>(image_number)
+              ->projectHomogeneous(hP_C, &keyframePt)
+              == okvis::cameras::CameraBase::ProjectionStatus::Successful)
+            isVisibleInKeyframe = true;
+          break;
+        }
+        case okvis::cameras::NCameraSystem::Equidistant: {
+          if (frame
+              ->geometryAs<
+                  okvis::cameras::PinholeCamera<
+                      okvis::cameras::EquidistantDistortion>>(image_number)
+              ->projectHomogeneous(hP_C, &keyframePt)
+              == okvis::cameras::CameraBase::ProjectionStatus::Successful)
+            isVisibleInKeyframe = true;
+          break;
+        }
+        case okvis::cameras::NCameraSystem::RadialTangential8: {
+          if (frame
+              ->geometryAs<
+                  okvis::cameras::PinholeCamera<
+                      okvis::cameras::RadialTangentialDistortion8>>(
+              image_number)->projectHomogeneous(hP_C, &keyframePt)
+              == okvis::cameras::CameraBase::ProjectionStatus::Successful)
+            isVisibleInKeyframe = true;
+          break;
+        }
+        default:
+          OKVIS_THROW(Exception, "Unsupported distortion type.")
+          break;
       }
       if (fabs(hP_C[3]) > 1.0e-8) {
         if (hP_C[2] / hP_C[3] < 0.4) {

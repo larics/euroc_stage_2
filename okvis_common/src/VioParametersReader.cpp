@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- *
+ * 
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -46,6 +46,7 @@
 #include <okvis/cameras/PinholeCamera.hpp>
 #include <okvis/cameras/EquidistantDistortion.hpp>
 #include <okvis/cameras/RadialTangentialDistortion.hpp>
+#include <okvis/cameras/RadialTangentialDistortion8.hpp>
 
 #include <opencv2/core/core.hpp>
 
@@ -319,6 +320,33 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
       s << calibrations[i].T_SC.T();
       LOG(INFO) << "Radial tangential pinhole camera " << camIdx
                 << " with T_SC=\n" << s.str();
+    } else if (strcmp(calibrations[i].distortionType.c_str(), "radialtangential8") == 0
+               || strcmp(calibrations[i].distortionType.c_str(), "plumb_bob8") == 0) {
+      vioParameters_.nCameraSystem.addCamera(
+          T_SC_okvis_ptr,
+          std::shared_ptr<const okvis::cameras::CameraBase>(
+              new okvis::cameras::PinholeCamera<
+                  okvis::cameras::RadialTangentialDistortion8>(
+                  calibrations[i].imageDimension[0],
+                  calibrations[i].imageDimension[1],
+                  calibrations[i].focalLength[0],
+                  calibrations[i].focalLength[1],
+                  calibrations[i].principalPoint[0],
+                  calibrations[i].principalPoint[1],
+                  okvis::cameras::RadialTangentialDistortion8(
+                    calibrations[i].distortionCoefficients[0],
+                    calibrations[i].distortionCoefficients[1],
+                    calibrations[i].distortionCoefficients[2],
+                    calibrations[i].distortionCoefficients[3],
+                    calibrations[i].distortionCoefficients[4],
+                    calibrations[i].distortionCoefficients[5],
+                    calibrations[i].distortionCoefficients[6],
+                    calibrations[i].distortionCoefficients[7])/*, id ?*/)),
+          okvis::cameras::NCameraSystem::RadialTangential8/*, computeOverlaps ?*/);
+      std::stringstream s;
+      s << calibrations[i].T_SC.T();
+      LOG(INFO) << "Radial tangential 8 pinhole camera " << camIdx
+                << " with T_SC=\n" << s.str();
     } else {
       LOG(ERROR) << "unrecognized distortion type " << calibrations[i].distortionType;
     }
@@ -503,8 +531,10 @@ bool VioParametersReader::getCalibrationViaConfig(
       calib.T_SC = okvis::kinematics::Transformation(T_SC);
 
       calib.imageDimension << imageDimensionNode[0], imageDimensionNode[1];
-      calib.distortionCoefficients << distortionCoefficientNode[0], distortionCoefficientNode[1],
-                                      distortionCoefficientNode[2], distortionCoefficientNode[3];
+      calib.distortionCoefficients.resize(distortionCoefficientNode.size());
+      for(size_t i=0; i<distortionCoefficientNode.size(); ++i) {
+        calib.distortionCoefficients[i] = distortionCoefficientNode[i];
+      }
       calib.focalLength << focalLengthNode[0], focalLengthNode[1];
       calib.principalPoint << principalPointNode[0], principalPointNode[1];
       calib.distortionType = (std::string)((*it)["distortion_type"]);

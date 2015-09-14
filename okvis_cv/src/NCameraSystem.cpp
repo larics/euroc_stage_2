@@ -39,6 +39,7 @@
  */
 
 #include "okvis/cameras/NCameraSystem.hpp"
+#include <opencv2/highgui/highgui.hpp>
 
 /// \brief okvis Main namespace of this package.
 namespace okvis {
@@ -72,7 +73,7 @@ void NCameraSystem::computeOverlaps()
       } else {
         // sizing the overlap map:
         const size_t height = camera->imageHeight();
-        const size_t width = camera->imageHeight();
+        const size_t width = camera->imageWidth();
         cv::Mat& overlapMat = overlapMats_[cameraIndexSeenBy][cameraIndex];
         overlapMat = cv::Mat::zeros(height, width, CV_8UC1);
         // go through all the pixels:
@@ -85,27 +86,41 @@ void NCameraSystem::computeOverlaps()
           for (size_t v = 0; v < height; ++v) {
             // backproject
             Eigen::Vector3d ray_C;
-            camera->backProject(Eigen::Vector2d(double(u), double(v)), &ray_C);
+            bool success = camera->backProject(Eigen::Vector2d(double(u), double(v)), &ray_C);
+            //std::cout<<ray_C.transpose()<<std::endl;
             // project into other camera
             Eigen::Vector3d ray_Cother = T_Cother_C.C() * ray_C;  // points at infinity, i.e. we only do rotation
             Eigen::Vector2d imagePointInOtherCamera;
             CameraBase::ProjectionStatus status = otherCamera->project(
                 ray_Cother, &imagePointInOtherCamera);
+
             // check the result
             if (status == CameraBase::ProjectionStatus::Successful) {
-              // fill in the matrix:
-              overlapMat.at<uchar>() = 1;
-              // and remember there is some overlap at all.
-              if (!hasOverlap) {
-                overlaps_[cameraIndexSeenBy][cameraIndex] = true;
+
+              Eigen::Vector3d verificationRay;
+              bool success2 = otherCamera->backProject(imagePointInOtherCamera,&verificationRay);
+
+              // to avoid an artefact of some distortion models, check again
+              // note: (this should be fixed in the distortion implementation)
+              if(fabs(ray_Cother.normalized().transpose()*verificationRay.normalized()-1.0)<1.0e-10) {
+                // fill in the matrix:
+                overlapMat.at<uchar>(v,u) = 1;
+                // and remember there is some overlap at all.
+                if (!hasOverlap) {
+                  overlaps_[cameraIndexSeenBy][cameraIndex] = true;
+                }
+                hasOverlap = true;
               }
-              hasOverlap = true;
             }
           }
         }
       }
+      //std::stringstream name;
+      //name << (cameraIndexSeenBy)<<"+"<<(cameraIndex);
+      //cv::imshow(name.str().c_str(),255*overlapMats_[cameraIndexSeenBy][cameraIndex]);
     }
   }
+  //cv::waitKey();
 }
 
 }  // namespace cameras

@@ -68,7 +68,8 @@ class NCameraSystem
   enum DistortionType  {
     Equidistant = 0, ///< Use with okvis::cameras::EquidistantDistortion.
     RadialTangential = 1, ///< Use with okvis::cameras::RadialTangentialDistortion.
-    NoDistortion = 2
+    NoDistortion = 2,
+    RadialTangential8 = 3 ///< Use with okvis::cameras::RadialTangentialDistortion.
   };
 
   /// \brief Default constructor
