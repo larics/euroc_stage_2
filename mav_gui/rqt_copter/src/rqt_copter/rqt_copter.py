@@ -5,8 +5,6 @@ import rosservice
 
 from functools import partial
 
-from asctec_hl_comm.msg import mav_status
-
 from mav_msgs.msg import Status
 
 from std_msgs.msg import String
@@ -27,9 +25,6 @@ from .srv_widget import SrvWidget
 from std_srvs.srv import Empty
 
 import tf
-
-
-
 
 # Main widget for the copter GUI
 # TODO: Move the subscribers to seperate class?
@@ -364,7 +359,7 @@ class CopterPlugin(Plugin):
         self.plot_odometry_rate.update_value('z', self.state_time, rate_z)
 
     def _trajectory_subscriber_callback(self, input):
-        # TODO(millanea): Trajectories are not time stamped. Current plotting with last state time. 
+        # TODO(millanea): Trajectories are not time stamped. Current plotting with last state time.
 
         # if self.state_plot_start_time is -1:
         #     self.state_plot_start_time = input.header.stamp.to_sec()

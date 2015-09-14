@@ -4,8 +4,8 @@
   <version>0.1.0</version>
   <description>The rqt_copter package privides a GUI for copter observation and debugging.</description>
 
-  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
-  <maintainer email="georgwi@student.ethz.ch">Georg Wiedebach</maintainer>
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
+  <maintainer email="millanea@ethz.ch">Alex Millane</maintainer>
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
@@ -27,7 +27,6 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>sensor_fusion_comm</build_depend>
-  <build_depend>asctec_hl_comm</build_depend>
 
   <run_depend>message_runtime</run_depend>
   <run_depend>rospy</run_depend>
@@ -36,8 +35,6 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>sensor_fusion_comm</run_depend>
-  <run_depend>asctec_hl_comm</run_depend>
-
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
