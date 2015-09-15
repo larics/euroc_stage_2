@@ -13,4 +13,6 @@
     <param name="rotational_estimator/rate_process_covariance" value="1" />
     <param name="rotational_estimator/orientation_measurementCovariance" value="0.0005" />
   </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="vicon_tf_broadcaster" args="0 0 0 0 0 0 1 world vicon 100" />
 </launch>
