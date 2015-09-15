@@ -12,7 +12,7 @@
       <param name="serial_port" value="/dev/ttyUSB_$(arg mav_name)" />
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="vicon_broadcaster" args="0 0 0 0 0 0 1 world vicon 100" />
+    <node pkg="tf" type="static_transform_publisher" name="vicon_tf_broadcaster" args="0 0 0 0 0 0 1 world vicon 100" />
   </group>
 
   <include file="$(find euroc_launch)/launch/vicon.launch">

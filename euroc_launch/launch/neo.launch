@@ -36,5 +36,7 @@
         <param name="control_interface/verbose" value="true"/>
         <rosparam file="$(find euroc_launch)/parameters/common/linear_mpc_neo.yaml"/>
       </node>
+
+      <node pkg="tf" type="static_transform_publisher" name="world_tf_broadcaster" args="0 0 0 0 0 0 1 world odom 100" />
     </group>
 </launch>
