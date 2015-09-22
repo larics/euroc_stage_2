@@ -34,6 +34,25 @@
       <param name="capability_group" value="Vicon" />
     </node>
 
+    <node name="vrpn_client" type="ros_vrpn_client" pkg="ros_vrpn_client" output="screen">
+      <param name="vrpn_server_ip" value="vicon" />
+      <param name="vrpn_coordinate_system" value="vicon" />
+      <param name="object_name" value="$(arg mav_name)" />
+      <param name="vicon_estimator/dt" value="0.01" />
+      <param name="translational_estimator/kp" value="1.0" />
+      <param name="translational_estimator/kv" value="10.0" />
+      <param name="rotational_estimator/orientation_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/rate_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/orientation_process_covariance" value="0.01" />
+      <param name="rotational_estimator/rate_process_covariance" value="1" />
+      <param name="rotational_estimator/orientation_measurementCovariance" value="0.0005" />
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="vicon_tf_broadcaster" args="0 0 0 0 0 0 1 world vicon 100">
+      <param name="capability_group" value="Vicon" />
+    </node>
+
     <!-- Okvis -->
     <node name="okvis_node" pkg="okvis_node" type="okvis_node" output="screen">
       <param name="config_filename" value="$(find euroc_launch)/parameters/$(arg mav_name)/okvis_cameras.yaml" />
