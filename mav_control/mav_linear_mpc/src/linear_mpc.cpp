@@ -474,7 +474,7 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
 void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *ref_attitude_thrust)
 {
   assert(ref_attitude_thrust != nullptr);
-  assert(initialized_params_ != nullptr);
+  assert(initialized_params_ == true);
   ros::WallTime starting_time = ros::WallTime::now();
 
   //Declare variables
