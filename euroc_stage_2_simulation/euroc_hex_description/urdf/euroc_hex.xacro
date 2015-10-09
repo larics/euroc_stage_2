@@ -45,7 +45,7 @@
   <xacro:property name="side_propeller_y" value="0.24939" />
   <xacro:property name="back_propeller_x" value="-0.21561" />
   <xacro:property name="back_propeller_y" value="0.12535" />
-  <xacro:property name="rotor_drag_coefficient" value="0.038" />
+  <xacro:property name="rotor_drag_coefficient" value="2.0673e-04" />
   <xacro:property name="rolling_moment_coefficient" value="0.0" />
 
   <!-- Property Blocks -->
