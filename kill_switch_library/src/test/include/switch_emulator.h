@@ -26,9 +26,7 @@
 
 #include "kill_switch_library/uart.h"
 
-class SwitchEmulator
-{
-
+class SwitchEmulator {
  public:
   // Constructor
   SwitchEmulator(double loop_frequency_hz = 100);
@@ -49,7 +47,6 @@ class SwitchEmulator
   void untrigger();
 
  private:
-
   // Main loop which process incoming serial data.
   void switchLoop();
 
@@ -67,7 +64,6 @@ class SwitchEmulator
   bool stop_;
   // The frequency of checking switch
   double loop_frequency_hz_;
-
 };
 
-#endif // SWITCH_EMULATOR_H
+#endif  // SWITCH_EMULATOR_H

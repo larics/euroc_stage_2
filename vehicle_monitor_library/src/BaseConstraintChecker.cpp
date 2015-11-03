@@ -28,112 +28,76 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
+BaseConstraintChecker::BaseConstraintChecker(std::string constraint_id)
+    : constraint_id_(constraint_id) {}
 
+BaseConstraintChecker::~BaseConstraintChecker() {}
 
-BaseConstraintChecker::BaseConstraintChecker(std::string ID)
-:_ID(ID){
+std::string BaseConstraintChecker::getId() const { return constraint_id_; }
 
+bool BaseConstraintChecker::registerVehicle(const std::string& vehicle_id) {
+  last_valid_state_map_.insert(make_pair(vehicle_id, VehicleState()));
+  return doRegisterVehicle(vehicle_id);
 }
 
-BaseConstraintChecker::~BaseConstraintChecker(){
-
+bool BaseConstraintChecker::doRegisterVehicle(const std::string& vehicle_id) {
+  return true;
 }
 
-std::string BaseConstraintChecker::GetID() const{
-
-  return _ID;
-
+bool BaseConstraintChecker::unregisterVehicle(const std::string& vehicle_id) {
+  last_valid_state_map_.erase(vehicle_id);
+  return doUnregisterVehicle(vehicle_id);
 }
 
-bool BaseConstraintChecker::RegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
+bool BaseConstraintChecker::doUnregisterVehicle(const std::string& vehicle_id) {
+  return true;
+}
 
-  pair<map<string, std::shared_ptr<Vehicle> >::iterator,bool> ret;
-
-  ret = _vehiclesMap.insert(make_pair(vehiclePtr->GetID(), vehiclePtr));
-
-  if (ret.second==false) {
-    std::cout << "VEHICLE REGISTER FAILED FOR "  << _ID << std::endl;
-    return false;
-
+void BaseConstraintChecker::setVehiclesMap(
+    std::shared_ptr<std::map<std::string, Vehicle::Ptr> > vehicles_map) {
+  // Register all vehicles in constraint.
+  for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
+       *vehicles_map) {
+    registerVehicle(vehicle_map_element.second->getID());
   }
 
-  _lastValidStateMap.insert(make_pair(vehiclePtr->GetID(), VehicleState()));
+  vehicles_map_ = vehicles_map;
+}
 
-  if(DoRegisterVehicle(vehiclePtr) == false){
-    std::cout << "VEHICLE DO_REGISTER_VEHICLE FAILED FOR "  << _ID << std::endl;
-
-    _vehiclesMap.erase(vehiclePtr->GetID());
-    _lastValidStateMap.erase(vehiclePtr->GetID());
-
+void BaseConstraintChecker::checkConstraint(
+    const MotionCaptureSystemFrame& motion_capture_system_frame,
+    bool emergency_button_pressed,
+    std::map<std::string, ConstraintCheckerOutput>& check_result) {
+  if (vehicles_map_ == nullptr) {
+    std::cout << "[vehicle_monitor_library]: ERROR, vehicles_map_ not set!";
+    return;
   }
 
-  return true;
-
-}
-
-bool BaseConstraintChecker::DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  return true;
-
-}
-
-bool BaseConstraintChecker::UnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  map<string, std::shared_ptr<Vehicle> >::iterator mapElement;
-
-  mapElement = _vehiclesMap.find(vehiclePtr->GetID());
-
-  if(mapElement == _vehiclesMap.end()){
-    return false;
-  }
-
-  _vehiclesMap.erase(mapElement);
-  _lastValidStateMap.erase(vehiclePtr->GetID());
-
-  return DoUnregisterVehicle(vehiclePtr);
-
-}
-
-bool BaseConstraintChecker::DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  return true;
-
-}
-
-void BaseConstraintChecker::CheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                            bool emergencyButtonPressed, std::map<std::string, ConstraintCheckerOutput>& checkResult){
-
-  checkResult.clear();
+  check_result.clear();
 
   // do preparation
 
-  map<string, bool> constraintSatisfiedMap;
+  map<string, bool> constraint_satisfied_map;
 
-  DoCheckConstraint(motionCaptureSystemFrame, emergencyButtonPressed, constraintSatisfiedMap);
+  doCheckConstraint(motion_capture_system_frame, emergency_button_pressed,
+                    constraint_satisfied_map);
 
-  VehicleState tmpFrame;
+  VehicleState tmp_frame;
 
-  for(const auto& vehicleResult : constraintSatisfiedMap){
-
-    if(vehicleResult.second == true &&
-        motionCaptureSystemFrame.GetFrameElementForVehicle(
-            vehicleResult.first, tmpFrame)){
-
+  for (const auto& vehicleResult : constraint_satisfied_map) {
+    if (vehicleResult.second == true &&
+        motion_capture_system_frame.getFrameElementForVehicle(
+            vehicleResult.first, tmp_frame)) {
       // store the new pose
-      _lastValidStateMap[vehicleResult.first] = tmpFrame;
-
+      last_valid_state_map_[vehicleResult.first] = tmp_frame;
     }
 
-    checkResult.insert(make_pair(vehicleResult.first,
-                                 ConstraintCheckerOutput(vehicleResult.second, _lastValidStateMap[vehicleResult.first])));
-
+    check_result.insert(make_pair(
+        vehicleResult.first,
+        ConstraintCheckerOutput(vehicleResult.second,
+                                last_valid_state_map_[vehicleResult.first])));
   }
-
-
 }
-
-
-
 }

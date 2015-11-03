@@ -26,33 +26,21 @@
 
 #include "BaseConstraintChecker.hpp"
 
-namespace VehicleMonitorLibrary{
-
-class BaseVelocityEstimator;
+namespace VehicleMonitorLibrary {
 
 class MotionConstraintChecker : public BaseConstraintChecker {
-
  public:
-
-  MotionConstraintChecker(std::shared_ptr<BaseVelocityEstimator> velocityEstimator);
+  MotionConstraintChecker();
 
   virtual ~MotionConstraintChecker();
 
  protected:
-
-  virtual bool DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
-
-  virtual bool DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
-
-  virtual void DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                 bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const;
+  virtual void doCheckConstraint(
+      const MotionCaptureSystemFrame& motionCaptureSystemFrame,
+      bool emergency_button_pressed, std::map<std::string, bool>& checkResult);
 
  private:
-
-  std::shared_ptr<BaseVelocityEstimator> _velocityEstimator;
-
 };
-
 }
 
 #endif /* VML__MOTION_CONSTRAINT_CHECKER_H_ */

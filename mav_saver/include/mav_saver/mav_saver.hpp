@@ -11,8 +11,6 @@
 //#include "mav_saver/vehicle_monitor.hpp"
 #include "mav_saver/safety_pose_publisher.hpp"
 
-
-
 #include <Eigen/Eigen>
 
 #include <vehicle_monitor_library/VehicleMonitor.hpp>
@@ -46,21 +44,21 @@
 #include "ros/publisher.h"
 #include "geometry_msgs/PointStamped.h"
 
-
 namespace mav_saver {
 
-
-
-class VehicleMonitorObserver : public VehicleMonitorLibrary::VehicleMonitorObserverBase {
+class VehicleMonitorObserver
+    : public VehicleMonitorLibrary::VehicleMonitorObserverBase {
  public:
-  VehicleMonitorObserver():take_control_flag_(false) { };
-  virtual ~VehicleMonitorObserver() { };
+  VehicleMonitorObserver() : take_control_flag_(false){};
+  virtual ~VehicleMonitorObserver(){};
 
-  virtual void Update(const std::map<std::string, std::map<std::string, VehicleMonitorLibrary::ConstraintCheckerOutput> >& vehicleStatus);
+  virtual void Update(
+      const std::map<std::string,
+                     std::map<std::string,
+                              VehicleMonitorLibrary::ConstraintCheckerOutput> >&
+          vehicleStatus);
 
-  bool getTakeControlFlag() const {
-    return take_control_flag_;
-  }
+  bool getTakeControlFlag() const { return take_control_flag_; }
 
  private:
   bool take_control_flag_;
@@ -68,21 +66,22 @@ class VehicleMonitorObserver : public VehicleMonitorLibrary::VehicleMonitorObser
 
 // Default values
 constexpr int kDefaultMotionCaptureFrequency = 100;
-constexpr double kDefaultCollisionThreesholdInBoundingSphereRadius = 1.5;
+constexpr double kDefaultCollisionThreesholdInBoundingSphereRadius = 1.8;
 constexpr double kDefaultMaxDistToCheckCollision = 2.0;
-constexpr int kDefaultProjectionWindow = 20;
+constexpr int kDefaultProjectionWindow = 50;
 constexpr double kDefaultVehicleRadius = 0.35;
-constexpr double kDefaultMaxRoll = 30.0/180.0*M_PI;
-constexpr double kDefaultMaxPitch = 30.0/180.0*M_PI;
+constexpr double kDefaultMinimumHeightToCheckCollision = 0.7;
+constexpr double kDefaultMaxRoll = 30.0 / 180.0 * M_PI;
+constexpr double kDefaultMaxPitch = 30.0 / 180.0 * M_PI;
 
-const std::string kDefaultObstacleOctomapPath = "res/LeoC6_no_floor.bt";
+const std::string kDefaultObstacleOctomapPath = "res/LeoC6.bt";
 const Eigen::Vector3d kBoundingBoxCorner1(-5.0, -5.0, -1.0);
 const Eigen::Vector3d kBoundingBoxCorner2(5.0, 5.0, 5.0);
 constexpr bool kDefaultEnableCollisionConstraint(true);
 constexpr bool kDefaultEnableBoundingVolumeConstraint(true);
 constexpr bool kDefaultEnableAttitudeConstraint(true);
 
-const std::string kDefaultKillSwitchPort = "/dev/ttyUSB1" ;
+const std::string kDefaultKillSwitchPort = "/dev/ttyUSB1";
 constexpr double kDefaultKillSwitchCheckRate = 10.0;
 constexpr int kDefaultKillSwitchBaudrate = 9600;
 constexpr double kDefaultKillSwitchWaitTime = 2.0;
@@ -91,15 +90,20 @@ class MavSaver {
  public:
   MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh);
 
-  void SetPose(const Eigen::Vector3d& p_W_I, const Eigen::Quaterniond& q_W_I);
+  void setPose(const Eigen::Vector3d& p_W_I, const Eigen::Quaterniond& q_W_I);
+  void setOdometry(const Eigen::Vector3d& p_W_I,
+                   const Eigen::Quaterniond& q_W_I,
+                   const Eigen::Vector3d& v_W_I,
+                   const Eigen::Vector3d& omega_I);
 
-  void SetTakeControlFlag(double take_control_flag);
+  void checkConstraints(const VehicleMonitorLibrary::VehicleState& state);
+
+  void setTakeControlFlag(double take_control_flag);
 
  private:
+  void registerConstraintCheckers();
 
-  void RegisterConstraintCheckers();
-
-  void RegisterVehicle();
+  void registerVehicle();
 
   std::shared_ptr<VehicleMonitorLibrary::VehicleMonitor> vehicle_monitor_;
 
@@ -117,6 +121,7 @@ class MavSaver {
   double max_dist_to_check_collision_;
   int projection_window_;
   double vehicle_radius_;
+  double minimum_height_to_check_collision_;
 
   std::string vehicle_id_;
 
@@ -140,10 +145,7 @@ class MavSaver {
   bool enable_collision_constraint_;
   bool enable_bounding_volume_constraint_;
   bool enable_attitude_constraint_;
-
 };
-
 }
-
 
 #endif /* INCLUDE_MAV_SAVER_HPP_ */

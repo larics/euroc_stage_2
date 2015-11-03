@@ -27,25 +27,17 @@
 
 #include "VehicleState.hpp"
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-struct ConstraintCheckerOutput{
-
+struct ConstraintCheckerOutput {
   bool _constraintSatisfied;
   VehicleState _lastValidState;
 
-  ConstraintCheckerOutput():
-    _constraintSatisfied(false),
-    _lastValidState(){
-  };
+  ConstraintCheckerOutput() : _constraintSatisfied(false), _lastValidState(){};
 
-  ConstraintCheckerOutput(bool constraintSatisfied,
-                          VehicleState lastValidState):
-                            _constraintSatisfied(constraintSatisfied),
-                            _lastValidState(lastValidState){
-  };
-
+  ConstraintCheckerOutput(bool constraintSatisfied, VehicleState lastValidState)
+      : _constraintSatisfied(constraintSatisfied),
+        _lastValidState(lastValidState){};
 };
-
 }
 #endif /* VML__CONSTRAINT_CHECKER_OUTPUT_H_ */

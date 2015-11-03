@@ -29,84 +29,35 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
+MotionConstraintChecker::MotionConstraintChecker()
+    : BaseConstraintChecker("MOTION_CONSTRAINT_CHECKER") {}
 
+MotionConstraintChecker::~MotionConstraintChecker() {}
 
-MotionConstraintChecker::MotionConstraintChecker(std::shared_ptr<BaseVelocityEstimator> velocityEstimator)
-:BaseConstraintChecker("MOTION_CONSTRAINT_CHECKER"),
- _velocityEstimator(velocityEstimator){
+void MotionConstraintChecker::doCheckConstraint(
+    const MotionCaptureSystemFrame& motion_capture_system_frame,
+    bool emergency_button_pressed, std::map<std::string, bool>& checkResult) {
+  bool constraint_ok;
 
-  if(_velocityEstimator == nullptr){
-    throw std::invalid_argument("Velocity Estimator cannot be nullptr");
-  }
+  VehicleState estimated_state;
 
-}
-
-MotionConstraintChecker::~MotionConstraintChecker(){
-
-}
-
-bool MotionConstraintChecker::DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  if(_velocityEstimator->RegisterVehicle(vehiclePtr->GetID())){
-
-    return true;
-
-  }
-
-  return false;
-
-}
-
-bool MotionConstraintChecker::DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  if(_velocityEstimator->UnregisterVehicle(vehiclePtr->GetID())){
-
-    return true;
-
-  }
-
-  return false;
-
-
-}
-
-
-void MotionConstraintChecker::DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                                bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const{
-
-
-  bool vehicleResult;
-
-  _velocityEstimator->Update(motionCaptureSystemFrame);
-
-  VehicleState frameElement;
-  VehicleState estimatedVelocityState;
-
-  for(const auto vehicleMapElement : _vehiclesMap){
-
-    // 2) Retrieve current position and estimate velocity
-
-    if( motionCaptureSystemFrame.GetFrameElementForVehicle(vehicleMapElement.first, frameElement) == false){
+  for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
+       *vehicles_map_) {
+    const std::string& vehicle_id = vehicle_map_element.first;
+    Vehicle::Ptr vehicle = vehicle_map_element.second;
+    if (vehicle->getHasNewState() == false) {
       continue;
     }
 
-    if(_velocityEstimator->PredictVelocity(vehicleMapElement.second->GetID(),
-                                           estimatedVelocityState) == false){
+    if (vehicle->getState(&estimated_state) == false) {
       continue;
     }
 
     // TODO: check constraints and produce output
-    // TODO: think a better way to run the estimator only once.
 
-    //checkResult.insert(make_pair(vehicleMapElement.first, vehicleResult));
-
-
-
+    // checkResult.insert(make_pair(vehicleMapElement.first, vehicleResult));
   }
-
 }
-
-
 }

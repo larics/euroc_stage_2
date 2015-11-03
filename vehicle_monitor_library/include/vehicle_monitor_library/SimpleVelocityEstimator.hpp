@@ -32,42 +32,32 @@
 
 #include "VehicleState.hpp"
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
 class MotionCaptureSystemFrame;
 
-class SimpleVelocityEstimator : public BaseVelocityEstimator{
-
+class SimpleVelocityEstimator : public BaseVelocityEstimator {
  public:
-
   SimpleVelocityEstimator(unsigned int motionCaptureSystemFrequency);
   virtual ~SimpleVelocityEstimator();
 
-  virtual void Update(const MotionCaptureSystemFrame& motionCaptureSystemFrame);
+  virtual void update(const std::string& vehicleID,
+                      const MotionCaptureSystemFrame& motionCaptureSystemFrame);
 
-  virtual bool PredictVelocity(std::string vehicleID, VehicleState& estimatedVehicleState);
-
-  bool RegisterVehicle(std::string vehicleID);
-  bool UnregisterVehicle(std::string vehicleID);
+  virtual bool predictVelocity(VehicleState& estimatedVehicleState);
 
  private:
+  const unsigned int motion_capture_system_frequency_;
+  uint64_t last_received_frame_number_;
 
-  void InitMaps();
-
-  const unsigned int _motionCaptureSystemFrequency;
-  uint64_t _lastReceivedFrameNumber;
-
-  std::map<std::string, bool> _initializedMap;
-  std::map<std::string, uint64_t> _currentStateFrameNumberMap;
-  std::map<std::string, VehicleState> _currentStateMap;
-  std::map<std::string, uint64_t> _previousStateFrameNumberMap;
-  std::map<std::string, VehicleState> _previousStateMap;
-  std::map<std::string, uint64_t> _lastPredictionFrameNumberMap;
-  std::map<std::string, VehicleState> _lastEstimatedStateMap;
-
-
+  bool initialized_;
+  uint64_t current_measurement_frame_number_;
+  VehicleState current_measurement_;
+  uint64_t previous_measurement_frame_number_;
+  VehicleState previous_measurement_;
+  uint64_t last_prediction_frame_number_;
+  VehicleState last_estimated_state_;
 };
-
 }
 
 #endif /* VML__SIMPLE_VELOCITY_ESTIMATOR_H_ */

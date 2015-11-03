@@ -26,184 +26,104 @@
 #include <string>
 #include "vehicle_monitor_library/MotionCaptureSystemFrame.hpp"
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-SimpleVelocityEstimator::SimpleVelocityEstimator(unsigned int motionCaptureSystemFrequency)
-: BaseVelocityEstimator(),
-  _lastReceivedFrameNumber(0),
-  _motionCaptureSystemFrequency(motionCaptureSystemFrequency){
-
-  //InitMaps();
-
+SimpleVelocityEstimator::SimpleVelocityEstimator(
+    unsigned int motionCaptureSystemFrequency)
+    : BaseVelocityEstimator(),
+      last_received_frame_number_(0),
+      motion_capture_system_frequency_(motionCaptureSystemFrequency) {
+  initialized_ = false;
+  current_measurement_frame_number_ = 0;
+  current_measurement_ = VehicleState();
+  previous_measurement_frame_number_ = 0;
+  previous_measurement_ = VehicleState();
+  last_prediction_frame_number_ = 0;
+  last_estimated_state_ = VehicleState();
 }
 
-SimpleVelocityEstimator::~SimpleVelocityEstimator(){
+SimpleVelocityEstimator::~SimpleVelocityEstimator() {}
 
-}
-
-void SimpleVelocityEstimator::Update(
-    const MotionCaptureSystemFrame& motionCaptureSystemFrame){
-
-  if(_lastReceivedFrameNumber == motionCaptureSystemFrame.GetFrameNumber()){
-
+void SimpleVelocityEstimator::update(
+    const std::string& vehicleID,
+    const MotionCaptureSystemFrame& motionCaptureSystemFrame) {
+  if (last_received_frame_number_ ==
+      motionCaptureSystemFrame.getFrameNumber()) {
     // This is to avoid that two plugins that use the same
     // estimator call the update twice with the same data
     // If the first frame has id 0 we skip it, it's not
     // a big problem.
     return;
-
   }
 
   VehicleState tmpFrameElement;
 
-  for(auto ID : _vehicleIDs){
+  if (motionCaptureSystemFrame.getFrameElementForVehicle(vehicleID,
+                                                         tmpFrameElement)) {
+    if (initialized_ == false) {
+      // we initialize the states with previous == current
+      current_measurement_frame_number_ =
+          motionCaptureSystemFrame.getFrameNumber();
+      current_measurement_ = tmpFrameElement;
+      previous_measurement_frame_number_ =
+          motionCaptureSystemFrame.getFrameNumber();
+      previous_measurement_ = tmpFrameElement;
+      initialized_ = true;
+    } else {
+      previous_measurement_ = current_measurement_;
+      previous_measurement_frame_number_ = current_measurement_frame_number_;
 
-    if(motionCaptureSystemFrame.GetFrameElementForVehicle(
-        ID, tmpFrameElement)){
-
-
-      if(_initializedMap[ID] == false){
-
-        // we initialize the states with previous == current
-
-        _currentStateFrameNumberMap[ID] = motionCaptureSystemFrame.GetFrameNumber();
-        _currentStateMap[ID] = tmpFrameElement;
-        _previousStateFrameNumberMap[ID] = motionCaptureSystemFrame.GetFrameNumber();
-        _previousStateMap[ID] = tmpFrameElement;
-        _initializedMap[ID] = true;
-
-      }else{
-
-        _previousStateMap[ID] = std::move(_currentStateMap[ID]);
-        _previousStateFrameNumberMap[ID] = std::move(_currentStateFrameNumberMap[ID]);
-
-        _currentStateMap[ID] = tmpFrameElement;
-        _currentStateFrameNumberMap[ID] = motionCaptureSystemFrame.GetFrameNumber();
-
-      }
-
+      current_measurement_ = tmpFrameElement;
+      current_measurement_frame_number_ =
+          motionCaptureSystemFrame.getFrameNumber();
     }
-
   }
-
 }
 
-bool SimpleVelocityEstimator::PredictVelocity(std::string vehicleID,
-                                              VehicleState& estimatedVehicleState){
-
-  if(_lastPredictionFrameNumberMap[vehicleID] == _currentStateFrameNumberMap[vehicleID]){
-
-    estimatedVehicleState = _lastEstimatedStateMap[vehicleID];
+bool SimpleVelocityEstimator::predictVelocity(
+    VehicleState& estimatedVehicleState) {
+  if (last_prediction_frame_number_ == current_measurement_frame_number_) {
+    estimatedVehicleState = last_estimated_state_;
 
     return true;
-
   }
 
-  if(_previousStateFrameNumberMap.at(vehicleID) == _currentStateFrameNumberMap.at(vehicleID)){
-
-    _lastEstimatedStateMap[vehicleID]._linear.x() =
-        estimatedVehicleState._linear.x() = 0.0;
-    _lastEstimatedStateMap[vehicleID]._linear.y() =
-        estimatedVehicleState._linear.y() = 0.0;
-    _lastEstimatedStateMap[vehicleID]._linear.z() =
-        estimatedVehicleState._linear.z() = 0.0;
-    _lastEstimatedStateMap[vehicleID]._angular.x() =
-        estimatedVehicleState._angular.x() = 0.0;
-    _lastEstimatedStateMap[vehicleID]._angular.y() =
-        estimatedVehicleState._angular.y() = 0.0;
-    _lastEstimatedStateMap[vehicleID]._angular.z() =
-        estimatedVehicleState._angular.z() = 0.0;
+  if (previous_measurement_frame_number_ == current_measurement_frame_number_) {
+    last_estimated_state_.velocity.x() = estimatedVehicleState.velocity.x() =
+        0.0;
+    last_estimated_state_.velocity.y() = estimatedVehicleState.velocity.y() =
+        0.0;
+    last_estimated_state_.velocity.z() = estimatedVehicleState.velocity.z() =
+        0.0;
+    last_estimated_state_.angular_rate.x() =
+        estimatedVehicleState.angular_rate.x() = 0.0;
+    last_estimated_state_.angular_rate.y() =
+        estimatedVehicleState.angular_rate.y() = 0.0;
+    last_estimated_state_.angular_rate.z() =
+        estimatedVehicleState.angular_rate.z() = 0.0;
 
     return false;
 
-  }else{
-
+  } else {
     // delta time in sec
-    float deltaTime = (_currentStateFrameNumberMap.at(vehicleID) - _previousStateFrameNumberMap.at(vehicleID))
-										    / (float)_motionCaptureSystemFrequency;
+    double deltaTime = (current_measurement_frame_number_ -
+                        previous_measurement_frame_number_) /
+                       (double)motion_capture_system_frequency_;
 
-    estimatedVehicleState._linear = _currentStateMap[vehicleID]._linear - _previousStateMap[vehicleID]._linear;
-    estimatedVehicleState._linear /= deltaTime;
+    estimatedVehicleState.velocity =
+        current_measurement_.position - previous_measurement_.position;
+    estimatedVehicleState.velocity /= deltaTime;
 
-    estimatedVehicleState._angular = _currentStateMap[vehicleID]._angular - _previousStateMap[vehicleID]._angular;
-    estimatedVehicleState._angular /= deltaTime;
+    // TODO(burrimi): detect wrap around on yaw!!!
+    estimatedVehicleState.angular_rate =
+        current_measurement_.orientation - previous_measurement_.orientation;
+    estimatedVehicleState.angular_rate /= deltaTime;
 
-    _lastEstimatedStateMap[vehicleID] = estimatedVehicleState;
+    estimatedVehicleState.velocity_valid = true;
 
-    return true;
-
-  }
-
-}
-
-bool SimpleVelocityEstimator::RegisterVehicle(std::string vehicleID){
-
-  if(BaseVelocityEstimator::RegisterVehicle(vehicleID)){
-
-    _currentStateFrameNumberMap.insert(make_pair(vehicleID, 0));
-    _currentStateMap.insert(make_pair(vehicleID, VehicleState()));
-    _previousStateFrameNumberMap.insert(make_pair(vehicleID, 0));
-    _previousStateMap.insert(make_pair(vehicleID, VehicleState()));
-    _initializedMap.insert(make_pair(vehicleID, false));
-    _lastPredictionFrameNumberMap.insert(make_pair(vehicleID, 0));
-    _lastEstimatedStateMap.insert(make_pair(vehicleID, VehicleState()));
-
-    std::cout << "[SimpleVelocityEstimator] Registered vehicle " << vehicleID << std::endl;
+    last_estimated_state_ = estimatedVehicleState;
 
     return true;
-
   }
-
-  return false;
-
 }
-
-bool SimpleVelocityEstimator::UnregisterVehicle(std::string vehicleID){
-
-  if(BaseVelocityEstimator::UnregisterVehicle(vehicleID)){
-
-    _currentStateFrameNumberMap.erase(vehicleID);
-    _currentStateMap.erase(vehicleID);
-    _previousStateFrameNumberMap.erase(vehicleID);
-    _previousStateMap.erase(vehicleID);
-    _initializedMap.erase(vehicleID);
-    _lastPredictionFrameNumberMap.erase(vehicleID);
-    _lastEstimatedStateMap.erase(vehicleID);
-
-    std::cout << "[SimpleVelocityEstimator] Unregistered vehicle " << vehicleID << std::endl;
-
-    return true;
-
-  }
-
-  return false;
-
-}
-
-void SimpleVelocityEstimator::InitMaps(){
-
-  _currentStateFrameNumberMap.clear();
-  _currentStateMap.clear();
-  _previousStateFrameNumberMap.clear();
-  _previousStateMap.clear();
-  _initializedMap.clear();
-  _lastPredictionFrameNumberMap.clear();
-  _lastEstimatedStateMap.clear();
-
-  for(auto ID : _vehicleIDs){
-
-    _currentStateFrameNumberMap.insert(make_pair(ID, 0));
-    _currentStateMap.insert(make_pair(ID, VehicleState()));
-    _previousStateFrameNumberMap.insert(make_pair(ID, 0));
-    _previousStateMap.insert(make_pair(ID, VehicleState()));
-    _initializedMap.insert(make_pair(ID, false));
-    _lastPredictionFrameNumberMap.insert(make_pair(ID, 0));
-    _lastEstimatedStateMap.insert(make_pair(ID, VehicleState()));
-
-  }
-
-}
-
-
-
 }

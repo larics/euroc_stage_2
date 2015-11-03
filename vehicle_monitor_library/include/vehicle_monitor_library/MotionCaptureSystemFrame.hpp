@@ -29,38 +29,31 @@
 #include <string>
 #include <stdint.h>
 
-#include "VehicleState.hpp"
+#include "vehicle_monitor_library/VehicleState.hpp"
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-class MotionCaptureSystemFrame{
-
+class MotionCaptureSystemFrame {
  public:
-
-  MotionCaptureSystemFrame(uint64_t frameNumber);
+  MotionCaptureSystemFrame(uint64_t frame_number);
   ~MotionCaptureSystemFrame();
 
-  bool GetFrameElementForVehicle(std::string vehicleID,
+  bool getFrameElementForVehicle(std::string vehicle_id,
                                  VehicleState& output) const;
 
-  bool AddFrameElement(std::string vehicleID,
-                       VehicleState frameElement);
+  bool addFrameElement(std::string vehicle_id, VehicleState frame_element);
 
   // If not present insert, otherwise update
-  void UpdateFrameElement(std::string vehicleID,
-                          VehicleState frameElement);
+  void updateFrameElement(std::string vehicle_id, VehicleState frame_element);
 
-  uint64_t GetFrameNumber() const;
+  uint64_t getFrameNumber() const;
 
-  void SetFrameNumber(uint64_t frameNumber);
+  void setFrameNumber(uint64_t frame_number);
 
  private:
-
-  uint64_t _frameNumber;
-  std::map<std::string, VehicleState> _frameElements;
-
+  uint64_t frame_number_;
+  std::map<std::string, VehicleState> frame_elements_;
 };
-
 }
 
 #endif /* VML__MOTION_CAPTURE_SYSTEM_FRAME_H_*/

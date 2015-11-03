@@ -26,24 +26,19 @@
 
 #include "BaseConstraintChecker.hpp"
 
-namespace VehicleMonitorLibrary{
-
+namespace VehicleMonitorLibrary {
 
 class EmergencyButtonConstraintChecker : public BaseConstraintChecker {
-
  public:
-
   EmergencyButtonConstraintChecker();
 
   virtual ~EmergencyButtonConstraintChecker();
 
  protected:
-
-  virtual void DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                 bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const;
-
+  virtual void doCheckConstraint(
+      const MotionCaptureSystemFrame& motion_capture_system_frame,
+      bool emergencyButtonPressed, std::map<std::string, bool>& check_result);
 };
-
 }
 
 #endif /* VML__EMERGENCY_BUTTON_CONSTRAINT_CHECKER_H_ */

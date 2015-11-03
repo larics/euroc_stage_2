@@ -29,33 +29,22 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
-
+namespace VehicleMonitorLibrary {
 
 EmergencyButtonConstraintChecker::EmergencyButtonConstraintChecker()
-:BaseConstraintChecker("EMERGENCY_BUTTON_CONSTRAINT_CHECKER"){
+    : BaseConstraintChecker("EMERGENCY_BUTTON_CONSTRAINT_CHECKER") {}
 
-}
+EmergencyButtonConstraintChecker::~EmergencyButtonConstraintChecker() {}
 
-EmergencyButtonConstraintChecker::~EmergencyButtonConstraintChecker(){
-
-}
-
-void EmergencyButtonConstraintChecker::DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                                         bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const{
-
-  if(emergencyButtonPressed){
-
-    for(const auto vehicleMapElement : _vehiclesMap){
-
+void EmergencyButtonConstraintChecker::doCheckConstraint(
+    const MotionCaptureSystemFrame& motion_capture_system_frame,
+    bool emergencyButtonPressed, std::map<std::string, bool>& check_result) {
+  if (emergencyButtonPressed) {
+    for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
+         *vehicles_map_) {
       // false stays for constraaint not satisfied
-      checkResult.insert(make_pair(vehicleMapElement.first, false));
-
+      check_result.insert(make_pair(vehicle_map_element.first, false));
     }
-
   }
-
 }
-
-
 }

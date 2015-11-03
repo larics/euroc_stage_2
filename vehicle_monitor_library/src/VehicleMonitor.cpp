@@ -21,8 +21,6 @@
  *    @author Luca Gherardi
  */
 
-
-
 #include <octomap/OcTree.h>
 
 #include "vehicle_monitor_library/BaseConstraintChecker.hpp"
@@ -30,231 +28,213 @@
 #include "vehicle_monitor_library/VehicleMonitor.hpp"
 #include "vehicle_monitor_library/VehicleMonitorObserver.hpp"
 
-namespace VehicleMonitorLibrary{
-
+namespace VehicleMonitorLibrary {
 
 VehicleMonitor::VehicleMonitor(boost::filesystem::path octoMapFilePath,
-                               const Eigen::Vector3d& environmentCorner1, const Eigen::Vector3d& environmentCornerB,
+                               const Eigen::Vector3d& environmentCorner1,
+                               const Eigen::Vector3d& environmentCornerB,
                                unsigned int motionCaptureSystemFrequency)
-: _environmentBoundingVolume(environmentCorner1, environmentCornerB),
-  _motionCaptureSystemFrequency(motionCaptureSystemFrequency){
-
-  if(boost::filesystem::exists(octoMapFilePath) &&
-      boost::filesystem::is_regular_file(octoMapFilePath)){
-
+    : environment_bounding_volume_(environmentCorner1, environmentCornerB),
+      motion_capture_system_frequency_(motionCaptureSystemFrequency) {
+  if (boost::filesystem::exists(octoMapFilePath) &&
+      boost::filesystem::is_regular_file(octoMapFilePath)) {
     _ocTreePtr = std::make_shared<octomap::OcTree>(octoMapFilePath.string());
 
-    octomath::Vector3 vertexMin = _environmentBoundingVolume.GetVertexMin();
-    octomath::Vector3 vertexMax = _environmentBoundingVolume.GetVertexMax();
+    octomath::Vector3 vertexMin = environment_bounding_volume_.getVertexMin();
+    octomath::Vector3 vertexMax = environment_bounding_volume_.getVertexMax();
 
     _ocTreePtr->setBBXMin(vertexMin);
     _ocTreePtr->setBBXMax(vertexMax);
 
-  }else{
+    vehicles_map_ = std::make_shared<std::map<std::string, Vehicle::Ptr> >();
 
+  } else {
     throw std::invalid_argument("The OctoMap path is not valid");
-
   }
-
 }
 
 VehicleMonitor::VehicleMonitor(std::shared_ptr<octomap::OcTree> ocTreePtr,
-                               const Eigen::Vector3d& environmentCorner1, const Eigen::Vector3d& environmentCornerB,
+                               const Eigen::Vector3d& environmentCorner1,
+                               const Eigen::Vector3d& environmentCornerB,
                                unsigned int motionCaptureSystemFrequency)
-:_ocTreePtr(ocTreePtr),
- _environmentBoundingVolume(environmentCorner1, environmentCornerB),
- _motionCaptureSystemFrequency(motionCaptureSystemFrequency){
-
-  octomath::Vector3 vertexMin = _environmentBoundingVolume.GetVertexMin();
-  octomath::Vector3 vertexMax = _environmentBoundingVolume.GetVertexMax();
+    : _ocTreePtr(ocTreePtr),
+      environment_bounding_volume_(environmentCorner1, environmentCornerB),
+      motion_capture_system_frequency_(motionCaptureSystemFrequency) {
+  octomath::Vector3 vertexMin = environment_bounding_volume_.getVertexMin();
+  octomath::Vector3 vertexMax = environment_bounding_volume_.getVertexMax();
 
   _ocTreePtr->setBBXMin(vertexMin);
   _ocTreePtr->setBBXMax(vertexMax);
-
 }
 
+VehicleMonitor::~VehicleMonitor() {}
 
-VehicleMonitor::~VehicleMonitor(){
-
-}
-
-std::shared_ptr<octomap::OcTree>  VehicleMonitor::GetOcTreePtr() {
-
+std::shared_ptr<octomap::OcTree> VehicleMonitor::GetOcTreePtr() {
   return _ocTreePtr;
-
 }
 
-BoundingVolume VehicleMonitor::GetEnvironmentBoundingVolume() const{
-
-  return _environmentBoundingVolume;
-
+BoundingVolume VehicleMonitor::GetEnvironmentBoundingVolume() const {
+  return environment_bounding_volume_;
 }
 
-std::vector<std::string> VehicleMonitor::GetVehicleIDs() const{
-
+std::vector<std::string> VehicleMonitor::GetVehicleIDs() const {
   std::vector<std::string> result;
 
-  for(auto vehicleMapElement : _vehiclesMap){
-
-    result.push_back(vehicleMapElement.first);
-
+  for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
+       *vehicles_map_) {
+    result.push_back(vehicle_map_element.first);
   }
 
   return result;
-
-
 }
 
-bool VehicleMonitor::RegisterChecker(std::shared_ptr<BaseConstraintChecker> constraintChekerPtr){
-
-  std::pair<std::map<std::string, std::shared_ptr<BaseConstraintChecker> >::iterator,bool> ret;
-
-  ret = _constraintCheckers.insert(make_pair(constraintChekerPtr->GetID(), constraintChekerPtr));
-
-  if (ret.second==false) {
-
-    return false;
-
-  }
-
-  std::cout << "[Vehicle Monitor] Registered constraint checker: " << constraintChekerPtr->GetID() << std::endl;
-
-  return true;
-
-}
-
-bool VehicleMonitor::UnregisterChecker(std::shared_ptr<BaseConstraintChecker> constraintChekerPtr){
-
-  std::map<std::string, std::shared_ptr<BaseConstraintChecker> >::iterator mapElement;
-
-  mapElement = _constraintCheckers.find(constraintChekerPtr->GetID());
-
-  if(mapElement == _constraintCheckers.end()){
+bool VehicleMonitor::RegisterChecker(
+    BaseConstraintChecker::Ptr constraint_cheker) {
+  if (vehicles_map_ == nullptr) {
+    std::cout << "[vehicle_monitor_library]: ERROR, vehicles_map_ not set!";
     return false;
   }
 
-  _constraintCheckers.erase(mapElement);
+  constraint_cheker->setVehiclesMap(vehicles_map_);
 
-  std::cout << "[Vehicle Monitor] Unregistered constraint checker: " << constraintChekerPtr->GetID() << std::endl;
+  std::pair<std::map<std::string, BaseConstraintChecker::Ptr>::iterator, bool>
+      ret;
 
-  return true;
+  ret = constraint_checkers_.insert(
+      make_pair(constraint_cheker->getId(), constraint_cheker));
 
-}
-
-bool VehicleMonitor::RegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  std::pair<std::map<std::string, std::shared_ptr<Vehicle> >::iterator,bool> ret;
-
-  ret = _vehiclesMap.insert(make_pair(vehiclePtr->GetID(), vehiclePtr));
-
-  if (ret.second==false) {
-
-    return false;
-
-  }
-
-  for(auto constraintCheckerMapElement : _constraintCheckers){
-
-    constraintCheckerMapElement.second->RegisterVehicle(vehiclePtr);
-
-  }
-
-  return true;
-
-}
-
-bool VehicleMonitor::UnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  std::map<std::string, std::shared_ptr<Vehicle> >::iterator mapElement;
-
-  mapElement = _vehiclesMap.find(vehiclePtr->GetID());
-
-  if(mapElement == _vehiclesMap.end()){
+  if (ret.second == false) {
     return false;
   }
 
-  _vehiclesMap.erase(mapElement);
+  std::cout << "[Vehicle Monitor] Registered constraint checker: "
+            << constraint_cheker->getId() << std::endl;
 
-  for(auto constraintCheckerMapElement : _constraintCheckers){
+  return true;
+}
 
-    constraintCheckerMapElement.second->UnregisterVehicle(vehiclePtr);
+bool VehicleMonitor::UnregisterChecker(
+    BaseConstraintChecker::Ptr constraint_cheker) {
+  std::map<std::string, BaseConstraintChecker::Ptr>::iterator mapElement;
 
+  mapElement = constraint_checkers_.find(constraint_cheker->getId());
+
+  if (mapElement == constraint_checkers_.end()) {
+    return false;
+  }
+
+  constraint_checkers_.erase(mapElement);
+
+  std::cout << "[Vehicle Monitor] Unregistered constraint checker: "
+            << constraint_cheker->getId() << std::endl;
+
+  return true;
+}
+
+bool VehicleMonitor::RegisterVehicle(Vehicle::Ptr vehicle) {
+  std::pair<std::map<std::string, Vehicle::Ptr>::iterator, bool> ret;
+
+  ret = vehicles_map_->insert(make_pair(vehicle->getID(), vehicle));
+
+  if (ret.second == false) {
+    return false;
+  }
+
+  for (auto constraintCheckerMapElement : constraint_checkers_) {
+    constraintCheckerMapElement.second->registerVehicle(vehicle->getID());
   }
 
   return true;
-
 }
 
-void VehicleMonitor::Trigger(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                             bool emergencyButtonPressed){
+bool VehicleMonitor::UnregisterVehicle(Vehicle::Ptr vehicle) {
+  std::map<std::string, Vehicle::Ptr>::iterator mapElement;
 
-  _lastComputedOutput.clear();
+  mapElement = vehicles_map_->find(vehicle->getID());
+
+  if (mapElement == vehicles_map_->end()) {
+    return false;
+  }
+
+  vehicles_map_->erase(mapElement);
+
+  for (auto constraintCheckerMapElement : constraint_checkers_) {
+    constraintCheckerMapElement.second->unregisterVehicle(vehicle->getID());
+  }
+
+  return true;
+}
+
+void VehicleMonitor::Trigger(
+    const MotionCaptureSystemFrame& motionCaptureSystemFrame,
+    bool emergencyButtonPressed) {
+  last_computed_output_.clear();
+
+  // update velocities of all vehicles.
+  for (const std::pair<std::string, Vehicle::Ptr>& vehicleMapElement :
+       *vehicles_map_) {
+    vehicleMapElement.second->updateState(motionCaptureSystemFrame);
+  }
 
   std::map<std::string, ConstraintCheckerOutput> constraintCheckerResult;
 
-  for(auto constraintMapElement : _constraintCheckers){
-
+  for (auto constraintMapElement : constraint_checkers_) {
     constraintCheckerResult.clear();
 
-    constraintMapElement.second->CheckConstraint(motionCaptureSystemFrame,
-                                                 emergencyButtonPressed, constraintCheckerResult);
+    constraintMapElement.second->checkConstraint(motionCaptureSystemFrame,
+                                                 emergencyButtonPressed,
+                                                 constraintCheckerResult);
 
-    for(const auto& resultMapElement : constraintCheckerResult){
-
+    for (const auto& resultMapElement : constraintCheckerResult) {
       // this means:
-      // _lastComputedOutput[vehicleID][constrainCheckerID] = constraincCheckerOutput;
-      _lastComputedOutput[resultMapElement.first][constraintMapElement.first] = resultMapElement.second;
-
+      // _lastComputedOutput[vehicleID][constrainCheckerID] =
+      // constraincCheckerOutput;
+      last_computed_output_[resultMapElement.first][constraintMapElement
+                                                        .first] =
+          resultMapElement.second;
     }
-
   }
 
-  NotifyObservers(_lastComputedOutput);
-
+  NotifyObservers(last_computed_output_);
 }
 
-bool VehicleMonitor::RegisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observerPtr) {
+bool VehicleMonitor::RegisterObserver(
+    std::shared_ptr<VehicleMonitorObserverBase> observerPtr) {
+  std::pair<std::set<std::shared_ptr<VehicleMonitorObserverBase> >::iterator,
+            bool> ret;
 
-  std::pair<std::set<std::shared_ptr<VehicleMonitorObserverBase> >::iterator,bool> ret;
+  ret = observers_.insert(observerPtr);
 
-  ret = _observers.insert(observerPtr);
-
-  if (ret.second==false) {
-
+  if (ret.second == false) {
     return false;
-
   }
 
   return true;
-
 }
 
-bool VehicleMonitor::UnregisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observerPtr) {
-
+bool VehicleMonitor::UnregisterObserver(
+    std::shared_ptr<VehicleMonitorObserverBase> observerPtr) {
   std::set<std::shared_ptr<VehicleMonitorObserverBase> >::iterator setElement;
 
-  setElement = _observers.find(observerPtr);
+  setElement = observers_.find(observerPtr);
 
-  if(setElement == _observers.end()){
+  if (setElement == observers_.end()) {
     return false;
   }
 
-  _observers.erase(setElement);
+  observers_.erase(setElement);
 
   return true;
-
 }
 
-// loop through all registered observers and provide them with the vector of outputs
-void VehicleMonitor::NotifyObservers(const std::map<std::string,
-                                     std::map<std::string, ConstraintCheckerOutput> >& vehicleStatus) const{
-
-  for(auto observerPtr : _observers){
-
+// loop through all registered observers and provide them with the vector of
+// outputs
+void VehicleMonitor::NotifyObservers(
+    const std::map<std::string,
+                   std::map<std::string, ConstraintCheckerOutput> >&
+        vehicleStatus) const {
+  for (auto observerPtr : observers_) {
     observerPtr->Update(vehicleStatus);
-
   }
-
 }
-
 }

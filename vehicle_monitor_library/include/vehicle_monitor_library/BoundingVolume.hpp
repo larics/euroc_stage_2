@@ -27,32 +27,27 @@
 #include <octomap/octomap_types.h>
 #include <Eigen/Eigen>
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-class BoundingVolume{
-
+class BoundingVolume {
  public:
-
   BoundingVolume(void);
-  BoundingVolume(const Eigen::Vector3d& vertexA, const Eigen::Vector3d& vertexB);
+  BoundingVolume(const Eigen::Vector3d& vertexA,
+                 const Eigen::Vector3d& vertexB);
 
   ~BoundingVolume(void);
 
-  octomath::Vector3 GetVertexMin() const;
-  octomath::Vector3 GetVertexMax() const;
+  octomath::Vector3 getVertexMin() const;
+  octomath::Vector3 getVertexMax() const;
 
-  bool IsSphereInsideBB(const Eigen::Vector3d& center, float sphereRadius) const;
-  bool IsOutOfSpace(const Eigen::Vector3d& position) const;
+  bool isSphereInsideBB(const Eigen::Vector3d& center,
+                        double sphereRadius) const;
+  bool isOutOfSpace(const Eigen::Vector3d& position) const;
 
  private:
-
-  Eigen::Vector3d _vertexMin;
-  Eigen::Vector3d _vertexMax;
-
-
+  Eigen::Vector3d vertex_min_;
+  Eigen::Vector3d vertex_max_;
 };
-
 }
 
 #endif /* VML__BOUNDING_VOLUME_H_ */
-
