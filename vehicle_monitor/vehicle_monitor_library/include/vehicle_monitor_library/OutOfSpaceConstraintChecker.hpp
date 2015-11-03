@@ -24,32 +24,25 @@
 #ifndef VML__OUT_OF_SPACE_CONSTRAINT_CHECKER_H_
 #define VML__OUT_OF_SPACE_CONSTRAINT_CHECKER_H_
 
-#include "BaseConstraintChecker.hpp"
+#include "vehicle_monitor_library/BaseConstraintChecker.hpp"
+#include "vehicle_monitor_library/BoundingVolume.hpp"
 
-#include "BoundingVolume.hpp"
-
-namespace VehicleMonitorLibrary{
-
+namespace VehicleMonitorLibrary {
 
 class OutOfSpaceConstraintChecker : public BaseConstraintChecker {
-
  public:
-
   OutOfSpaceConstraintChecker(BoundingVolume environmentBoundingVolume);
 
   virtual ~OutOfSpaceConstraintChecker();
 
  protected:
-
-  virtual void DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                 bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const;
+  virtual void doCheckConstraint(
+      const MotionCaptureSystemFrame& motion_capture_system_frame,
+      bool emergency_button_pressed, std::map<std::string, bool>& check_result);
 
  private:
-
   BoundingVolume _environmentBoundingVolume;
-
 };
-
 }
 
 #endif /* VML__OUT_OF_SPACE_CONSTRAINT_CHECKER_H_ */

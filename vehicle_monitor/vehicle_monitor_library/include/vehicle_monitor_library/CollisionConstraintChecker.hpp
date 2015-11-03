@@ -24,6 +24,9 @@
 #ifndef VML__COLLISION_CONSTRAINT_CHECKER_H_
 #define VML__COLLISION_CONSTRAINT_CHECKER_H_
 
+#include <unordered_set>
+#include <set>
+
 #include "BaseConstraintChecker.hpp"
 
 #include "BoundingVolume.hpp"
@@ -31,54 +34,44 @@
 #include "octomap/octomap_types.h"
 #include "dynamicEDT3D/dynamicEDTOctomap.h"
 
-namespace octomap{
+namespace octomap {
 class OcTree;
 }
 
-namespace VehicleMonitorLibrary{
-
-class BaseVelocityEstimator;
+namespace VehicleMonitorLibrary {
 
 class CollisionConstraintChecker : public BaseConstraintChecker {
-
  public:
-
   CollisionConstraintChecker(
-      std::shared_ptr<octomap::OcTree> ocTreePtr,
-      BoundingVolume environmentBoundingVolume,
-      float maxDistToCheckCollision,
-      float collisionThreesholdInBoundingSphereRadius,
-      unsigned int projectionWindow,
-      unsigned int motionCaptureSystemFrequency,
-      std::shared_ptr<BaseVelocityEstimator> velocityEstimator);
+      std::shared_ptr<octomap::OcTree> oc_tree,
+      const BoundingVolume& environment_bounding_volume,
+      double max_dist_to_check_collision,
+      double collision_threeshold_in_bounding_sphere_radius,
+      unsigned int projection_window,
+      unsigned int motion_capture_system_frequency, double minimum_height);
 
   virtual ~CollisionConstraintChecker();
 
  protected:
-
-  virtual bool DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
-
-  virtual bool DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
-
-  virtual void DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                 bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const;
+  virtual void doCheckConstraint(
+      const MotionCaptureSystemFrame& motion_capture_system_frame,
+      bool emergency_button_pressed, std::map<std::string, bool>& check_result);
 
  private:
+  std::shared_ptr<octomap::OcTree> oc_tree_ptr_;
 
-  std::shared_ptr<octomap::OcTree> _ocTreePtr;
+  DynamicEDTOctomap dist_map_;
 
-  DynamicEDTOctomap _distMap;
-
-  float _collisionThreesholdInBoundingSphereRadius;
+  double collision_threshold_in_bounding_sphere_radius_;
 
   // number of time steps used to compute the future position of a vehicle
-  unsigned int _projectionWindow;
+  unsigned int projection_window_size_;
 
-  unsigned int _motionCaptureSystemFrequency;
+  unsigned int motion_capture_system_frequency_;
 
-  std::shared_ptr<BaseVelocityEstimator> _velocityEstimator;
+  double minimum_height_;
 
+  std::unordered_set<std::string> take_off_detected_;
 };
-
 }
 #endif /* VML__COLLISION_CONSTRAINT_CHECKER_H_ */

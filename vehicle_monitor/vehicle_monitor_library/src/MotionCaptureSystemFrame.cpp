@@ -25,69 +25,49 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-MotionCaptureSystemFrame::MotionCaptureSystemFrame(uint64_t frameNumber)
-:_frameNumber(frameNumber){
+MotionCaptureSystemFrame::MotionCaptureSystemFrame(uint64_t frame_number)
+    : frame_number_(frame_number) {}
 
-}
+MotionCaptureSystemFrame::~MotionCaptureSystemFrame() {}
 
-MotionCaptureSystemFrame::~MotionCaptureSystemFrame(){
-
-}
-
-bool MotionCaptureSystemFrame::GetFrameElementForVehicle(
-    std::string vehicleID,
-    VehicleState& output) const{
-
+bool MotionCaptureSystemFrame::getFrameElementForVehicle(
+    std::string vehicle_id, VehicleState& output) const {
   map<string, VehicleState>::const_iterator element;
-  element = _frameElements.find(vehicleID);
+  element = frame_elements_.find(vehicle_id);
 
-  if(element == _frameElements.end()){
+  if (element == frame_elements_.end()) {
     return false;
   }
 
   output = element->second;
   return true;
-
 }
 
-bool MotionCaptureSystemFrame::AddFrameElement(std::string vehicleID,
-                                               VehicleState frameElement){
+bool MotionCaptureSystemFrame::addFrameElement(std::string vehicle_id,
+                                               VehicleState frame_element) {
+  pair<map<string, VehicleState>::iterator, bool> ret;
 
-  pair<map<string, VehicleState>::iterator,bool> ret;
+  ret = frame_elements_.insert(make_pair(vehicle_id, frame_element));
 
-  ret = _frameElements.insert(make_pair(vehicleID, frameElement));
-
-  if (ret.second==false) {
-
+  if (ret.second == false) {
     return false;
-
   }
 
   return true;
-
 }
 
-void MotionCaptureSystemFrame::UpdateFrameElement(std::string vehicleID,
-                                                  VehicleState frameElement){
-
-  _frameElements[vehicleID] = frameElement;
-
+void MotionCaptureSystemFrame::updateFrameElement(std::string vehicle_id,
+                                                  VehicleState frame_element) {
+  frame_elements_[vehicle_id] = frame_element;
 }
 
-uint64_t MotionCaptureSystemFrame::GetFrameNumber() const{
-
-  return _frameNumber;
-
+uint64_t MotionCaptureSystemFrame::getFrameNumber() const {
+  return frame_number_;
 }
 
-void MotionCaptureSystemFrame::SetFrameNumber(uint64_t frameNumber){
-
-  _frameNumber = frameNumber;
-
+void MotionCaptureSystemFrame::setFrameNumber(uint64_t frame_number) {
+  frame_number_ = frame_number;
 }
-
-
-
 }

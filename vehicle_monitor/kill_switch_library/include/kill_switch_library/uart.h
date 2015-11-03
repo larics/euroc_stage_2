@@ -28,18 +28,17 @@
 #include <termios.h> /* POSIX terminal control definitions */
 #include <unistd.h>  /* UNIX standard function definitions */
 
-#include <ros/console.h>   /* File control definitions */
+#include <ros/console.h> /* File control definitions */
 
 #include <mutex>
 #include <thread>
 #include <condition_variable>
 
-class WriteQueue
-{
+class WriteQueue {
  public:
-  enum
-  {
-    WAIT_TIMEOUT = 1000,  ///< Timeout for waiting for new data in the buffer, in [ms].
+  enum {
+    WAIT_TIMEOUT =
+        1000,  ///< Timeout for waiting for new data in the buffer, in [ms].
     WRITE_BUFFER_SIZE = 1024
   };
   WriteQueue();
@@ -61,32 +60,44 @@ class WriteQueue
 };
 
 /**
- * Can connect to either one or two (e.g. for separate rx/tx wireless links) serial ports. 
- * The default baudrate can be changed up to 921600 baud. Messages can be sent with 
- * Uart::sendPacket or Uart::sendPacketAck . Messages are received by setting a callback function
+ * Can connect to either one or two (e.g. for separate rx/tx wireless links)
+ * serial ports.
+ * The default baudrate can be changed up to 921600 baud. Messages can be sent
+ * with
+ * Uart::sendPacket or Uart::sendPacketAck . Messages are received by setting a
+ * callback function
  * with Uart::registerCallback for the message id to receive.
  */
-class Uart
-{
-
+class Uart {
  public:
   Uart();
   ~Uart();
 
-  /// connects to the specified serial port(s) with the given baudrate. The HLP sets it's baudrate automatically.
+  /// connects to the specified serial port(s) with the given baudrate. The HLP
+  /// sets it's baudrate automatically.
   /**
-   * The port names can be equal, then it connects only to one serial port (most common operation).
-   * It can also connect to different ports for rx and tx. This is useful when e.g. two wireless modules (one for rx, one for tx) such as XBee are used to connect
-   * to the helicopter and bandwidth of one link is to low. rx/tx is seen from the host computer running the communication node. Any baudrate can be set. If it doesn't
-   * match a standard baudrate, the closest standard baudrate is chosen. If the HLP doesn't "hear" anything from the node for ~10s, it will go into autobaud mode. During connection
-   * setup, the node sends 'a' to the HLP, which will then configure its baudrate automatically.
+   * The port names can be equal, then it connects only to one serial port (most
+   * common operation).
+   * It can also connect to different ports for rx and tx. This is useful when
+   * e.g. two wireless modules (one for rx, one for tx) such as XBee are used to
+   * connect
+   * to the helicopter and bandwidth of one link is to low. rx/tx is seen from
+   * the host computer running the communication node. Any baudrate can be set.
+   * If it doesn't
+   * match a standard baudrate, the closest standard baudrate is chosen. If the
+   * HLP doesn't "hear" anything from the node for ~10s, it will go into
+   * autobaud mode. During connection
+   * setup, the node sends 'a' to the HLP, which will then configure its
+   * baudrate automatically.
    * @param port_rx port to use for rx
    * @param port_tx port to use for tx
-   * @param baudrate baudrate to connect with. equal for both ports. The baudrate finally chosen is written to baudrate.
+   * @param baudrate baudrate to connect with. equal for both ports. The
+   * baudrate finally chosen is written to baudrate.
    * @return connection successful
    */
-  bool connect(const std::string & port_rx, const std::string & port_tx, int baudrate);
-  bool connect(const std::string & port, int baudrate);
+  bool connect(const std::string& port_rx, const std::string& port_tx,
+               int baudrate);
+  bool connect(const std::string& port, int baudrate);
 
   /// Closes the serial port(s).
   void closePort();
@@ -98,16 +109,13 @@ class Uart
   int readBuffer(uint8_t* data, int size, int timeout_ms = 1000);
 
   // Added for unit testing
-  int getPtyfd()
-  {
-    return fd_rx_;
-  }
+  int getPtyfd() { return fd_rx_; }
 
  private:
   int openPort(const std::string& port);
-  bool setupPort(int fd, int* baudrate, int data_bits = 8, int stop_bits = 1, bool parity = false,
-                 bool hardware_control = false);
-  bool connect(const std::string & port, int baudrate, int* serial_port);
+  bool setupPort(int fd, int* baudrate, int data_bits = 8, int stop_bits = 1,
+                 bool parity = false, bool hardware_control = false);
+  bool connect(const std::string& port, int baudrate, int* serial_port);
 
   // The file descriptors to transmission and reception
   int fd_rx_;
@@ -120,7 +128,6 @@ class Uart
 
   // Queue managing writing on the port
   WriteQueue tx_queue_;
-
 };
 
-#endif //SERIAL_PORT_H
+#endif  // SERIAL_PORT_H

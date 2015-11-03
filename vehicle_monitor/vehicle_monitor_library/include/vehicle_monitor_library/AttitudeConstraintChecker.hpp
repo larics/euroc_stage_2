@@ -29,50 +29,35 @@
 #include "vehicle_monitor_library/BaseConstraintChecker.hpp"
 #include "vehicle_monitor_library/BoundingVolume.hpp"
 
-
-namespace octomap{
+namespace octomap {
 class OcTree;
 }
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
 class BaseVelocityEstimator;
 
 class AttitudeConstraintChecker : public BaseConstraintChecker {
-
  public:
-
-  AttitudeConstraintChecker(
-      double max_roll,
-      double max_pitch,
-      unsigned int projection_window,
-      unsigned int motion_capture_system_frequency,
-      std::shared_ptr<BaseVelocityEstimator> velocity_estimator);
+  AttitudeConstraintChecker(double max_roll, double max_pitch,
+                            unsigned int projection_window,
+                            unsigned int motion_capture_system_frequency);
 
   virtual ~AttitudeConstraintChecker();
 
  protected:
-
-  virtual bool DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
-
-  virtual bool DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
-
-  virtual void DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                 bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const;
+  virtual void doCheckConstraint(
+      const MotionCaptureSystemFrame& motion_capture_system_frame,
+      bool emergency_button_pressed, std::map<std::string, bool>& check_result);
 
  private:
-
-
   // number of time steps used to compute the future position of a vehicle
   unsigned int projection_window_;
 
   unsigned int motion_capture_system_frequency_;
 
-  std::shared_ptr<BaseVelocityEstimator> velocity_estimator_;
-
   double max_roll_;
   double max_pitch_;
 };
-
 }
 #endif /* VML__ATTITUDE_CONSTRAINT_CHECKER_H_ */

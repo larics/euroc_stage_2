@@ -8,7 +8,6 @@
 #ifndef INCLUDE_SAFETY_POSE_PUBLISHER_HPP_
 #define INCLUDE_SAFETY_POSE_PUBLISHER_HPP_
 
-
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
@@ -22,18 +21,16 @@
 
 namespace mav_saver {
 
-
 // Default values
 constexpr int kDefaultMeasurementDivisor = 1;
 static const std::string kDefaultSerialPort = "/dev/ttyUSB0";
 constexpr int kDefaultBaudrate = 57600;
 
-
 class SafetyPosePublisher {
  public:
   SafetyPosePublisher(ros::NodeHandle& nh, ros::NodeHandle& private_nh);
   SafetyPosePublisher(int baudrate, std::string port, int measurement_divisor);
-  ~SafetyPosePublisher() {};
+  ~SafetyPosePublisher(){};
 
   bool SetupSerialPort();
 
@@ -42,7 +39,8 @@ class SafetyPosePublisher {
 
  private:
   static unsigned short CrcUpdate(unsigned short crc, unsigned char data);
-  static unsigned short UpdateCrc16(unsigned short crc, const void * data, unsigned short cnt);
+  static unsigned short UpdateCrc16(unsigned short crc, const void* data,
+                                    unsigned short cnt);
 
   std::shared_ptr<aci::RawBuffer> buffer_;
   int measurement_divisor_;
@@ -56,9 +54,6 @@ class SafetyPosePublisher {
   std::string port_;
 };
 
-
 }  // namespace mav_saver
-
-
 
 #endif /* INCLUDE_SAFETY_POSE_PUBLISHER_HPP_ */

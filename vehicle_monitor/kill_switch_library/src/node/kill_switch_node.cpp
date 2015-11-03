@@ -22,8 +22,7 @@
 #include "kill_switch_library/kill_switch.h"
 
 // Standard C++ entry point
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   // Announce this program to the ROS master
   ros::init(argc, argv, "kill_switch_node");
   // Start the node resource managers (communication, time, etc)
@@ -47,14 +46,10 @@ int main(int argc, char** argv)
   // Looping and waiting until switch pressed
   double test_freq_hz = 1.0;
   ros::Rate loop_rate(test_freq_hz);
-  while(ros::ok())
-  {
-    if(!kill_switch.getKillStatus())
-    {
+  while (ros::ok()) {
+    if (!kill_switch.getKillStatus()) {
       ROS_INFO("Everything ok.");
-    }
-    else
-    {
+    } else {
       ROS_INFO("Kill switch pressed.");
     }
 

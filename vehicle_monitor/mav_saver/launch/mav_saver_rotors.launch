@@ -1,6 +1,13 @@
 <launch>
+  <arg name="mav_name" default="firefly" />
+
   <node name="mav_saver" pkg="mav_saver" type="mav_saver_node" clear_params="true" output="screen" >
-    <remap from="transform" to="/firefly/ground_truth/transform" />
+    <remap from="odometry" to="/firefly/ground_truth/odometry" />
+    <param name="measurement_divisor" value="10" />
+    <param name="obstacle_octomap_path" value="res/lee.bt" />
+    <param name="enable_collision_constraint" value="true" />
+    <param name="kill_switch_port_name" value="/dev/ttyUSB_kill_switch" />
+    <param name="serial_port" value="/dev/ttyUSB_$(arg mav_name)" />
   </node>
 
   <include file="$(find rotors_gazebo)/launch/mav_hovering_example.launch" />
