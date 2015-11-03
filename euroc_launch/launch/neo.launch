@@ -28,7 +28,7 @@
 
     <!-- Vicon -->
     <node name="pose_sensor_vicon" pkg="msf_updates" type="pose_sensor" respawn="true" clear_params="true" output="screen">
-      <remap from="msf_updates/transform_input" to="vrpn_client/pose" />
+      <remap from="msf_updates/transform_input" to="vrpn_client/estimated_transform" />
       <remap from="msf_core/imu_state_input" to="imu" />
       <rosparam file="$(find euroc_launch)/parameters/common/msf_parameters_vicon.yaml"/>
       <param name="capability_group" value="Vicon" />
