@@ -1,13 +1,14 @@
 <launch>
   <arg name="mav_name" default="euroc6" />
-  <arg name="octomap_path" default="res/LeoC6_no_floor.bt" />
+  <arg name="octomap_path" default="res/LEO_octomap.bt" />
 
   <group ns="$(arg mav_name)">
     <node name="mav_saver" pkg="mav_saver" type="mav_saver_node" clear_params="true" output="screen" >
-      <remap from="transform" to="vrpn_client/pose" />
+      <remap from="odometry" to="vrpn_client/estimated_odometry" />
       <param name="measurement_divisor" value="10" />
       <param name="obstacle_octomap_path" value="$(arg octomap_path)" />
-      <param name="enable_collision_constraint" value="false" />
+      <param name="enable_collision_constraint" value="true" />
+      <param name="minimum_height_to_check_collision" value="0.7" />
       <param name="kill_switch_port_name" value="/dev/ttyUSB_kill_switch" />
       <param name="serial_port" value="/dev/ttyUSB_$(arg mav_name)" />
     </node>
