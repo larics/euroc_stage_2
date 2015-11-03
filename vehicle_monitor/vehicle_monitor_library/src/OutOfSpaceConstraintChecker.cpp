@@ -22,46 +22,41 @@
  */
 
 #include "vehicle_monitor_library/OutOfSpaceConstraintChecker.hpp"
-
 #include "vehicle_monitor_library/Vehicle.hpp"
-#include "vehicle_monitor_library/MotionCaptureSystemFrame.hpp"
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
+OutOfSpaceConstraintChecker::OutOfSpaceConstraintChecker(
+    BoundingVolume environmentBoundingVolume)
+    : BaseConstraintChecker("OUT_OF_SPACE_CONSTRAINT_CHECKER"),
+      _environmentBoundingVolume(environmentBoundingVolume) {}
 
-OutOfSpaceConstraintChecker::OutOfSpaceConstraintChecker(BoundingVolume environmentBoundingVolume)
-:BaseConstraintChecker("OUT_OF_SPACE_CONSTRAINT_CHECKER"),
- _environmentBoundingVolume(environmentBoundingVolume){
+OutOfSpaceConstraintChecker::~OutOfSpaceConstraintChecker() {}
 
-}
+void OutOfSpaceConstraintChecker::doCheckConstraint(
+    const MotionCaptureSystemFrame& motion_capture_system_frame,
+    bool emergency_button_pressed, std::map<std::string, bool>& check_result) {
+  bool constraint_ok;
+  VehicleState estimated_state;
 
-OutOfSpaceConstraintChecker::~OutOfSpaceConstraintChecker(){
-
-}
-
-void OutOfSpaceConstraintChecker::DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                                    bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const{
-
-
-  bool vehicleResult;
-
-  VehicleState frameElement;
-
-  for(const auto vehicleMapElement : _vehiclesMap){
-
-    if( motionCaptureSystemFrame.GetFrameElementForVehicle(vehicleMapElement.first, frameElement) == false){
+  for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
+       *vehicles_map_) {
+    const std::string& vehicle_id = vehicle_map_element.first;
+    Vehicle::Ptr vehicle = vehicle_map_element.second;
+    if (vehicle->getHasNewState() == false) {
       continue;
     }
 
-    checkResult.insert(make_pair(vehicleMapElement.first,
-                                 _environmentBoundingVolume.IsSphereInsideBB(frameElement._linear,
-                                                                             vehicleMapElement.second->GetBoundingSphereRadius())));
+    if (vehicle->getState(&estimated_state) == false) {
+      continue;
+    }
 
+    constraint_ok = _environmentBoundingVolume.isSphereInsideBB(
+        estimated_state.position, vehicle->getBoundingSphereRadius());
+
+    check_result.insert(make_pair(vehicle_id, constraint_ok));
   }
-
 }
-
-
 }

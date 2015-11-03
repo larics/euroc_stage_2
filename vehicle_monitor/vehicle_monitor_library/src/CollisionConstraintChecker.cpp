@@ -31,126 +31,85 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
-
-
+namespace VehicleMonitorLibrary {
 
 CollisionConstraintChecker::CollisionConstraintChecker(
-    std::shared_ptr<octomap::OcTree> ocTreePtr,
-    BoundingVolume environmentBoundingVolume,
-    float maxDistToCheckCollision,
-    float collisionThreesholdInBoundingSphereRadius,
-    unsigned int projectionWindow,
-    unsigned int motionCaptureSystemFrequency,
-    std::shared_ptr<BaseVelocityEstimator> velocityEstimator)
-:BaseConstraintChecker("COLLISION_CONSTRAINT_CHECKER"),
- _ocTreePtr(ocTreePtr),
- _distMap(maxDistToCheckCollision, _ocTreePtr.get(), environmentBoundingVolume.GetVertexMin(),
-          environmentBoundingVolume.GetVertexMax(), true),
-          _collisionThreesholdInBoundingSphereRadius(collisionThreesholdInBoundingSphereRadius),
-          _projectionWindow(projectionWindow),
-          _motionCaptureSystemFrequency(motionCaptureSystemFrequency),
-          _velocityEstimator(velocityEstimator){
-
-  if(_velocityEstimator == nullptr){
-    throw std::invalid_argument("Velocity Estimator cannot be nullptr");
-  }
-
-  _distMap.update();
-
-
+    std::shared_ptr<octomap::OcTree> oc_tree,
+    const BoundingVolume& environment_bounding_volume,
+    double max_dist_to_check_collision,
+    double collision_threshold_in_bounding_sphere_radius,
+    unsigned int projection_window,
+    unsigned int motion_capture_system_frequency, double minimum_height)
+    : BaseConstraintChecker("COLLISION_CONSTRAINT_CHECKER"),
+      oc_tree_ptr_(oc_tree),
+      dist_map_(max_dist_to_check_collision, oc_tree_ptr_.get(),
+                environment_bounding_volume.getVertexMin(),
+                environment_bounding_volume.getVertexMax(), true),
+      collision_threshold_in_bounding_sphere_radius_(
+          collision_threshold_in_bounding_sphere_radius),
+      projection_window_size_(projection_window),
+      minimum_height_(minimum_height),
+      motion_capture_system_frequency_(motion_capture_system_frequency) {
+  dist_map_.update();
 }
 
-CollisionConstraintChecker::~CollisionConstraintChecker(){
+CollisionConstraintChecker::~CollisionConstraintChecker() {}
 
-}
+void CollisionConstraintChecker::doCheckConstraint(
+    const MotionCaptureSystemFrame& motion_capture_system_frame,
+    bool emergency_button_pressed, std::map<std::string, bool>& check_result) {
+  bool constraint_ok;
 
-bool CollisionConstraintChecker::DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
+  VehicleState estimated_state;
 
-  if(_velocityEstimator->RegisterVehicle(vehiclePtr->GetID())){
-    return true;
+  double delta_time =
+      projection_window_size_ / (double)motion_capture_system_frequency_;
 
-  }
-
-  return false;
-
-}
-
-
-bool CollisionConstraintChecker::DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr){
-
-  if(_velocityEstimator->UnregisterVehicle(vehiclePtr->GetID())){
-
-    return true;
-
-  }
-
-  return false;
-
-
-}
-
-
-void CollisionConstraintChecker::DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                                   bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const{
-
-
-  bool vehicleResult;
-
-
-  _velocityEstimator->Update(motionCaptureSystemFrame);
-
-  VehicleState frameElement;
-  VehicleState estimatedVelocityState;
-
-  float deltaTime = _projectionWindow / (float)_motionCaptureSystemFrequency;
-
-
-  for(const auto vehicleMapElement : _vehiclesMap){
-
-    // 2) Retrieve current position and estimate velocity
-
-    if( motionCaptureSystemFrame.GetFrameElementForVehicle(vehicleMapElement.first, frameElement) == false){
+  for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
+       *vehicles_map_) {
+    const std::string& vehicle_id = vehicle_map_element.first;
+    Vehicle::Ptr vehicle = vehicle_map_element.second;
+    if (vehicle->getHasNewState() == false) {
       continue;
     }
 
-    if(_velocityEstimator->PredictVelocity(vehicleMapElement.second->GetID(),
-                                           estimatedVelocityState) == false){
+    if (vehicle->getState(&estimated_state) == false) {
       continue;
     }
 
-    // 1) Project current position according to velocity estimation
+    if (take_off_detected_.find(vehicle_id) == take_off_detected_.end()) {
+      if (estimated_state.position.z() > minimum_height_) {
+        take_off_detected_.insert(vehicle_map_element.first);
+        std::cout << "[VEHICLE_MONITOR] Collision Constraint activated for "
+                  << vehicle_id << std::endl;
+      } else {
+        continue;
+      }
+    }
 
+    // Project current position according to velocity estimation
+    Eigen::Vector3d future_pose(estimated_state.position.x() +
+                                    estimated_state.velocity.x() * delta_time,
+                                estimated_state.position.y() +
+                                    estimated_state.velocity.y() * delta_time,
+                                estimated_state.position.z() +
+                                    estimated_state.velocity.z() * delta_time);
 
+    // Given the future position check for a collision
+    octomath::Vector3 future_pose_octomath(future_pose.x(), future_pose.y(),
+                                           future_pose.z());
 
+    double distance = dist_map_.getDistance(future_pose_octomath);
 
-    Eigen::Vector3d futurePose(
-        frameElement._linear.x() + estimatedVelocityState._linear.x() * deltaTime,
-        frameElement._linear.y() + estimatedVelocityState._linear.y() * deltaTime,
-        frameElement._linear.z() + estimatedVelocityState._linear.z() * deltaTime
-    );
-
-    // 2) Given the future position check for a collision
-
-
-    octomath::Vector3 futurePoseOctomath(futurePose.x(), futurePose.y(), futurePose.z());
-
-    float distance = _distMap.getDistance(futurePoseOctomath);
-
-    if(distance==DynamicEDTOctomap::distanceValue_Error) {
+    if (distance == DynamicEDTOctomap::distanceValue_Error) {
       std::cout << "VEHICLE NOT IN MAP" << std::endl;
-      vehicleResult = false;
+      constraint_ok = false;
     } else {
-      vehicleResult =  distance >
-      (_collisionThreesholdInBoundingSphereRadius * vehicleMapElement.second->GetBoundingSphereRadius());
+      constraint_ok =
+          distance > (collision_threshold_in_bounding_sphere_radius_ *
+                      vehicle->getBoundingSphereRadius());
     }
-    checkResult.insert(make_pair(vehicleMapElement.first, vehicleResult));
-
-
-
+    check_result.insert(make_pair(vehicle_id, constraint_ok));
   }
-
 }
-
-
 }

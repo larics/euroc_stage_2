@@ -25,64 +25,9 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-BaseVelocityEstimator::BaseVelocityEstimator(){
+BaseVelocityEstimator::BaseVelocityEstimator() {}
 
-}
-
-BaseVelocityEstimator::~BaseVelocityEstimator(){
-
-}
-
-bool BaseVelocityEstimator::RegisterVehicle(std::string vehicleID){
-
-  pair<set<string>::iterator, bool> ret;
-
-  ret = _vehicleIDs.insert(vehicleID);
-
-  if (ret.second==false) {
-
-    return false;
-
-  }
-
-  if(DoRegisterVehicle(vehicleID) == false){
-
-    _vehicleIDs.erase(vehicleID);
-
-  }
-
-  return true;
-
-}
-
-bool BaseVelocityEstimator::DoRegisterVehicle(std::string vehicleID){
-
-  return true;
-
-}
-
-bool BaseVelocityEstimator::UnregisterVehicle(std::string vehicleID){
-
-  set<string>::iterator setElement;
-
-  setElement = _vehicleIDs.find(vehicleID);
-
-  if(setElement == _vehicleIDs.end()){
-    return false;
-  }
-
-  _vehicleIDs.erase(setElement);
-
-  return DoUnregisterVehicle(vehicleID);
-
-}
-bool BaseVelocityEstimator::DoUnregisterVehicle(std::string vehicleID){
-
-  return true;
-
-}
-
-
+BaseVelocityEstimator::~BaseVelocityEstimator() {}
 }

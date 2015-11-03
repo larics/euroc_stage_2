@@ -30,40 +30,50 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-namespace VehicleMonitorLibrary{
+#include "vehicle_monitor_library/BaseVelocityEstimator.hpp"
+#include "vehicle_monitor_library/MotionCaptureSystemFrame.hpp"
+
+namespace VehicleMonitorLibrary {
 class Vehicle;
 }
 
-std::ostream& operator<< (std::ostream& outStream, const VehicleMonitorLibrary::Vehicle& vehicle);
+std::ostream& operator<<(std::ostream& outStream,
+                         const VehicleMonitorLibrary::Vehicle& vehicle);
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-class IVelocityEstimator;
 class MotionCaptureSystemFrame;
 
-class Vehicle{
-
+class Vehicle {
  public:
+  typedef std::shared_ptr<Vehicle> Ptr;
 
-  Vehicle(std::string ID, float boundingSphereRadius);
+  Vehicle(const std::string& id, double bounding_sphere_radius,
+          BaseVelocityEstimator::Ptr velocity_estimator);
 
   ~Vehicle();
 
-  std::string GetID() const;
+  std::string getID() const;
 
-  float GetBoundingSphereRadius() const;
+  double getBoundingSphereRadius() const;
 
-  void UpdatePose(const MotionCaptureSystemFrame& motionCaptureSystemFrame);
+  std::string toString() const;
 
-  std::string ToString() const;
+  void updateState(const MotionCaptureSystemFrame& motion_capture_system_frame);
+  bool getState(VehicleState* estimated_velocity_state);
+
+  bool getHasNewState() { return has_new_state_; }
+  bool resetHasNewState() { has_new_state_ = false; }
 
  private:
+  std::string
+      id_;  // id used to identify and access vehicle in the VehicleContainer
+  double bounding_sphere_radius_;
 
-  std::string _ID;                     // id used to identify and access vehicle in the VehicleContainer
-
-  float _boundingSphereRadius;
-
+  BaseVelocityEstimator::Ptr velocity_estimator_;
+  VehicleState estimated_state_;
+  bool valid_velocity_;
+  bool has_new_state_;
 };
-
 }
 #endif /* VML__VEHICLE_H_ */

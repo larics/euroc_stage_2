@@ -29,25 +29,23 @@
 
 #include "ConstraintCheckerOutput.hpp"
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
 struct VMVehicleStatus;
 
-class VehicleMonitorObserverBase{
-
+class VehicleMonitorObserverBase {
  public:
-
   VehicleMonitorObserverBase(){};
 
   virtual ~VehicleMonitorObserverBase(){};
 
   // firs string vehicle ID, second  string constraint checker ID;
 
-  virtual void Update(const std::map<std::string, std::map<std::string, ConstraintCheckerOutput> >& vehicleStatus) = 0;
-
-
+  virtual void Update(
+      const std::map<std::string,
+                     std::map<std::string, ConstraintCheckerOutput> >&
+          vehicleStatus) = 0;
 };
-
 }
 
 #endif /* VML__VEHICLE_MONITOR_OBSERVER_H_ */

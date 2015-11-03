@@ -28,24 +28,48 @@
 
 #include <octomap/octomap_types.h>
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-struct VehicleState{
+struct VehicleState {
+ public:
+  Eigen::Vector3d position;
+  Eigen::Vector3d orientation;
 
-  Eigen::Vector3d _linear;
-  Eigen::Vector3d _angular;
+  bool velocity_valid;
+
+  Eigen::Vector3d velocity;
+  Eigen::Vector3d angular_rate;
 
   VehicleState()
-  :_linear(), _angular(){
+      : position(Eigen::Vector3d::Zero()),
+        orientation(Eigen::Vector3d::Zero()),
+        velocity(Eigen::Vector3d::Zero()),
+        angular_rate(Eigen::Vector3d::Zero()),
+        velocity_valid(false) {}
 
+  VehicleState(const Eigen::Vector3d& position,
+               const Eigen::Vector3d& orientation)
+      : position(position),
+        orientation(orientation),
+        velocity(Eigen::Vector3d::Zero()),
+        angular_rate(Eigen::Vector3d::Zero()),
+        velocity_valid(false) {}
+
+  VehicleState(const Eigen::Vector3d& position,
+               const Eigen::Vector3d& orientation,
+               const Eigen::Vector3d& velocity,
+               const Eigen::Vector3d& angular_rate)
+      : position(position),
+        orientation(orientation),
+        velocity(velocity),
+        angular_rate(angular_rate),
+        velocity_valid(true) {}
+
+  void copyVelocityAndRate(const VehicleState& state) {
+    velocity = state.velocity;
+    angular_rate = state.angular_rate;
+    velocity_valid = state.velocity_valid;
   }
-
-  VehicleState(const Eigen::Vector3d& linear, const Eigen::Vector3d& angular)
-  :_linear(linear), _angular(angular){
-
-  }
-
 };
-
 }
 #endif /* VML__VEHICLE_STATE_H_ */

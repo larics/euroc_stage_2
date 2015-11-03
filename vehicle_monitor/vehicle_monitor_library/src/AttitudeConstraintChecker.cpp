@@ -30,86 +30,56 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
-
+namespace VehicleMonitorLibrary {
 
 AttitudeConstraintChecker::AttitudeConstraintChecker(
-    double max_roll,
-    double max_pitch,
-    unsigned int projection_window,
-    unsigned int motion_capture_system_frequency,
-    std::shared_ptr<BaseVelocityEstimator> velocityEstimator)
-:BaseConstraintChecker("ATTITUDE_CONSTRAINT_CHECKER"),
- projection_window_(projection_window),
- motion_capture_system_frequency_(motion_capture_system_frequency),
- velocity_estimator_(velocityEstimator),
- max_roll_(max_roll),
- max_pitch_(max_pitch) {
+    double max_roll, double max_pitch, unsigned int projection_window,
+    unsigned int motion_capture_system_frequency)
+    : BaseConstraintChecker("ATTITUDE_CONSTRAINT_CHECKER"),
+      projection_window_(projection_window),
+      motion_capture_system_frequency_(motion_capture_system_frequency),
+      max_roll_(max_roll),
+      max_pitch_(max_pitch) {}
 
-  if(velocity_estimator_ == nullptr){
-    throw std::invalid_argument("Velocity Estimator cannot be nullptr");
-  }
-}
+AttitudeConstraintChecker::~AttitudeConstraintChecker() {}
 
-AttitudeConstraintChecker::~AttitudeConstraintChecker() {
-}
+void AttitudeConstraintChecker::doCheckConstraint(
+    const MotionCaptureSystemFrame& motion_capture_system_frame,
+    bool emergency_button_pressed, std::map<std::string, bool>& check_result) {
+  bool constraint_ok;
 
-bool AttitudeConstraintChecker::DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr) {
+  VehicleState estimated_state;
 
-  if(velocity_estimator_->RegisterVehicle(vehiclePtr->GetID())) {
-    return true;
-  }
+  double deltaTime =
+      projection_window_ / (double)motion_capture_system_frequency_;
 
-  return false;
-}
-
-bool AttitudeConstraintChecker::DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr) {
-
-  if(velocity_estimator_->UnregisterVehicle(vehiclePtr->GetID())) {
-    return true;
-  }
-
-  return false;
-}
-
-
-void AttitudeConstraintChecker::DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                                  bool emergencyButtonPressed, std::map<std::string, bool>& checkResult) const {
-
-  bool vehicleResult;
-
-  velocity_estimator_->Update(motionCaptureSystemFrame);
-
-  VehicleState frameElement;
-  VehicleState estimatedVelocityState;
-
-  float deltaTime = projection_window_ / (float)motion_capture_system_frequency_;
-
-  for(const auto vehicleMapElement : _vehiclesMap) {
-
-    if( motionCaptureSystemFrame.GetFrameElementForVehicle(vehicleMapElement.first, frameElement) == false) {
+  for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
+       *vehicles_map_) {
+    const std::string& vehicle_id = vehicle_map_element.first;
+    Vehicle::Ptr vehicle = vehicle_map_element.second;
+    if (vehicle->getHasNewState() == false) {
       continue;
     }
 
-    if(velocity_estimator_->PredictVelocity(vehicleMapElement.second->GetID(),
-                                            estimatedVelocityState) == false) {
+    if (vehicle->getState(&estimated_state) == false) {
       continue;
     }
 
     //    Eigen::Vector3d futureAngle(
-    //        frameElement._angular.x() + estimatedVelocityState._angular.x() * deltaTime,
-    //        frameElement._angular.y() + estimatedVelocityState._angular.y() * deltaTime,
-    //        frameElement._angular.z() + estimatedVelocityState._angular.z() * deltaTime
+    //        frameElement._angular.x() + estimatedVelocityState._angular.x() *
+    //        deltaTime,
+    //        frameElement._angular.y() + estimatedVelocityState._angular.y() *
+    //        deltaTime,
+    //        frameElement._angular.z() + estimatedVelocityState._angular.z() *
+    //        deltaTime
     //    );
 
     // TODO(burrimi): Switch to predicted attitude.
-    vehicleResult =  max_roll_ > std::abs(frameElement._angular.x()) &&
-        max_pitch_ > std::abs(frameElement._angular.y());
+    constraint_ok = max_roll_ > std::abs(estimated_state.orientation.x()) &&
+                    max_pitch_ > std::abs(estimated_state.orientation.y());
 
     // false stays for constraint not satisfied
-    checkResult.insert(make_pair(vehicleMapElement.first, vehicleResult));
-
+    check_result.insert(make_pair(vehicle_id, constraint_ok));
   }
 }
-
 }

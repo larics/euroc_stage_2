@@ -5,13 +5,9 @@ SwitchEmulator::SwitchEmulator(double loop_frequency_hz)
       connected_(false),
       started_(false),
       stop_(true),
-      loop_frequency_hz_(loop_frequency_hz)
-{
+      loop_frequency_hz_(loop_frequency_hz) {}
 
-}
-
-bool SwitchEmulator::connect(const std::string& port, int baudrate)
-{
+bool SwitchEmulator::connect(const std::string& port, int baudrate) {
   // Connecting to the switch
   bool success = uart_.connect(port, baudrate);
   // Setting flag indicating switch is connected to hardware
@@ -26,9 +22,8 @@ bool SwitchEmulator::connect(const std::string& port, int baudrate)
   }
 }
 
-bool SwitchEmulator::start()
-{
-  // If not already started 
+bool SwitchEmulator::start() {
+  // If not already started
   if (!started_) {
     if (connected_) {
       // Create thread to do switch checking
@@ -46,40 +41,31 @@ bool SwitchEmulator::start()
   }
 }
 
-void SwitchEmulator::stop()
-{
+void SwitchEmulator::stop() {
   // If already started, stop the checking thread
   if (started_ == true) {
     stop_ = true;
-    if (switch_thread_->joinable())
-      switch_thread_->join();
+    if (switch_thread_->joinable()) switch_thread_->join();
     switch_thread_ = nullptr;
     started_ = false;
   }
 }
 
-void SwitchEmulator::trigger()
-{
-  kill_state_ = true;
-}
+void SwitchEmulator::trigger() { kill_state_ = true; }
 
-void SwitchEmulator::untrigger()
-{
-  kill_state_ = false;
-}
+void SwitchEmulator::untrigger() { kill_state_ = false; }
 
-void SwitchEmulator::switchLoop()
-{
+void SwitchEmulator::switchLoop() {
   while (ros::ok() && !stop_) {
     // Reading and character
     char switch_char;
     int timeout = 100;  // [ms]
-    int num_bytes_read = uart_.readBuffer((uint8_t*) &switch_char, 1, timeout);
+    int num_bytes_read = uart_.readBuffer((uint8_t*)&switch_char, 1, timeout);
     if (num_bytes_read > 0) {
       // If not triggered sending the same character back
       if (kill_state_ == false) {
         int num_bytes_writen;
-        num_bytes_writen = uart_.writeBuffer((uint8_t*) &switch_char, 1);
+        num_bytes_writen = uart_.writeBuffer((uint8_t*)&switch_char, 1);
       }
     }
   }

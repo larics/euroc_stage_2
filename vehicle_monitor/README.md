@@ -1,4 +1,4 @@
-#EuRoC-VehicleMonitor
+# Mav Saver
 
 The Vehicle Monitor Library (VML) is a C++ library designed to monitor the behavior of a set of flying machines. Its main objective is to process input data representing the state of a set of vehicles and comparing their poses and projected movement according to a given representation of the space they can move in. Depending on these data, the Vehicle Monitor Library checks if a given set of constraints are satisfied and provides as output the result of these checks. 
 

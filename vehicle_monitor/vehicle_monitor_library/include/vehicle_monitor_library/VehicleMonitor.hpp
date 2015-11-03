@@ -24,39 +24,37 @@
 #ifndef VML__VEHICLE_MONITOR_H_
 #define VML__VEHICLE_MONITOR_H_
 
-#include "BoundingVolume.hpp"
-#include "ConstraintCheckerOutput.hpp"
-
+#include <boost/filesystem.hpp>
 #include <Eigen/Eigen>
 #include <map>
 #include <set>
 
-#include <boost/shared_container_iterator.hpp>
-#include <boost/filesystem.hpp>
-
 #include <octomap/octomap_types.h>
 
-namespace octomap{
+#include "vehicle_monitor_library/BaseConstraintChecker.hpp"
+#include "vehicle_monitor_library/BoundingVolume.hpp"
+#include "vehicle_monitor_library/ConstraintCheckerOutput.hpp"
+#include "vehicle_monitor_library/Vehicle.hpp"
+
+namespace octomap {
 class OcTree;
 }
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-class BaseConstraintChecker;
-class Vehicle;
 class MotionCaptureSystemFrame;
 class VehicleMonitorObserverBase;
 
-class VehicleMonitor{
-
+class VehicleMonitor {
  public:
-
   // constructors
   VehicleMonitor(boost::filesystem::path octoMapFilePath,
-                 const Eigen::Vector3d& environmentCorner1, const Eigen::Vector3d& environmentCornerB,
+                 const Eigen::Vector3d& environmentCorner1,
+                 const Eigen::Vector3d& environmentCornerB,
                  unsigned int motionCaptureSystemFrequency);
   VehicleMonitor(std::shared_ptr<octomap::OcTree> ocTreePtr,
-                 const Eigen::Vector3d& environmentCorner1, const Eigen::Vector3d& environmentCornerB,
+                 const Eigen::Vector3d& environmentCorner1,
+                 const Eigen::Vector3d& environmentCornerB,
                  unsigned int motionCaptureSystemFrequency);
   ~VehicleMonitor();
 
@@ -67,39 +65,39 @@ class VehicleMonitor{
 
   std::vector<std::string> GetVehicleIDs() const;
 
-  bool RegisterChecker(std::shared_ptr<BaseConstraintChecker> constraintChekerPtr);
-  bool UnregisterChecker(std::shared_ptr<BaseConstraintChecker> constraintChekerPtr);
+  bool RegisterChecker(BaseConstraintChecker::Ptr constraint_cheker);
+  bool UnregisterChecker(BaseConstraintChecker::Ptr constraint_cheker);
 
-  bool RegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
-  bool UnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
+  bool RegisterVehicle(Vehicle::Ptr vehicle);
+  bool UnregisterVehicle(Vehicle::Ptr vehicle);
 
-  bool RegisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observerPtr);
-  bool UnregisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observerPtr);
+  bool RegisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observer);
+  bool UnregisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observer);
 
-  void Trigger(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-               bool emergencyButtonPressed);
+  void Trigger(const MotionCaptureSystemFrame& motion_capture_system_frame,
+               bool emergency_button_pressed);
 
+ private:
+  void NotifyObservers(
+      const std::map<std::string,
+                     std::map<std::string, ConstraintCheckerOutput> >&
+          vehicle_status) const;
 
- private :
+  std::shared_ptr<std::map<std::string, Vehicle::Ptr> > vehicles_map_;
 
-  void NotifyObservers(const std::map<std::string, std::map<std::string, ConstraintCheckerOutput> >& vehicleStatus) const;
+  BoundingVolume environment_bounding_volume_;
 
-  std::map< std::string, std::shared_ptr<Vehicle> > _vehiclesMap;
+  std::map<std::string, BaseConstraintChecker::Ptr> constraint_checkers_;
 
-  BoundingVolume _environmentBoundingVolume;
-
-  std::map<std::string, std::shared_ptr<BaseConstraintChecker> > _constraintCheckers;
-
-  unsigned int _motionCaptureSystemFrequency;
+  unsigned int motion_capture_system_frequency_;
 
   std::shared_ptr<octomap::OcTree> _ocTreePtr;
 
-  std::map<std::string, std::map<std::string, ConstraintCheckerOutput> > _lastComputedOutput;
+  std::map<std::string, std::map<std::string, ConstraintCheckerOutput> >
+      last_computed_output_;
 
-  std::set<std::shared_ptr<VehicleMonitorObserverBase> > _observers;
-
+  std::set<std::shared_ptr<VehicleMonitorObserverBase> > observers_;
 };
-
 }
 
 #endif /* VML__VEHICLE_MONITOR_H_ */

@@ -33,44 +33,51 @@
 
 #include "ConstraintCheckerOutput.hpp"
 #include "VehicleState.hpp"
+#include "vehicle_monitor_library/Vehicle.hpp"
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
-class Vehicle;
 class MotionCaptureSystemFrame;
 
 class BaseConstraintChecker {
-
  public:
+  typedef std::shared_ptr<BaseConstraintChecker> Ptr;
 
-  BaseConstraintChecker(std::string ID);
+  BaseConstraintChecker(std::string constraint_id);
 
   virtual ~BaseConstraintChecker();
 
-  std::string GetID() const;
+  std::string getId() const;
 
-  bool RegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
+  bool registerVehicle(const std::string& vehicle_id);
 
-  bool UnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
+  bool unregisterVehicle(const std::string& vehicle_id);
 
-  void CheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                       bool emergencyButtonPressed, std::map<std::string, ConstraintCheckerOutput>& checkResult);
+  void checkConstraint(
+      const MotionCaptureSystemFrame& motion_capture_system_frame,
+      bool emergency_button_pressed,
+      std::map<std::string, ConstraintCheckerOutput>& check_result);
+
+  void setVehiclesMap(
+      std::shared_ptr<std::map<std::string, Vehicle::Ptr> > vehicles_map);
 
  protected:
+  // Optional function for the constraints, to get notified about new vehicles.
+  virtual bool doRegisterVehicle(const std::string& vehicle_id);
+  // Optional function for the constraints, to get notified about removed
+  // vehicles.
+  virtual bool doUnregisterVehicle(const std::string& vehicle_id);
 
-  virtual bool DoRegisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
+  virtual void doCheckConstraint(
+      const MotionCaptureSystemFrame& motionCaptureSystemFrame,
+      bool emergencyButtonPressed,
+      std::map<std::string, bool>& checkResult) = 0;
 
-  virtual bool DoUnregisterVehicle(std::shared_ptr<Vehicle> vehiclePtr);
+  std::string constraint_id_;
 
-  virtual void DoCheckConstraint(const MotionCaptureSystemFrame& motionCaptureSystemFrame,
-                                 bool emergencyButtonPressed, std::map<std::string, bool>& checkResult)  const = 0;
+  std::shared_ptr<std::map<std::string, Vehicle::Ptr> > vehicles_map_;
 
-  std::string _ID;
-
-  std::map< std::string, std::shared_ptr<Vehicle> > _vehiclesMap;
-  std::map< std::string, VehicleState > _lastValidStateMap;
-
+  std::map<std::string, VehicleState> last_valid_state_map_;
 };
-
 }
 #endif /* VML__BASE_CONSTRAINT_CHECKER_H_ */

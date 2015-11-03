@@ -28,34 +28,27 @@
 
 #include <set>
 #include <string>
+#include <memory>
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
 class MotionCaptureSystemFrame;
 
-class BaseVelocityEstimator{
-
+class BaseVelocityEstimator {
  public:
+  typedef std::shared_ptr<BaseVelocityEstimator> Ptr;
 
   BaseVelocityEstimator();
   virtual ~BaseVelocityEstimator();
 
-  virtual void Update(const MotionCaptureSystemFrame& motionCaptureSystemFrame) = 0;
+  virtual void update(
+      const std::string& vehicleID,
+      const MotionCaptureSystemFrame& motionCaptureSystemFrame) = 0;
 
-  virtual bool PredictVelocity(std::string vehicleID, VehicleState& estimatedVehicleState) = 0;
-
-  bool RegisterVehicle(std::string vehicleID);
-  bool UnregisterVehicle(std::string vehicleID);
+  virtual bool predictVelocity(VehicleState& estimatedVehicleState) = 0;
 
  protected:
-
-  virtual bool DoRegisterVehicle(std::string vehicleID);
-  virtual bool DoUnregisterVehicle(std::string vehicleID);
-
-  std::set<std::string> _vehicleIDs;
-
 };
-
 }
 
 #endif /* VML__BASE_VELOCITY_ESTIMATOR_H_ */

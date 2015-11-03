@@ -12,20 +12,15 @@ KillSwitch::KillSwitch(double check_frequency_hz, double wait_time_s)
       connected_(false),
       switch_state_(SAFE),
       safe_counter_(0),
-      wait_time_s_(wait_time_s)
-{
+      wait_time_s_(wait_time_s) {
   // The timeout is half the time required by the checking frequency.
   // For example for a checkfreq of 100Hz we have a timeout of 5ms.
   timeout_ms_ = (1.0 * 1000.0) / (check_frequency_hz * 2);
 }
 
-KillSwitch::~KillSwitch()
-{
-  stop();
-}
+KillSwitch::~KillSwitch() { stop(); }
 
-bool KillSwitch::connect(const std::string& port, int baudrate)
-{
+bool KillSwitch::connect(const std::string& port, int baudrate) {
   // Connecting to the switch
   bool success = uart_.connect(port, baudrate);
   // Setting flag indicating switch is connected to hardware
@@ -40,9 +35,8 @@ bool KillSwitch::connect(const std::string& port, int baudrate)
   }
 }
 
-bool KillSwitch::start()
-{
-  // If not already started 
+bool KillSwitch::start() {
+  // If not already started
   if (!started_) {
     // If connected to hardware
     if (connected_) {
@@ -66,20 +60,17 @@ bool KillSwitch::start()
   }
 }
 
-void KillSwitch::stop()
-{
+void KillSwitch::stop() {
   // If already started, stop the checking thread
   if (started_ == true) {
     stop_ = true;
-    if (checkingThread_->joinable())
-      checkingThread_->join();
+    if (checkingThread_->joinable()) checkingThread_->join();
     checkingThread_ = nullptr;
     started_ = false;
   }
 }
 
-bool KillSwitch::reset()
-{
+bool KillSwitch::reset() {
   // Resetting the kill status
   if (kill_status_ == true) {
     // If switch not depressed
@@ -97,39 +88,35 @@ bool KillSwitch::reset()
   }
 }
 
-void KillSwitch::checkLoop()
-{
+void KillSwitch::checkLoop() {
   // Looping forever and printing
   ros::Rate loop_rate(check_frequency_hz_);
   while (ros::ok() && !stop_) {
     // Taking action depending on switch state
-    switch(switch_state_)
-    {
+    switch (switch_state_) {
       // Kill state
       case KILLED:
         // If switch saying safe - start transition
-        if(check() == false)
-        {
+        if (check() == false) {
           switch_state_ = TRANS_TO_SAFE;
-//          ROS_INFO_STREAM("Entering transition to safe state. Wait: " << wait_time_s_ << " seconds.");
+          //          ROS_INFO_STREAM("Entering transition to safe state. Wait:
+          //          " << wait_time_s_ << " seconds.");
         }
         break;
       // Transitioning to safe state
       case TRANS_TO_SAFE:
         // If switch saying safe - keep counting
-        if(check() == false)
-        {
+        if (check() == false) {
           safe_counter_++;
           // If count reached - transition to safe state
-          if(safe_counter_>= static_cast<int>(wait_time_s_*check_frequency_hz_) )
-          {
+          if (safe_counter_ >=
+              static_cast<int>(wait_time_s_ * check_frequency_hz_)) {
             kill_status_ = false;
             switch_state_ = SAFE;
           }
         }
         // If switch saying kill - transition to kill state + reset counter
-        else
-        {
+        else {
           safe_counter_ = 0;
           switch_state_ = KILLED;
         }
@@ -137,8 +124,7 @@ void KillSwitch::checkLoop()
       // Safe state
       case SAFE:
         // If switch saying kill - immediately transition to kill state
-        if(check() == true)
-        {
+        if (check() == true) {
           kill_status_ = true;
           safe_counter_ = 0;
           switch_state_ = KILLED;
@@ -150,20 +136,22 @@ void KillSwitch::checkLoop()
   }
 }
 
-bool KillSwitch::check()
-{
+bool KillSwitch::check() {
   // Writing a character on to the switch
   check_char_++;
-  int num_bytes_writen = uart_.writeBuffer((uint8_t*) &check_char_, 1);
+  int num_bytes_writen = uart_.writeBuffer((uint8_t*)&check_char_, 1);
   // Checking bytes written
   if (num_bytes_writen != 1)
-    return true;  //TODO(millanea):  If were unable to write to the uart what is the appropriate action?
-                  //                 Here I have assumed the appropriate action is to trigger the kill
-                  //                 switch. This is the safest option.
+    return true;  // TODO(millanea):  If were unable to write to the uart what
+                  // is the appropriate action?
+  //                 Here I have assumed the appropriate action is to trigger
+  //                 the kill
+  //                 switch. This is the safest option.
 
   // Reading the character back
   char check_char_read;
-  int num_bytes_read = uart_.readBuffer((uint8_t*) &check_char_read, 1, timeout_ms_);
+  int num_bytes_read =
+      uart_.readBuffer((uint8_t*)&check_char_read, 1, timeout_ms_);
   // Performing check
   bool char_received_check = num_bytes_read == 1;
   bool correct_char_received_check = check_char_read == check_char_;
@@ -172,6 +160,4 @@ bool KillSwitch::check()
   else
     return true;
 }
-
 }
-

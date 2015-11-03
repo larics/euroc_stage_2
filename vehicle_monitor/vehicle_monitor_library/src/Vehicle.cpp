@@ -28,46 +28,70 @@
 
 using namespace std;
 
-namespace VehicleMonitorLibrary{
+namespace VehicleMonitorLibrary {
 
+Vehicle::Vehicle(const std::string& id, double bounding_sphere_radius,
+                 BaseVelocityEstimator::Ptr velocity_estimator)
+    : id_(id),
+      bounding_sphere_radius_(bounding_sphere_radius),
+      velocity_estimator_(velocity_estimator),
+      valid_velocity_(false),
+      has_new_state_(false) {}
 
-Vehicle::Vehicle(std::string ID, float boundingSphereRadius)
-:_ID(ID),
- _boundingSphereRadius(boundingSphereRadius){
+Vehicle::~Vehicle() {}
 
+std::string Vehicle::getID() const { return id_; }
 
+double Vehicle::getBoundingSphereRadius() const {
+  return bounding_sphere_radius_;
 }
 
+void Vehicle::updateState(
+    const MotionCaptureSystemFrame& motion_capture_system_frame) {
+  VehicleState frame_element;
+  if (motion_capture_system_frame.getFrameElementForVehicle(
+          id_, frame_element) == false) {
+    has_new_state_ = false;
+    return;
+  }
 
-Vehicle::~Vehicle(){
+  if (frame_element.velocity_valid) {
+    valid_velocity_ = true;
+    has_new_state_ = true;
+  } else {
+    velocity_estimator_->update(id_, motion_capture_system_frame);
 
+    VehicleState estimated_velocity_state;
+    valid_velocity_ =
+        velocity_estimator_->predictVelocity(estimated_velocity_state);
+    if (valid_velocity_) {
+      frame_element.copyVelocityAndRate(estimated_velocity_state);
+      has_new_state_ = true;
+    }
+  }
+
+  estimated_state_ = frame_element;
 }
 
-std::string Vehicle::GetID() const{
-
-  return _ID;
-
+bool Vehicle::getState(VehicleState* estimated_state) {
+  if (valid_velocity_) {
+    *estimated_state = estimated_state_;
+    return true;
+  }
+  return false;
 }
 
-float Vehicle::GetBoundingSphereRadius() const{
-
-  return _boundingSphereRadius;
-
-}
-
-std::string Vehicle::ToString() const{
-
+std::string Vehicle::toString() const {
   stringstream ss;
-  ss << "Vehicle:" << endl << "\tID = " << _ID  << endl << "\tBounding Sphere Radius = " << _boundingSphereRadius << endl;
+  ss << "Vehicle:" << endl
+     << "\tID = " << id_ << endl
+     << "\tBounding Sphere Radius = " << bounding_sphere_radius_ << endl;
   return ss.str();
-
+}
 }
 
-}
-
-ostream& operator<< (ostream& outStream, const VehicleMonitorLibrary::Vehicle& vehicle){
-
-  outStream << vehicle.ToString();
+ostream& operator<<(ostream& outStream,
+                    const VehicleMonitorLibrary::Vehicle& vehicle) {
+  outStream << vehicle.toString();
   return outStream;
-
 }

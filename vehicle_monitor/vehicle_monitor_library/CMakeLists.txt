@@ -1,17 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(vehicle_monitor_library)
 
-# check c++11 / c++0x
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "-std=c++11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "-std=c++0x")
-else()
-    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-endif()
+add_definitions(-std=c++11)
 
 
 ## Find catkin macros and libraries
@@ -19,6 +9,7 @@ find_package(catkin REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -33,7 +24,7 @@ find_package(Eigen REQUIRED)
 catkin_package(
   INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
   LIBRARIES ${PROJECT_NAME}
-#  CATKIN_DEPENDS octomap
+  CATKIN_DEPENDS tf
   DEPENDS Eigen
 )
 
