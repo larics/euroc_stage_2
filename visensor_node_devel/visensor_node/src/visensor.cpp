@@ -58,8 +58,10 @@ ViSensor::ViSensor(ros::NodeHandle& nh, std::string sensor_ip,
                    const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
                    bool stereo_flip_disable, bool use_time_sync)
                    : nh_(nh),
-                   use_time_sync_(use_time_sync) {
-  init(sensor_ip, slot_ids, is_flipped, lens_types, projection_types, stereo_left_cam, stereo_right_cam, stereo_flip_disable);
+                   use_time_sync_(use_time_sync),
+                   stereo_left_cam_(stereo_left_cam),
+                   stereo_right_cam_(stereo_right_cam) {
+  init(sensor_ip, slot_ids, is_flipped, lens_types, projection_types, stereo_flip_disable);
 }
 
 ViSensor::~ViSensor() {
@@ -69,7 +71,6 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
                     const std::map<SensorId::SensorId, int>& is_flipped,
                     const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
                     const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
-                    const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
                     bool stereo_flip_disable) {
   try {
     // ip not specified, use autodiscovery to find sensor
@@ -85,8 +86,8 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
 #ifndef EXPERT_MODE
   // swap left/right camera topic names if cameras are flipped
   if (drv_.isStereoCameraFlipped()){
-    const std::map<SensorId::SensorId, std::string>::iterator cam0 = ROS_CAMERA_NAMES.find(stereo_left_cam);
-    const std::map<SensorId::SensorId, std::string>::iterator cam1 = ROS_CAMERA_NAMES.find(stereo_right_cam);
+    const std::map<SensorId::SensorId, std::string>::iterator cam0 = ROS_CAMERA_NAMES.find(stereo_left_cam_);
+    const std::map<SensorId::SensorId, std::string>::iterator cam1 = ROS_CAMERA_NAMES.find(stereo_right_cam_);
     if ((cam0 != ROS_CAMERA_NAMES.end()) && (cam1 != ROS_CAMERA_NAMES.end()))
         std::swap(cam0->second, cam1->second);
   }
@@ -153,26 +154,26 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
   }
 
   //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
-  if(std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_left_cam)!=list_of_camera_ids_.end()
-      && std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_right_cam)!=list_of_camera_ids_.end()) {
+  if(std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_left_cam_)!=list_of_camera_ids_.end()
+      && std::find(list_of_camera_ids_.begin(), list_of_camera_ids_.end(), stereo_right_cam_)!=list_of_camera_ids_.end()) {
     if (!drv_.isStereoCameraFlipped() || stereo_flip_disable){
       //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
-      if (getRosStereoCameraConfig(stereo_left_cam, cinfo_.at(stereo_left_cam),
-                                   stereo_right_cam, cinfo_.at(stereo_right_cam)))
+      if (getRosStereoCameraConfig(stereo_left_cam_, cinfo_.at(stereo_left_cam_),
+                                   stereo_right_cam_, cinfo_.at(stereo_right_cam_)))
         ROS_INFO("Generated ROS Stereo Calibration, assuming %s (left) and %s (right) are a stereo pair.",
-                 ROS_CAMERA_NAMES[stereo_left_cam].c_str(), ROS_CAMERA_NAMES[stereo_right_cam].c_str());
+                 ROS_CAMERA_NAMES[stereo_left_cam_].c_str(), ROS_CAMERA_NAMES[stereo_right_cam_].c_str());
       else
         ROS_WARN("Could not read stereo calibration for %s and %s.",
-                 ROS_CAMERA_NAMES[stereo_left_cam].c_str(), ROS_CAMERA_NAMES[stereo_right_cam].c_str());
+                 ROS_CAMERA_NAMES[stereo_left_cam_].c_str(), ROS_CAMERA_NAMES[stereo_right_cam_].c_str());
     } else {
       //Generate Stereo ROS config, assuming than cam0 and cam1 are in fronto-parallel stereo configuration
-      if (getRosStereoCameraConfig(stereo_right_cam, cinfo_.at(stereo_right_cam),
-                                   stereo_left_cam, cinfo_.at(stereo_left_cam)))
+      if (getRosStereoCameraConfig(stereo_right_cam_, cinfo_.at(stereo_right_cam_),
+                                   stereo_left_cam_, cinfo_.at(stereo_left_cam_)))
         ROS_INFO("Generated ROS Stereo Calibration, assuming %s (left) and %s (right) are a stereo pair.",
-                 ROS_CAMERA_NAMES[stereo_right_cam].c_str(), ROS_CAMERA_NAMES[stereo_left_cam].c_str());
+                 ROS_CAMERA_NAMES[stereo_right_cam_].c_str(), ROS_CAMERA_NAMES[stereo_left_cam_].c_str());
       else
         ROS_WARN("Could not read stereo calibration for %s and %s.",
-                 ROS_CAMERA_NAMES[stereo_right_cam].c_str(), ROS_CAMERA_NAMES[stereo_left_cam].c_str());
+                 ROS_CAMERA_NAMES[stereo_right_cam_].c_str(), ROS_CAMERA_NAMES[stereo_left_cam_].c_str());
     }
   }
 
@@ -367,7 +368,11 @@ void ViSensor::frameCallback(ViFrame::Ptr frame_ptr, ViErrorCode error) {
   // create new image message
   sensor_msgs::Image msg;
   msg.header.stamp = msg_time;
-  msg.header.frame_id = ROS_CAMERA_FRAME_NAMES.at(static_cast<SensorId::SensorId>(frame_ptr->camera_id));
+  if (frame_ptr->camera_id == stereo_right_cam_) {
+    msg.header.frame_id = ROS_CAMERA_FRAME_NAMES.at(static_cast<SensorId::SensorId>(stereo_left_cam_));
+  } else {
+    msg.header.frame_id = ROS_CAMERA_FRAME_NAMES.at(static_cast<SensorId::SensorId>(frame_ptr->camera_id));
+  }
 
   if (frame_ptr->image_type == MONO8)
     sensor_msgs::fillImage(msg, sensor_msgs::image_encodings::MONO8, image_height, image_width, image_width,
@@ -390,7 +395,11 @@ void ViSensor::frameCallback(ViFrame::Ptr frame_ptr, ViErrorCode error) {
   sensor_msgs::CameraInfo ci = cinfo_[static_cast<SensorId::SensorId>(frame_ptr->camera_id)];
 
   // fill header
-  ci.header.frame_id = ROS_CAMERA_FRAME_NAMES.at(static_cast<SensorId::SensorId>(frame_ptr->camera_id));
+  if (frame_ptr->camera_id == stereo_right_cam_) {
+    ci.header.frame_id = ROS_CAMERA_FRAME_NAMES.at(static_cast<SensorId::SensorId>(stereo_left_cam_));
+  } else {
+    ci.header.frame_id = ROS_CAMERA_FRAME_NAMES.at(static_cast<SensorId::SensorId>(frame_ptr->camera_id));
+  }
   ci.header.stamp = msg_time;
 
   ci.height = image_height;
@@ -1139,6 +1148,22 @@ bool ViSensor::getRosCameraConfig(const SensorId::SensorId& camera_id, sensor_ms
   for (int i = 0; i < 9; i++) {
     cam_info.K[i] = c[i];
   }
+  
+  cam_info.R.assign(0.0);
+  cam_info.R[0] = cam_info.R[4] = cam_info.R[8] = 1.0;
+
+  for (int i = 0; i < 3; i++) {
+    cam_info.P[i] = c[i];
+  }
+  cam_info.P[3] = 0.0;
+  for (int i = 4; i < 7; i++) {
+    cam_info.P[i] = c[i-1];
+  }
+  cam_info.P[7] = 0.0;
+  for (int i = 8; i < 11; i++) {
+    cam_info.P[i] = c[i-2];
+  }
+  cam_info.P[11] = 0.0;
 
   cam_info.width = image_width;
   cam_info.height = image_height;
