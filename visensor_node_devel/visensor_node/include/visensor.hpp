@@ -75,13 +75,13 @@ static std::map<SensorId::SensorId, std::string> ROS_CAMERA_NAMES {
   { SensorId::FLIR3, "tau3" } };
 static const std::map<SensorId::SensorId, std::string> ROS_CAMERA_FRAME_NAMES {
   { SensorId::CAM0, "cam0" },
-  { SensorId::CAM1, "cam0" },
-  { SensorId::CAM2, "cam0" },
-  { SensorId::CAM3, "cam0" },
-  { SensorId::CAM4, "cam0" },
-  { SensorId::CAM5, "cam0" },
-  { SensorId::CAM6, "cam0" },
-  { SensorId::CAM7, "cam0" },
+  { SensorId::CAM1, "cam1" },
+  { SensorId::CAM2, "cam2" },
+  { SensorId::CAM3, "cam3" },
+  { SensorId::CAM4, "cam4" },
+  { SensorId::CAM5, "cam5" },
+  { SensorId::CAM6, "cam6" },
+  { SensorId::CAM7, "cam7" },
   { SensorId::FLIR0, "tau0" },
   { SensorId::FLIR1, "tau1" },
   { SensorId::FLIR2, "tau2" },
@@ -101,6 +101,8 @@ static std::map<SensorId::SensorId, std::string> ROS_CAMERA_NAMES {
   { SensorId::FLIR2, "tau2" },
   { SensorId::FLIR3, "tau3" } };
 static const std::map<SensorId::SensorId, std::string> ROS_CAMERA_FRAME_NAMES {
+// TODO: Equal camera frames only make sense for stereo camera pairs. Figure out
+// how to handle this with the left/right frame names.
   { SensorId::CAM0, "left" },
   { SensorId::CAM1, "left" },
   { SensorId::CAM2, "left" },
@@ -165,7 +167,6 @@ class ViSensor {
             const std::map<SensorId::SensorId, int>& is_flipped,
             const std::map<SensorId::SensorId, visensor::ViCameraLensModel::LensModelTypes>& lens_types,
             const std::map<SensorId::SensorId, visensor::ViCameraProjectionModel::ProjectionModelTypes>& projection_types,
-            const SensorId::SensorId& stereo_left_cam, const SensorId::SensorId& stereo_right_cam,
             bool stereo_flip_disable);
   bool getRosCameraConfig(const SensorId::SensorId& camera_id, sensor_msgs::CameraInfo& cam_info);
   bool getRosStereoCameraConfig(const SensorId::SensorId& camera_id_0, sensor_msgs::CameraInfo& cam_info_0,
@@ -195,6 +196,8 @@ class ViSensor {
   std::vector<SensorId::SensorId> list_of_dense_ids_;
   std::vector<SensorId::SensorId> list_of_imu_ids_;
   std::vector<SensorId::SensorId> list_of_trigger_ids_;
+  SensorId::SensorId stereo_left_cam_;
+  SensorId::SensorId stereo_right_cam_;
 
 
   std::map<std::string, visensor_msgs::visensor_calibration> camera_imu_calibrations_;

@@ -218,6 +218,27 @@ class DSO_EXPORT ViSensorDriver {
   int getViSensorId() const;
 
   /**
+   * Gets user configuration parameters which were saved previous on the visensor
+   * in case of an error an visensor exception (ConfigException) is thrown.
+   *
+   * @param key:    identifier for the parameter
+   * @param value:  return value
+   */
+  void getUserConfiguration(const std::string& key, int * value) const;
+  void getUserConfiguration(const std::string& key, std::string* value) const;
+
+  /**
+   * sets an user configuration parameter
+   *
+   * in case of an error an visensor exception (ConfigException) is thrown.
+   *
+   * @param key:    identifier for the parameter
+   * @param value:  value to set
+   */
+  void setUserConfiguration(const std::string& key, const int& value);
+  void setUserConfiguration(const std::string& key, const std::string& value);
+
+  /**
    * returns the specific camera calibration.
    *
    * If more than one calibration configuration matches to the input values the first calibration is returned.

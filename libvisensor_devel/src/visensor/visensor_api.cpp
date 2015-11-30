@@ -256,6 +256,26 @@ int ViSensorDriver::getViSensorId() const {
   return pImpl_->getViSensorId();
 }
 
+void ViSensorDriver::getUserConfiguration(const std::string& key, std::string* value) const
+{
+  pImpl_->getUserConfiguration(key, value);
+}
+
+void ViSensorDriver::getUserConfiguration(const std::string& key, int* value) const
+{
+  pImpl_->getUserConfiguration(key, value);
+}
+
+void ViSensorDriver::setUserConfiguration(const std::string& key, const std::string& value)
+{
+  pImpl_->setUserConfiguration(key, value);
+}
+
+void ViSensorDriver::setUserConfiguration(const std::string& key, const int& value)
+{
+  pImpl_->setUserConfiguration(key, value);
+}
+
 bool ViSensorDriver::isStereoCameraFlipped() const
 {
   return pImpl_->isStereoCameraFlipped();

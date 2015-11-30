@@ -61,7 +61,8 @@ class DSO_EXPORT ViSensorConfiguration
   {
     UNKOWN,
     CALIBRATION,
-    SENSOR_ID
+    SENSOR_ID,
+    USER
   };
   enum class ConfigYamlCamera_e
   {
@@ -105,7 +106,7 @@ class DSO_EXPORT ViSensorConfiguration
    *
    * @return true if the loading was successful, otherwise false
    */
-  bool loadConfig();
+  void loadConfig();
 
   /**
    * Loads the configuration from a specific place.
@@ -114,7 +115,7 @@ class DSO_EXPORT ViSensorConfiguration
    *
    * @return true if the loading was successful, otherwise false
    */
-  bool loadConfig(const std::string& config_path);
+  void loadConfig(const std::string& config_path);
 
   /**
    * Saves the configuration from the Vi-Sensor
@@ -149,6 +150,27 @@ class DSO_EXPORT ViSensorConfiguration
    * @return true if the seting was successful, otherwise false
    */
   bool setViSensorId(const int vi_sensor_id);
+
+  /**
+   * Gets user configuration parameters which were saved previous on the visensor
+   * in case of an error an visensor exception (ConfigException) is thrown.
+   *
+   * @param key:    identifier for the parameter
+   * @param value:  return value
+   */
+  void getUserConfiguration(const std::string& key, int* value );
+  void getUserConfiguration(const std::string& key, std::string* value );
+
+  /**
+   * sets an user configuration parameter
+   *
+   * in case of an error an visensor exception (ConfigException) is thrown.
+   *
+   * @param key:    identifier for the parameter
+   * @param value:  value to set
+   */
+  void setUserConfiguration(const std::string& key, const int& value );
+  void setUserConfiguration(const std::string& key, const std::string& value );
 
   /**
    * returns the specific camera calibration.
@@ -309,7 +331,8 @@ class DSO_EXPORT ViSensorConfiguration
 * maps with the YAML keys and the corresponding enum
 */
 static const std::map<ViSensorConfiguration::ConfigYaml_e, std::string> yaml_naming_ = {
-    { ViSensorConfiguration::ConfigYaml_e::SENSOR_ID,  "sensorID"},
+    { ViSensorConfiguration::ConfigYaml_e::SENSOR_ID, "sensorID"},
+    { ViSensorConfiguration::ConfigYaml_e::USER, "user"},
     { ViSensorConfiguration::ConfigYaml_e::CALIBRATION, "Vi_camera_calibration" } };
 
 static const std::map<ViSensorConfiguration::ConfigYamlCamera_e, std::string> yaml_camera_ = {
