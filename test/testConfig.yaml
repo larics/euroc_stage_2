@@ -107,6 +107,8 @@ dead_pixel:
       x: 0
       y: 0
       
-Custom:
+user:
   test: bla
+  testInteger: 123
+
 

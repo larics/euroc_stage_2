@@ -118,7 +118,13 @@ class ViSensorDriver::Impl {
   void setCameraFactoryCalibration(const ViCameraCalibration calib);
 
   void setViSensorId(const int vi_sensor_id);
-  int  getViSensorId() const;
+  int getViSensorId() const;
+
+  void getUserConfiguration(const std::string& key, int* value) const;
+  void getUserConfiguration(const std::string& key, std::string* value) const;
+
+  void setUserConfiguration(const std::string& key, const int& value);
+  void setUserConfiguration(const std::string& key, const std::string& value);
 
   bool isStereoCameraFlipped();
   // is called with synchronized images and corresponding corners
