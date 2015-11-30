@@ -209,22 +209,22 @@ class Test_time_synchronizer : public ::testing::Test {
   virtual void SetUp()
   {
     timeSynchronizer_ = new timesync::TimeSynchronizer(0, (uint64_t)1e9/(uint64_t)100000);
-    std::string timestamp_log_filename = "timestamps.log";
-    std::string results_log_filename = "timesync.log";
+    timestamp_log_filename_ = "timestamps.log";
+    results_log_filename_ = "timesync.log";
 
-    logfile.open(timestamp_log_filename, std::ios::in);
+    logfile.open(timestamp_log_filename_, std::ios::in);
     if (logfile.good()) {
       logfile.close();
-      std::remove(timestamp_log_filename.c_str());
+      std::remove(timestamp_log_filename_.c_str());
     }
-    logfile.open (timestamp_log_filename, std::ios::out | std::ios::app);
+    logfile.open (timestamp_log_filename_, std::ios::out | std::ios::app);
 
-    resfile.open(results_log_filename, std::ios::in);
+    resfile.open(results_log_filename_, std::ios::in);
     if (resfile.good()) {
       resfile.close();
-      std::remove(results_log_filename.c_str());
+      std::remove(results_log_filename_.c_str());
     }
-    resfile.open (results_log_filename, std::ios::out | std::ios::app);
+    resfile.open (results_log_filename_, std::ios::out | std::ios::app);
 
 
     log_timestamps("requestTime; pcTime at FPGA receiving; fpga_time; responseTime; ");
@@ -233,11 +233,29 @@ class Test_time_synchronizer : public ::testing::Test {
   virtual void TearDown() {
     logfile.close();
     resfile.close();
+
+    if (file_exists(timestamp_log_filename_))
+      std::remove(timestamp_log_filename_.c_str());
+
+    if (file_exists(results_log_filename_))
+      std::remove(results_log_filename_.c_str());
+  }
+
+  inline bool file_exists(const std::string& name)
+  {
+    if (FILE *file = fopen(name.c_str(), "r")) {
+      fclose(file);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   timesync::TimeSynchronizer * timeSynchronizer_;
   std::fstream logfile;
   std::fstream resfile;
+  std::string timestamp_log_filename_;
+  std::string results_log_filename_;
   uint64_t requestTime;
   uint64_t fpgaTime;
   uint64_t responseTime;

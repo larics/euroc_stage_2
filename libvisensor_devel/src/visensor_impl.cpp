@@ -88,9 +88,7 @@ void ViSensorDriver::Impl::init(std::string sensor_ip) {
   config_ = boost::make_shared<ViSensorConfiguration>(ip_connection_->file_transfer());
 
   if (!config_->isValid()) {
-    if (!config_->loadConfig() ) {
-      throw visensor::exceptions::ConfigException("Could not load the configuration from the sensor!");
-    }
+    config_->loadConfig();
   }
 
   VISENSOR_DEBUG("Connection established with VISensor %i\n", config_->getViSensorId());
@@ -116,11 +114,6 @@ void ViSensorDriver::Impl::init(std::string sensor_ip) {
 
   //set initialized flag
   initialized_ = true;
-
-//  load configuration
-  if ( !config_->loadConfig()) {
-    VISENSOR_DEBUG("ViSensorDriver::Impl: failed to load the configuration\n");
-  }
 }
 
 ViSensorDriver::Impl::~Impl()
@@ -571,10 +564,8 @@ std::vector<ViCameraCalibration> ViSensorDriver::Impl::getCameraCalibrations(con
                                                                              const ViCameraLensModel::LensModelTypes lens_model_type,
                                                                              const ViCameraProjectionModel::ProjectionModelTypes projection_model_type) const {
   if(!initialized_) throw visensor::exceptions::ConnectionException("No connection to sensor.");
-  if (config_->isValid() != true) {
-    if (config_->loadConfig() != true) {
-      throw visensor::exceptions::ConfigException("Could not load the configuration from the sensor!");
-    }
+  if (!config_->isValid()) {
+    config_->loadConfig();
   }
   return config_->getCameraCalibrations(cam_id, slot_id, is_flipped, lens_model_type, projection_model_type);
 }
@@ -675,9 +666,7 @@ bool ViSensorDriver::Impl::isSensorPresent(const SensorId::SensorId sensor_id) c
 void ViSensorDriver::Impl::setViSensorId(const int vi_sensor_id) {
   if(!initialized_) throw visensor::exceptions::ConnectionException("No connection to sensor.");
   if (!config_->isValid()) {
-    if (!config_->loadConfig() ) {
-      throw visensor::exceptions::ConfigException("Could not load the configuration from the sensor!");
-    }
+    config_->loadConfig();
   }
   if (!config_->setViSensorId(vi_sensor_id))
     throw visensor::exceptions::ConfigException("Failed to set the VISensor ID!");
@@ -690,14 +679,64 @@ void ViSensorDriver::Impl::setViSensorId(const int vi_sensor_id) {
 int ViSensorDriver::Impl::getViSensorId() const {
   if(!initialized_) throw visensor::exceptions::ConnectionException("No connection to sensor.");
   if (!config_->isValid()) {
-    if (!config_->loadConfig() ) {
-      throw visensor::exceptions::ConfigException("Could not load the configuration from the sensor!");
-    }
+    config_->loadConfig();
   }
   int sensor_id;
   if ((sensor_id = config_->getViSensorId()) <  0)
     throw visensor::exceptions::ConfigException("Failed to get the VISensor ID!");
   return sensor_id;
+}
+
+void ViSensorDriver::Impl::getUserConfiguration(const std::string& key, int* value) const
+{
+  if (!initialized_)
+    throw visensor::exceptions::ConnectionException("No connection to sensor.");
+  if (!config_->isValid()) {
+    config_->loadConfig();
+  }
+  config_->getUserConfiguration(key, value);
+}
+
+void ViSensorDriver::Impl::getUserConfiguration(const std::string& key,
+                                                    std::string* value) const
+{
+  if (!initialized_)
+    throw visensor::exceptions::ConnectionException("No connection to sensor.");
+  if (!config_->isValid()) {
+    config_->loadConfig();
+  }
+  config_->getUserConfiguration(key, value);
+}
+
+void ViSensorDriver::Impl::setUserConfiguration(const std::string& key, const int& value)
+{
+  if (!initialized_)
+    throw visensor::exceptions::ConnectionException("No connection to sensor.");
+  if (!config_->isValid()) {
+    config_->loadConfig();
+  }
+  config_->setUserConfiguration(key, value);
+
+  if (!config_->saveConfig()) {
+    throw visensor::exceptions::ConnectionException(
+        "Failed to store the configuration on the sensor");
+  }
+}
+
+void ViSensorDriver::Impl::setUserConfiguration(const std::string& key,
+                                                    const std::string& value)
+{
+  if (!initialized_)
+    throw visensor::exceptions::ConnectionException("No connection to sensor.");
+  if (!config_->isValid()) {
+    config_->loadConfig();
+  }
+  config_->setUserConfiguration(key, value);
+
+  if (!config_->saveConfig()) {
+    throw visensor::exceptions::ConnectionException(
+        "Failed to store the configuration on the sensor");
+  }
 }
 
 }  //namespace visensor

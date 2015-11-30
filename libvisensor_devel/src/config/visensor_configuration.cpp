@@ -43,12 +43,12 @@ ViSensorConfiguration::~ViSensorConfiguration()
 {
 }
 
-bool ViSensorConfiguration::loadConfig()
+void ViSensorConfiguration::loadConfig()
 {
-  return loadConfig(REMOTE_CONFIG_PATH);
+  loadConfig(REMOTE_CONFIG_PATH);
 }
 
-bool ViSensorConfiguration::loadConfig(const std::string& config_path)
+void ViSensorConfiguration::loadConfig(const std::string& config_path)
 {
   std::string file_content;
   try {
@@ -57,11 +57,12 @@ bool ViSensorConfiguration::loadConfig(const std::string& config_path)
     config_calibrations_ = parseYaml(config_nodes_);
     valid_ = true;
   } catch (visensor::exceptions const &ex) {
-    VISENSOR_DEBUG("Loading and parsing configuration file failed: %s\n", ex.what());
+    throw visensor::exceptions::ConfigException(
+        "Could not load the configuration from the sensor!");
   } catch (YAML::Exception &ex) {
-    VISENSOR_DEBUG("could not parse loaded configuration, yaml exception: %s\n", ex.what());
+    throw visensor::exceptions::ConfigException(
+        "Could not parse the configuration from the sensor! Exception was " + std::string(ex.what()));
   }
-  return isValid();
 }
 
 bool ViSensorConfiguration::saveConfig()
@@ -89,6 +90,65 @@ int ViSensorConfiguration::getViSensorId() const {
   if (config_nodes_[yaml_naming_.at(ConfigYaml_e::SENSOR_ID)])
     return config_nodes_[yaml_naming_.at(ConfigYaml_e::SENSOR_ID)].as<int>();
   return -1;
+}
+
+void ViSensorConfiguration::getUserConfiguration(const std::string& key, int* value)
+{
+  if (key.size() == 0)
+    throw visensor::exceptions::ConfigException("No key is provided");
+
+  YAML::Node costumer_node;
+  if (!config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)])
+    throw visensor::exceptions::ConfigException("No user configuration were saved");
+
+  costumer_node = config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)];
+
+  if (!costumer_node[key])
+    throw visensor::exceptions::ConfigException("Key " + key + " was not found");
+  *value = costumer_node[key].as<int>();
+}
+
+void ViSensorConfiguration::getUserConfiguration(const std::string& key, std::string* value)
+{
+  if (key.size() == 0)
+    throw visensor::exceptions::ConfigException("No key is provided");
+
+  YAML::Node costumer_node;
+  if (!config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)])
+    throw visensor::exceptions::ConfigException("No user configuration were saved");
+
+  costumer_node = config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)];
+
+  if (!costumer_node[key])
+    throw visensor::exceptions::ConfigException("Key " + key + " was not found");
+  *value = costumer_node[key].as<std::string>();
+}
+
+void ViSensorConfiguration::setUserConfiguration(const std::string& key, const int& value)
+{
+  if (key.size() == 0)
+    throw visensor::exceptions::ConfigException("No key is provided");
+
+  YAML::Node costumer_node;
+  if (config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)])
+    costumer_node = config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)];
+  else
+    config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)] = costumer_node;
+  costumer_node[key] = value;
+}
+
+void ViSensorConfiguration::setUserConfiguration(const std::string& key,
+                                                     const std::string& value)
+{
+  if (key.size() == 0)
+    throw visensor::exceptions::ConfigException("No key is provided");
+
+  YAML::Node costumer_node;
+  if (config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)])
+    costumer_node = config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)];
+  else
+    config_nodes_[yaml_naming_.at(ConfigYaml_e::USER)] = costumer_node;
+  costumer_node[key] = value;
 }
 
 bool ViSensorConfiguration::cleanCameraCalibration(

@@ -93,6 +93,7 @@ class Visensor_configuration : public ::testing::Test
   visensor::ViSensorConfiguration::Ptr config_;
   visensor::SshConnection::Ptr ssh_connection_;
 };
+
 TEST_F(Visensor_configuration, TestVisensorConfigurationInitConfigClass)
 {
   const int CAM_ID = 1;
@@ -505,6 +506,51 @@ TEST_F(Visensor_configuration, TestVisensorConfigurationReadBackGetMultiple)
       visensor::ViCameraLensModel::LensModelTypes::RADTAN,
       visensor::ViCameraProjectionModel::ProjectionModelTypes::OMNIDIRECTIONAL);
   EXPECT_EQ(calibration_back.size(), 1);
+}
+
+TEST_F(Visensor_configuration, TestVisensorConfigurationReadUserValues)
+{
+  config_->loadConfig(TEST_FILE_PATH);
+  EXPECT_EQ(config_->isValid(), true);
+  std::string testvalue;
+  config_->getUserConfiguration("test", &testvalue);
+  EXPECT_EQ(testvalue, "bla");
+  int testinteger;
+  config_->getUserConfiguration("testInteger", &testinteger);
+  EXPECT_EQ(testinteger, 123);
+}
+
+TEST_F(Visensor_configuration, TestVisensorConfigurationWriteUserValues)
+{
+  config_->loadConfig(TEST_FILE_PATH);
+  EXPECT_EQ(config_->isValid(), true);
+  std::string testSetValue = "This is a test";
+  config_->setUserConfiguration("test", testSetValue);
+  config_->setUserConfiguration("testInteger", 1000);
+
+  config_->saveConfig(TEST_OUTPUTFILE_PATH);
+  config_->loadConfig(TEST_OUTPUTFILE_PATH);
+
+  std::string testvalue;
+  int testinteger;
+  config_->getUserConfiguration("test", &testvalue);
+  config_->getUserConfiguration("testInteger", &testinteger);
+  EXPECT_EQ(testvalue, testSetValue);
+  EXPECT_EQ(testinteger, 1000);
+}
+
+TEST_F(Visensor_configuration, TestVisensorConfigurationWriteNewUserValues)
+{
+  config_->loadConfig(TEST_FILE_PATH);
+  EXPECT_EQ(config_->isValid(), true);
+  config_->setUserConfiguration("newTestInteger", -1);
+
+  config_->saveConfig(TEST_OUTPUTFILE_PATH);
+  config_->loadConfig(TEST_OUTPUTFILE_PATH);
+
+  int testinteger;
+  config_->getUserConfiguration("newTestInteger", &testinteger);
+  EXPECT_EQ(testinteger, -1);
 }
 
 // Run all the tests that were declared with TEST()
