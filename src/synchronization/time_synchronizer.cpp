@@ -103,29 +103,33 @@ uint64_t TimeSynchronizer::getOffset()
 
 uint64_t TimeSynchronizer::extendTimestampWithOverflows(const uint32_t& timestamp)
 {
-  uint32_t imax = std::numeric_limits<uint32_t>::max();
-  int64_t time_diff = static_cast<int64_t>(timestamp) - last_timestamp_;
 
-  if (time_diff < -POSSIBLE_OLDER_TIMESTAMP) {
-    num_overflows_++;
-    VISENSOR_DEBUG("remote time overflow occurred or the timestamp is much older then the last one.\n");
-    VISENSOR_DEBUG("nb_overflows; %lu ; timestamp; %u; last_timestamp_; %lu\n",
-                   num_overflows_, timestamp, last_timestamp_);
-  }
-  else if (time_diff > (imax-POSSIBLE_OLDER_TIMESTAMP)) {
-    num_overflows_--;
-    VISENSOR_DEBUG("a huge step forward occured or the timestamp is much "
-        "older then the last one and jumped over the overflow.\n");
-    VISENSOR_DEBUG("nb_overflows; %lu ; timestamp; %u; last_timestamp_; %lu\n",
-                   num_overflows_, timestamp, last_timestamp_);
+	// THIS IS NOT A FIX TO THE WRAP-AROUND PROBLEM!
 
-    }
-
-
-  uint64_t extended_timestamp = static_cast<uint64_t>(timestamp) + num_overflows_ * static_cast<uint64_t>(imax);
-  last_timestamp_ = static_cast<int64_t>(timestamp);
-
-  return extended_timestamp;
+	//  uint32_t imax = std::numeric_limits<uint32_t>::max();
+	//  int64_t time_diff = static_cast<int64_t>(timestamp) - last_timestamp_;
+	//
+	//  if (time_diff < -POSSIBLE_OLDER_TIMESTAMP) {
+	//    num_overflows_++;
+	//    VISENSOR_DEBUG("remote time overflow occurred or the timestamp is much older then the last one.\n");
+	//    VISENSOR_DEBUG("nb_overflows; %lu ; timestamp; %u; last_timestamp_; %lu\n",
+	//                   num_overflows_, timestamp, last_timestamp_);
+	//  }
+	//  else if (time_diff > (imax-POSSIBLE_OLDER_TIMESTAMP)) {
+	//    num_overflows_--;
+	//    VISENSOR_DEBUG("a huge step forward occured or the timestamp is much "
+	//        "older then the last one and jumped over the overflow.\n");
+	//    VISENSOR_DEBUG("nb_overflows; %lu ; timestamp; %u; last_timestamp_; %lu\n",
+	//                   num_overflows_, timestamp, last_timestamp_);
+	//
+	//    }
+	//
+	//
+	//  uint64_t extended_timestamp = static_cast<uint64_t>(timestamp) + num_overflows_ * static_cast<uint64_t>(imax);
+	//  last_timestamp_ = static_cast<int64_t>(timestamp);
+	//
+	//  return extended_timestamp;
+	return static_cast<int64_t>(timestamp);
 }
 
 }  // namespace timesync
