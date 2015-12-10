@@ -116,6 +116,7 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
 
   // initialize cameras
   for (auto camera_id : list_of_camera_ids_) {
+    bool calibration_loaded = false;
     try {
       if (slot_ids.count(camera_id)) {
         drv_.selectCameraCalibration(camera_id, slot_ids.at(camera_id), is_flipped.at(camera_id),
@@ -125,10 +126,26 @@ void ViSensor::init(const std::string& sensor_ip, const std::map<SensorId::Senso
                                      ViCameraLensModel::LensModelTypes::UNKNOWN,
                                      ViCameraProjectionModel::ProjectionModelTypes::UNKNOWN);
       }
-
+      calibration_loaded = true;
+      ROS_INFO("[visensor init] Calibration loaded successfully.");
     } catch (visensor::exceptions const &ex) {
-      ROS_WARN("visensor init: failed to select calibration: %s\nRunning without a calibration", ex.what());
+      ROS_WARN("[visensor init] Failed to select calibration: %s\nWill try factory equidistant.", ex.what());
     }
+
+    // If we still haven't gotten a calibration, try some fallbacks...
+    if (!calibration_loaded) {
+      try {
+        // Prefer the factory equidistant calibration.
+        drv_.selectCameraCalibration(camera_id, 0, -1,
+                                     ViCameraLensModel::LensModelTypes::EQUIDISTANT,
+                                     ViCameraProjectionModel::ProjectionModelTypes::PINHOLE);
+        ROS_INFO("[visensor init] Backup factory equidistant calibration loaded successfully.");
+        calibration_loaded = true;
+      }  catch (visensor::exceptions const &ex) {
+        ROS_WARN("[visensor init] Failed to load backup calibration, running without a calibration.", ex.what());
+      }
+    }
+
     ros::NodeHandle nhc_temp(nh_, ROS_CAMERA_NAMES.at(camera_id));
     nhc_.insert(std::pair<SensorId::SensorId, ros::NodeHandle>(camera_id, nhc_temp));
     image_transport::ImageTransport itc_temp(nhc_[camera_id]);
@@ -1148,7 +1165,7 @@ bool ViSensor::getRosCameraConfig(const SensorId::SensorId& camera_id, sensor_ms
   for (int i = 0; i < 9; i++) {
     cam_info.K[i] = c[i];
   }
-  
+
   cam_info.R.assign(0.0);
   cam_info.R[0] = cam_info.R[4] = cam_info.R[8] = 1.0;
 
