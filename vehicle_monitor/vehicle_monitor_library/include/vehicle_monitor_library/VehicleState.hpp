@@ -70,6 +70,13 @@ struct VehicleState {
     angular_rate = state.angular_rate;
     velocity_valid = state.velocity_valid;
   }
+
+  void reset() {
+    position = Eigen::Vector3d::Zero();
+    orientation = Eigen::Vector3d::Zero();
+    velocity = Eigen::Vector3d::Zero();
+    angular_rate = Eigen::Vector3d::Zero();
+  }
 };
 }
 #endif /* VML__VEHICLE_STATE_H_ */

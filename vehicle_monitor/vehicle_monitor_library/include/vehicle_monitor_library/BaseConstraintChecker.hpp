@@ -61,6 +61,8 @@ class BaseConstraintChecker {
   void setVehiclesMap(
       std::shared_ptr<std::map<std::string, Vehicle::Ptr> > vehicles_map);
 
+  void reset();
+
  protected:
   // Optional function for the constraints, to get notified about new vehicles.
   virtual bool doRegisterVehicle(const std::string& vehicle_id);
@@ -72,6 +74,8 @@ class BaseConstraintChecker {
       const MotionCaptureSystemFrame& motionCaptureSystemFrame,
       bool emergencyButtonPressed,
       std::map<std::string, bool>& checkResult) = 0;
+
+  virtual void doReset();
 
   std::string constraint_id_;
 

@@ -69,15 +69,15 @@ VehicleMonitor::VehicleMonitor(std::shared_ptr<octomap::OcTree> ocTreePtr,
 
 VehicleMonitor::~VehicleMonitor() {}
 
-std::shared_ptr<octomap::OcTree> VehicleMonitor::GetOcTreePtr() {
+std::shared_ptr<octomap::OcTree> VehicleMonitor::getOcTreePtr() {
   return _ocTreePtr;
 }
 
-BoundingVolume VehicleMonitor::GetEnvironmentBoundingVolume() const {
+BoundingVolume VehicleMonitor::getEnvironmentBoundingVolume() const {
   return environment_bounding_volume_;
 }
 
-std::vector<std::string> VehicleMonitor::GetVehicleIDs() const {
+std::vector<std::string> VehicleMonitor::getVehicleIDs() const {
   std::vector<std::string> result;
 
   for (const std::pair<std::string, Vehicle::Ptr>& vehicle_map_element :
@@ -88,7 +88,7 @@ std::vector<std::string> VehicleMonitor::GetVehicleIDs() const {
   return result;
 }
 
-bool VehicleMonitor::RegisterChecker(
+bool VehicleMonitor::registerChecker(
     BaseConstraintChecker::Ptr constraint_cheker) {
   if (vehicles_map_ == nullptr) {
     std::cout << "[vehicle_monitor_library]: ERROR, vehicles_map_ not set!";
@@ -113,7 +113,7 @@ bool VehicleMonitor::RegisterChecker(
   return true;
 }
 
-bool VehicleMonitor::UnregisterChecker(
+bool VehicleMonitor::unregisterChecker(
     BaseConstraintChecker::Ptr constraint_cheker) {
   std::map<std::string, BaseConstraintChecker::Ptr>::iterator mapElement;
 
@@ -131,7 +131,13 @@ bool VehicleMonitor::UnregisterChecker(
   return true;
 }
 
-bool VehicleMonitor::RegisterVehicle(Vehicle::Ptr vehicle) {
+void VehicleMonitor::resetAllChecker() {
+  for (auto constraintCheckerMapElement : constraint_checkers_) {
+    constraintCheckerMapElement.second->reset();
+  }
+}
+
+bool VehicleMonitor::registerVehicle(Vehicle::Ptr vehicle) {
   std::pair<std::map<std::string, Vehicle::Ptr>::iterator, bool> ret;
 
   ret = vehicles_map_->insert(make_pair(vehicle->getID(), vehicle));
@@ -147,7 +153,7 @@ bool VehicleMonitor::RegisterVehicle(Vehicle::Ptr vehicle) {
   return true;
 }
 
-bool VehicleMonitor::UnregisterVehicle(Vehicle::Ptr vehicle) {
+bool VehicleMonitor::unregisterVehicle(Vehicle::Ptr vehicle) {
   std::map<std::string, Vehicle::Ptr>::iterator mapElement;
 
   mapElement = vehicles_map_->find(vehicle->getID());
@@ -165,7 +171,7 @@ bool VehicleMonitor::UnregisterVehicle(Vehicle::Ptr vehicle) {
   return true;
 }
 
-void VehicleMonitor::Trigger(
+void VehicleMonitor::trigger(
     const MotionCaptureSystemFrame& motionCaptureSystemFrame,
     bool emergencyButtonPressed) {
   last_computed_output_.clear();
@@ -195,10 +201,10 @@ void VehicleMonitor::Trigger(
     }
   }
 
-  NotifyObservers(last_computed_output_);
+  notifyObservers(last_computed_output_);
 }
 
-bool VehicleMonitor::RegisterObserver(
+bool VehicleMonitor::registerObserver(
     std::shared_ptr<VehicleMonitorObserverBase> observerPtr) {
   std::pair<std::set<std::shared_ptr<VehicleMonitorObserverBase> >::iterator,
             bool> ret;
@@ -212,7 +218,7 @@ bool VehicleMonitor::RegisterObserver(
   return true;
 }
 
-bool VehicleMonitor::UnregisterObserver(
+bool VehicleMonitor::unregisterObserver(
     std::shared_ptr<VehicleMonitorObserverBase> observerPtr) {
   std::set<std::shared_ptr<VehicleMonitorObserverBase> >::iterator setElement;
 
@@ -229,7 +235,7 @@ bool VehicleMonitor::UnregisterObserver(
 
 // loop through all registered observers and provide them with the vector of
 // outputs
-void VehicleMonitor::NotifyObservers(
+void VehicleMonitor::notifyObservers(
     const std::map<std::string,
                    std::map<std::string, ConstraintCheckerOutput> >&
         vehicleStatus) const {
