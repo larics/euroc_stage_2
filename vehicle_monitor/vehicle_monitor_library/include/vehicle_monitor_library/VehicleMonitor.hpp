@@ -59,26 +59,27 @@ class VehicleMonitor {
   ~VehicleMonitor();
 
   // methods
-  std::shared_ptr<octomap::OcTree> GetOcTreePtr();
+  std::shared_ptr<octomap::OcTree> getOcTreePtr();
 
-  BoundingVolume GetEnvironmentBoundingVolume() const;
+  BoundingVolume getEnvironmentBoundingVolume() const;
 
-  std::vector<std::string> GetVehicleIDs() const;
+  std::vector<std::string> getVehicleIDs() const;
 
-  bool RegisterChecker(BaseConstraintChecker::Ptr constraint_cheker);
-  bool UnregisterChecker(BaseConstraintChecker::Ptr constraint_cheker);
+  bool registerChecker(BaseConstraintChecker::Ptr constraint_cheker);
+  bool unregisterChecker(BaseConstraintChecker::Ptr constraint_cheker);
+  void resetAllChecker();
 
-  bool RegisterVehicle(Vehicle::Ptr vehicle);
-  bool UnregisterVehicle(Vehicle::Ptr vehicle);
+  bool registerVehicle(Vehicle::Ptr vehicle);
+  bool unregisterVehicle(Vehicle::Ptr vehicle);
 
-  bool RegisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observer);
-  bool UnregisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observer);
+  bool registerObserver(std::shared_ptr<VehicleMonitorObserverBase> observer);
+  bool unregisterObserver(std::shared_ptr<VehicleMonitorObserverBase> observer);
 
-  void Trigger(const MotionCaptureSystemFrame& motion_capture_system_frame,
+  void trigger(const MotionCaptureSystemFrame& motion_capture_system_frame,
                bool emergency_button_pressed);
 
  private:
-  void NotifyObservers(
+  void notifyObservers(
       const std::map<std::string,
                      std::map<std::string, ConstraintCheckerOutput> >&
           vehicle_status) const;

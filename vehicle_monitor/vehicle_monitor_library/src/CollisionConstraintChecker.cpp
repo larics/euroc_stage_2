@@ -112,4 +112,9 @@ void CollisionConstraintChecker::doCheckConstraint(
     check_result.insert(make_pair(vehicle_id, constraint_ok));
   }
 }
+
+void CollisionConstraintChecker::doReset() {
+  take_off_detected_.clear();
+}
+
 }
