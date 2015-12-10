@@ -57,6 +57,8 @@ class CollisionConstraintChecker : public BaseConstraintChecker {
       const MotionCaptureSystemFrame& motion_capture_system_frame,
       bool emergency_button_pressed, std::map<std::string, bool>& check_result);
 
+  void doReset();
+
  private:
   std::shared_ptr<octomap::OcTree> oc_tree_ptr_;
 

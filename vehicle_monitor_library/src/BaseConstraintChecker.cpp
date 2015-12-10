@@ -55,6 +55,18 @@ bool BaseConstraintChecker::doUnregisterVehicle(const std::string& vehicle_id) {
   return true;
 }
 
+void BaseConstraintChecker::reset() {
+  for (std::pair<const std::string, VehicleState>& last_valid_state :
+      last_valid_state_map_) {
+    last_valid_state.second.reset();
+  }
+
+  doReset();
+}
+
+void BaseConstraintChecker::doReset() {
+}
+
 void BaseConstraintChecker::setVehiclesMap(
     std::shared_ptr<std::map<std::string, Vehicle::Ptr> > vehicles_map) {
   // Register all vehicles in constraint.

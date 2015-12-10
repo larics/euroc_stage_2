@@ -93,7 +93,7 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
       octoMapPath, kBoundingBoxCorner1, kBoundingBoxCorner2,
       motion_capture_frequency_));
 
-  vehicle_monitor_->RegisterObserver(vehicle_monitor_observer_);
+  vehicle_monitor_->registerObserver(vehicle_monitor_observer_);
 
   registerConstraintCheckers();
 
@@ -107,7 +107,7 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
   octomap_msg_.header.stamp = ros::Time::now();
   octomap_msg_.header.frame_id = "world";
 
-  octomap_msgs::binaryMapToMsg(*vehicle_monitor_->GetOcTreePtr(), octomap_msg_);
+  octomap_msgs::binaryMapToMsg(*vehicle_monitor_->getOcTreePtr(), octomap_msg_);
 
   octomap_publisher_.publish(octomap_msg_);
 
@@ -131,8 +131,8 @@ void MavSaver::registerConstraintCheckers() {
   if (enable_collision_constraint_) {
     std::shared_ptr<CollisionConstraintChecker> collisionChecker =
         std::make_shared<CollisionConstraintChecker>(
-            vehicle_monitor_->GetOcTreePtr(),
-            vehicle_monitor_->GetEnvironmentBoundingVolume(),
+            vehicle_monitor_->getOcTreePtr(),
+            vehicle_monitor_->getEnvironmentBoundingVolume(),
             max_dist_to_check_collision_,  // max distance to check for
                                            // collisions
             collision_threshold_in_bounding_sphere_radius_,  // we consider a
@@ -142,7 +142,7 @@ void MavSaver::registerConstraintCheckers() {
             projection_window_, motion_capture_frequency_,
             minimum_height_to_check_collision_);
 
-    vehicle_monitor_->RegisterChecker(collisionChecker);
+    vehicle_monitor_->registerChecker(collisionChecker);
   }
 
   if (enable_attitude_constraint_) {
@@ -151,15 +151,15 @@ void MavSaver::registerConstraintCheckers() {
                                                     projection_window_,
                                                     motion_capture_frequency_);
 
-    vehicle_monitor_->RegisterChecker(attitudeChecker);
+    vehicle_monitor_->registerChecker(attitudeChecker);
   }
 
   if (enable_bounding_volume_constraint_) {
     std::shared_ptr<OutOfSpaceConstraintChecker> outOfSpaceChecker(
         new OutOfSpaceConstraintChecker(
-            vehicle_monitor_->GetEnvironmentBoundingVolume()));
+            vehicle_monitor_->getEnvironmentBoundingVolume()));
 
-    vehicle_monitor_->RegisterChecker(outOfSpaceChecker);
+    vehicle_monitor_->registerChecker(outOfSpaceChecker);
   }
 }
 
@@ -171,7 +171,7 @@ void MavSaver::registerVehicle() {
 
   std::shared_ptr<Vehicle> vehiclePtr = std::make_shared<Vehicle>(
       vehicle_id_, vehicle_radius_, velocity_estimator);
-  vehicle_monitor_->RegisterVehicle(vehiclePtr);
+  vehicle_monitor_->registerVehicle(vehiclePtr);
 }
 
 void MavSaver::setPose(const Eigen::Vector3d& p_W_I,
@@ -263,6 +263,7 @@ void MavSaver::checkConstraints(
     // You can release the safety pilot, by releasing the kill switch.
     if (!emergency_button_pressed && emergency_button_pressed_prev_) {
       setTakeControlFlag(false);
+      vehicle_monitor_->resetAllChecker();
       ROS_WARN_THROTTLE(
           1, "[MAV_SAVER]: MAV RELEASED, you're back in control !!!");
     }
@@ -271,7 +272,7 @@ void MavSaver::checkConstraints(
   }
   emergency_button_pressed_prev_ = emergency_button_pressed;
 
-  vehicle_monitor_->Trigger(*frame_, emergency_button_pressed);
+  vehicle_monitor_->trigger(*frame_, emergency_button_pressed);
 
   if (vehicle_monitor_observer_->getTakeControlFlag()) {
     setTakeControlFlag(true);
