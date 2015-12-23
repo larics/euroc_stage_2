@@ -1479,7 +1479,7 @@ bool ViSensor::precacheViCalibration(const SensorId::SensorId& camera_id) {
   camera_imu_calibrations_.insert(std::pair<std::string, visensor_msgs::visensor_calibration>(ROS_CAMERA_NAMES.at(camera_id), calibration));
 
   camera_imu_transformations_.insert(std::pair < std::string, tf::Transform > (ROS_CAMERA_NAMES.at(camera_id),
-          tf::Transform(q_CI, tf::Vector3(T_CI.position.x, T_CI.position.y, T_CI.position.z))));
+          tf::Transform(q_CI, tf::Vector3(T_CI.position.x, T_CI.position.y, T_CI.position.z)).inverse()));
 
   return true;
 }
