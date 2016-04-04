@@ -46,7 +46,7 @@ git clone https://github.com/ethz-asl/libvisensor.git
 Make sure that you installed all necessary Ubuntu packages
 
 ```
-sudo apt-get install libeigen3-dev libboost-dev
+sudo apt-get install libeigen3-dev libboost-dev libssh2-1-dev
 ```
 
 Build the package using catkin_make
