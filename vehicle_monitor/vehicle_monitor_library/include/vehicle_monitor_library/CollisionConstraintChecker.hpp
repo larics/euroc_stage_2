@@ -31,11 +31,10 @@
 
 #include "BoundingVolume.hpp"
 
-#include "octomap/octomap_types.h"
-#include "dynamicEDT3D/dynamicEDTOctomap.h"
+#include "octomap/octomap.h"
 
 namespace octomap {
-class OcTree;
+  class OcTree;
 }
 
 namespace VehicleMonitorLibrary {
@@ -43,12 +42,12 @@ namespace VehicleMonitorLibrary {
 class CollisionConstraintChecker : public BaseConstraintChecker {
  public:
   CollisionConstraintChecker(
-      std::shared_ptr<octomap::OcTree> oc_tree,
-      const BoundingVolume& environment_bounding_volume,
-      double max_dist_to_check_collision,
-      double collision_threeshold_in_bounding_sphere_radius,
-      unsigned int projection_window,
-      unsigned int motion_capture_system_frequency, double minimum_height);
+    std::shared_ptr<octomap::OcTree> oc_tree,
+    double collision_threshold_distance,
+    double vehicle_height,
+    double vehicle_radius,
+    unsigned int projection_window,
+    unsigned int motion_capture_system_frequency, double minimum_height);
 
   virtual ~CollisionConstraintChecker();
 
@@ -62,9 +61,11 @@ class CollisionConstraintChecker : public BaseConstraintChecker {
  private:
   std::shared_ptr<octomap::OcTree> oc_tree_ptr_;
 
-  DynamicEDTOctomap dist_map_;
+  double collision_threshold_distance_;
 
-  double collision_threshold_in_bounding_sphere_radius_;
+  double vehicle_radius_;
+
+  double vehicle_height_;
 
   // number of time steps used to compute the future position of a vehicle
   unsigned int projection_window_size_;

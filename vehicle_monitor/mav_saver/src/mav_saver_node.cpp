@@ -53,7 +53,7 @@ void MavSaverNode::OdometryCallback(const nav_msgs::OdometryConstPtr& msg) {
 }
 
 void MavSaverNode::TakeControlCallback(const std_msgs::BoolConstPtr& msg) {
-  if (msg->data) {
+  if (msg->data && !mav_saver_->getTakeControlFlag()) {
     mav_saver_->setTakeControlFlag(true);
     ROS_WARN_THROTTLE(
         1, "[MAV_SAVER]: EXTERNAL MAV RESCUE REQUESTED, TAKING OVER !!!");

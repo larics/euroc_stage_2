@@ -9,6 +9,11 @@
 #include "tf/transform_datatypes.h"
 namespace mav_saver {
 
+enum MarkerIdx { MAV = 0, BBOX, TEXT, FUTURE_BBOX, MARKER_IDX_LENGTH };
+
+VehicleMonitorObserver::VehicleMonitorObserver(ros::NodeHandle* const nh)
+    : take_control_flag_(false),
+      control_publisher_(nh->advertise<std_msgs::Bool>("take_control", 0)) {}
 void VehicleMonitorObserver::Update(
     const std::map<
         std::string,
@@ -24,10 +29,132 @@ void VehicleMonitorObserver::Update(
         //              << " - Last Valid Position: " <<
         //              outputMapElement.second._lastValidState._linear);
         take_control_flag_ = true;
+        control_publisher_.publish(take_control_flag_);
       }
     }
   }
 }
+
+void MavSaver::setupRvizMarker(ros::NodeHandle* const nh) {
+  visualization_msgs::Marker marker_mav;
+  marker_mav.header.frame_id = "world";
+  marker_mav.id = MAV;
+  marker_mav.type = visualization_msgs::Marker::MESH_RESOURCE;
+  marker_mav.action = visualization_msgs::Marker::ADD;
+  marker_mav.scale.x = 1.0;
+  marker_mav.scale.y = 1.0;
+  marker_mav.scale.z = 1.0;
+  marker_mav.color.a = 1.0;
+  marker_mav.mesh_resource = "package://mav_saver/meshes/euroc_hex.dae";
+  marker_mav.mesh_use_embedded_materials = true;
+
+  markers_mav_bbox_.markers.push_back(marker_mav);
+
+  visualization_msgs::Marker marker_bbox;
+  marker_bbox.header.frame_id = "world";
+  marker_bbox.id = BBOX;
+  marker_bbox.type = visualization_msgs::Marker::MESH_RESOURCE;
+  marker_bbox.action = visualization_msgs::Marker::ADD;
+  marker_bbox.scale.x = 1.0;
+  marker_bbox.scale.y = 1.0;
+  marker_bbox.scale.z = 1.0;
+  marker_bbox.color.a = 0.2;
+  marker_bbox.color.r = 1.0;
+  marker_bbox.color.g = 0.0;
+  marker_bbox.color.b = 0.0;
+  marker_bbox.mesh_resource = "package://mav_saver/meshes/bbox.dae";
+
+  markers_mav_bbox_.markers.push_back(marker_bbox);
+
+  visualization_msgs::Marker marker_text;
+  marker_text.header.frame_id = "world";
+  marker_text.id = TEXT;
+  marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  marker_text.action = visualization_msgs::Marker::ADD;
+  marker_text.scale.z = 0.2;
+  marker_text.color.a = 1.0;
+  marker_text.color.r = 1.0;
+  marker_text.color.g = 1.0;
+  marker_text.color.b = 1.0;
+  marker_text.text = "MAV Saver running...";
+
+  markers_mav_bbox_.markers.push_back(marker_text);
+
+  visualization_msgs::Marker marker_future_bbox;
+  marker_future_bbox.header.frame_id = "world";
+  marker_future_bbox.id = FUTURE_BBOX;
+  marker_future_bbox.type = visualization_msgs::Marker::MESH_RESOURCE;
+  marker_future_bbox.action = visualization_msgs::Marker::ADD;
+  marker_future_bbox.scale.x = 1.0;
+  marker_future_bbox.scale.y = 1.0;
+  marker_future_bbox.scale.z = 1.0;
+  marker_future_bbox.color.a = 0.0;  // initially invisible
+  marker_future_bbox.color.r = 0.5;
+  marker_future_bbox.color.g = 0.0;
+  marker_future_bbox.color.b = 0.0;
+  marker_future_bbox.mesh_resource = "package://mav_saver/meshes/bbox.dae";
+
+  markers_mav_bbox_.markers.push_back(marker_future_bbox);
+
+  viz_publisher_ = nh->advertise<visualization_msgs::MarkerArray>(
+      "mav_saver_status_markers", 0);
+}
+
+void MavSaver::setRvizMarkerPosition(const Eigen::Vector3d& pos,
+                                     const Eigen::Quaterniond& rot) {
+  markers_mav_bbox_.markers[MAV].pose.orientation.x = rot.x();
+  markers_mav_bbox_.markers[MAV].pose.orientation.y = rot.y();
+  markers_mav_bbox_.markers[MAV].pose.orientation.z = rot.z();
+  markers_mav_bbox_.markers[MAV].pose.orientation.w = rot.w();
+
+  for (size_t i = 0; i < MARKER_IDX_LENGTH; ++i) {
+    markers_mav_bbox_.markers[i].pose.position.x = pos[0];
+    markers_mav_bbox_.markers[i].pose.position.y = pos[1];
+    markers_mav_bbox_.markers[i].pose.position.z = pos[2];
+  }
+
+  markers_mav_bbox_.markers[TEXT].pose.position.z += 0.5;
+
+  // no vel info so hide future pose
+  markers_mav_bbox_.markers[FUTURE_BBOX].color.a = 0.0;
+}
+
+void MavSaver::setRvizMarkerPosition(const Eigen::Vector3d& pos,
+                                     const Eigen::Quaterniond& rot,
+                                     const Eigen::Vector3d& vel) {
+  setRvizMarkerPosition(pos, rot);
+
+  // future pose
+  double delta = static_cast<double>(projection_window_) /
+                 static_cast<double>(motion_capture_frequency_);
+  markers_mav_bbox_.markers[FUTURE_BBOX].color.a = 0.4;
+  markers_mav_bbox_.markers[FUTURE_BBOX].pose.position.x += delta * vel.x();
+  markers_mav_bbox_.markers[FUTURE_BBOX].pose.position.y += delta * vel.y();
+  markers_mav_bbox_.markers[FUTURE_BBOX].pose.position.z += delta * vel.z();
+}
+
+void MavSaver::setRvizMarkerText(const std::string& text, TextType type) {
+  markers_mav_bbox_.markers[TEXT].text = text.c_str();
+
+  switch (type) {
+    case (WARN):
+      markers_mav_bbox_.markers[TEXT].color.r = 1.0;
+      markers_mav_bbox_.markers[TEXT].color.g = 1.0;
+      markers_mav_bbox_.markers[TEXT].color.b = 0.0;
+      break;
+    case (ERR):
+      markers_mav_bbox_.markers[TEXT].color.r = 1.0;
+      markers_mav_bbox_.markers[TEXT].color.g = 0.0;
+      markers_mav_bbox_.markers[TEXT].color.b = 0.0;
+      break;
+    default:
+      markers_mav_bbox_.markers[TEXT].color.r = 1.0;
+      markers_mav_bbox_.markers[TEXT].color.g = 1.0;
+      markers_mav_bbox_.markers[TEXT].color.b = 1.0;
+  }
+}
+
+void MavSaver::updateRviz(void) { viz_publisher_.publish(markers_mav_bbox_); }
 
 MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
     : vehicle_id_("MAV1"),
@@ -41,14 +168,13 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
 
   std::string obstacle_octomap_path;
 
-  private_nh.param("collision_threeshold_in_bounding_sphere_radius",
-                   collision_threshold_in_bounding_sphere_radius_,
-                   kDefaultCollisionThreesholdInBoundingSphereRadius);
-  private_nh.param("max_dist_to_check_collision", max_dist_to_check_collision_,
-                   kDefaultMaxDistToCheckCollision);
+  private_nh.param("collision_threshold_distance",
+                   collision_threshold_distance_,
+                   kDefaultCollisionThreesholdDistance);
   private_nh.param("projection_window", projection_window_,
                    kDefaultProjectionWindow);
   private_nh.param("vehicle_radius", vehicle_radius_, kDefaultVehicleRadius);
+  private_nh.param("vehicle_height", vehicle_height_, kDefaultVehicleHeight);
   private_nh.param("minimum_height_to_check_collision",
                    minimum_height_to_check_collision_,
                    kDefaultMinimumHeightToCheckCollision);
@@ -75,6 +201,8 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
   private_nh.param("kill_switch_wait_time_", kill_switch_wait_time_,
                    kDefaultKillSwitchWaitTime);
 
+  setupRvizMarker(&nh);
+
   std::string configFilePath = ros::package::getPath("mav_saver");
   std::stringstream ss;
   ss.str("");
@@ -87,7 +215,7 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
 
   boost::filesystem::path octoMapPath(ss.str());
 
-  vehicle_monitor_observer_.reset(new VehicleMonitorObserver);
+  vehicle_monitor_observer_.reset(new VehicleMonitorObserver(&nh));
 
   vehicle_monitor_.reset(new VehicleMonitorLibrary::VehicleMonitor(
       octoMapPath, kBoundingBoxCorner1, kBoundingBoxCorner2,
@@ -116,9 +244,9 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
       kill_switch_check_rate_, kill_switch_wait_time_));
   if (kill_switch_->connect(kill_switch_port_name_, kill_switch_baudrate_)) {
     kill_switch_->start();
-    kill_switch_connected_ == true;
+    kill_switch_connected_ = true;
   } else {
-    kill_switch_connected_ == false;
+    kill_switch_connected_ = false;
     ROS_WARN(
         "Failure in connecting the kill switch. Flight will be without kill "
         "switch.");
@@ -131,16 +259,9 @@ void MavSaver::registerConstraintCheckers() {
   if (enable_collision_constraint_) {
     std::shared_ptr<CollisionConstraintChecker> collisionChecker =
         std::make_shared<CollisionConstraintChecker>(
-            vehicle_monitor_->getOcTreePtr(),
-            vehicle_monitor_->getEnvironmentBoundingVolume(),
-            max_dist_to_check_collision_,  // max distance to check for
-                                           // collisions
-            collision_threshold_in_bounding_sphere_radius_,  // we consider a
-                                                             // collision when
-                                                             // the distance is
-                                                             // <= 2*radius
-            projection_window_, motion_capture_frequency_,
-            minimum_height_to_check_collision_);
+            vehicle_monitor_->getOcTreePtr(), collision_threshold_distance_,
+            vehicle_height_, vehicle_radius_, projection_window_,
+            motion_capture_frequency_, minimum_height_to_check_collision_);
 
     vehicle_monitor_->registerChecker(collisionChecker);
   }
@@ -204,6 +325,8 @@ void MavSaver::setPose(const Eigen::Vector3d& p_W_I,
   checkConstraints(vehicle_state);
 
   safety_pose_publisher_->SetPose(p_W_I, q_W_I);
+  setRvizMarkerPosition(p_W_I, q_W_I);
+  updateRviz();
 }
 
 void MavSaver::setOdometry(const Eigen::Vector3d& p_W_I,
@@ -241,6 +364,8 @@ void MavSaver::setOdometry(const Eigen::Vector3d& p_W_I,
   checkConstraints(vehicle_state);
 
   safety_pose_publisher_->SetPose(p_W_I, q_W_I);
+  setRvizMarkerPosition(p_W_I, q_W_I, v_W_I);
+  updateRviz();
 }
 
 void MavSaver::checkConstraints(
@@ -258,6 +383,8 @@ void MavSaver::checkConstraints(
       setTakeControlFlag(true);
       ROS_WARN_THROTTLE(
           1, "[MAV_SAVER]: EXTERNAL MAV RESCUE REQUESTED, TAKING OVER !!!");
+      setRvizMarkerText("KILL SWITCH HIT, SAVER ACTIVATED", ERR);
+      updateRviz();
     }
 
     // You can release the safety pilot, by releasing the kill switch.
@@ -266,6 +393,8 @@ void MavSaver::checkConstraints(
       vehicle_monitor_->resetAllChecker();
       ROS_WARN_THROTTLE(
           1, "[MAV_SAVER]: MAV RELEASED, you're back in control !!!");
+      setRvizMarkerText("MAV Saver running...", INFO);
+      updateRviz();
     }
   } else {
     emergency_button_pressed = false;
@@ -276,7 +405,10 @@ void MavSaver::checkConstraints(
 
   if (vehicle_monitor_observer_->getTakeControlFlag()) {
     setTakeControlFlag(true);
-    ROS_WARN_THROTTLE(1, "[MAV_SAVER]: CONSTRAINTS HIT, TAKING OVER !!!");
+    std::string text = "[MAV_SAVER]: CONSTRAINTS HIT, TAKING OVER !!!";
+    ROS_WARN_THROTTLE(1, text.c_str());
+    setRvizMarkerText("CONSTRAINT HIT, SAVER ACTIVATED", ERR);
+    updateRviz();
   }
 
   safety_pose_publisher_->SetTakeControlFlag(take_control_flag_);
@@ -287,4 +419,6 @@ void MavSaver::checkConstraints(
 void MavSaver::setTakeControlFlag(double take_control_flag) {
   take_control_flag_ = take_control_flag;
 }
+
+bool MavSaver::getTakeControlFlag(void) { return take_control_flag_; }
 }
