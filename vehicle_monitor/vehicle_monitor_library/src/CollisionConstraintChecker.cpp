@@ -35,22 +35,19 @@ namespace VehicleMonitorLibrary {
 
 CollisionConstraintChecker::CollisionConstraintChecker(
     std::shared_ptr<octomap::OcTree> oc_tree,
-    const BoundingVolume& environment_bounding_volume,
-    double max_dist_to_check_collision,
-    double collision_threshold_in_bounding_sphere_radius,
+    double collision_threshold_distance,
+    double vehicle_height,
+    double vehicle_radius,
     unsigned int projection_window,
     unsigned int motion_capture_system_frequency, double minimum_height)
     : BaseConstraintChecker("COLLISION_CONSTRAINT_CHECKER"),
       oc_tree_ptr_(oc_tree),
-      dist_map_(max_dist_to_check_collision, oc_tree_ptr_.get(),
-                environment_bounding_volume.getVertexMin(),
-                environment_bounding_volume.getVertexMax(), true),
-      collision_threshold_in_bounding_sphere_radius_(
-          collision_threshold_in_bounding_sphere_radius),
+      collision_threshold_distance_(collision_threshold_distance),
+      vehicle_radius_(vehicle_radius),
+      vehicle_height_(vehicle_height),
       projection_window_size_(projection_window),
       minimum_height_(minimum_height),
       motion_capture_system_frequency_(motion_capture_system_frequency) {
-  dist_map_.update();
 }
 
 CollisionConstraintChecker::~CollisionConstraintChecker() {}
@@ -88,7 +85,7 @@ void CollisionConstraintChecker::doCheckConstraint(
     }
 
     // Project current position according to velocity estimation
-    Eigen::Vector3d future_pose(estimated_state.position.x() +
+    octomath::Vector3 future_pose(estimated_state.position.x() +
                                     estimated_state.velocity.x() * delta_time,
                                 estimated_state.position.y() +
                                     estimated_state.velocity.y() * delta_time,
@@ -96,19 +93,55 @@ void CollisionConstraintChecker::doCheckConstraint(
                                     estimated_state.velocity.z() * delta_time);
 
     // Given the future position check for a collision
-    octomath::Vector3 future_pose_octomath(future_pose.x(), future_pose.y(),
-                                           future_pose.z());
+    octomath::Vector3 bbx_min(
+      future_pose.x() - vehicle_radius_ - collision_threshold_distance_,
+      future_pose.y() - vehicle_radius_ - collision_threshold_distance_,
+      future_pose.z() - vehicle_height_/2.0 - collision_threshold_distance_);
 
-    double distance = dist_map_.getDistance(future_pose_octomath);
+    octomath::Vector3 bbx_max(
+      future_pose.x() + vehicle_radius_ + collision_threshold_distance_,
+      future_pose.y() + vehicle_radius_ + collision_threshold_distance_,
+      future_pose.z() + vehicle_height_/2.0 + collision_threshold_distance_);
 
-    if (distance == DynamicEDTOctomap::distanceValue_Error) {
-      std::cout << "VEHICLE NOT IN MAP" << std::endl;
-      constraint_ok = false;
-    } else {
-      constraint_ok =
-          distance > (collision_threshold_in_bounding_sphere_radius_ *
-                      vehicle->getBoundingSphereRadius());
+    constraint_ok = true;
+    for (octomap::OcTree::leaf_bbx_iterator it =
+             oc_tree_ptr_->begin_leafs_bbx(bbx_min, bbx_max);
+         it != oc_tree_ptr_->end_leafs_bbx(); ++it) {
+      if (oc_tree_ptr_->isNodeOccupied(*it)) {
+
+        float center_offset = it.getSize() / 2.0;
+        octomath::Vector3 diff = future_pose - it.getCoordinate();
+        diff = octomath::Vector3(fabs(fabs(diff.x()) - center_offset),
+          fabs(fabs(diff.y()) - center_offset),
+          fabs(fabs(diff.z()) - center_offset));
+
+        float check_height = diff.z();
+        float check_radius = sqrtf(diff.x()*diff.x() + diff.y()*diff.y());
+
+
+        // divide shape into 2 cylinders and a torus and check constraints
+        if ((vehicle_radius_ > check_radius) &&
+            ((vehicle_height_ / 2.0 + collision_threshold_distance_) > check_height)) {
+          constraint_ok = false;
+          break;
+        }
+        if (((vehicle_radius_ + collision_threshold_distance_) >
+             check_radius) &&
+            (vehicle_height_ / 2.0 > check_height)) {
+          constraint_ok = false;
+          break;
+        }
+        if (collision_threshold_distance_*collision_threshold_distance_ >
+            ((check_radius - vehicle_radius_) *
+                 (check_radius - vehicle_radius_) +
+             (check_height - vehicle_height_ / 2.0) *
+                 (check_height - vehicle_height_ / 2.0))) {
+          constraint_ok = false;
+          break;
+        }
+      }
     }
+
     check_result.insert(make_pair(vehicle_id, constraint_ok));
   }
 }
