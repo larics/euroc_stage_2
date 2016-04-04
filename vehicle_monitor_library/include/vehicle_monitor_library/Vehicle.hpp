@@ -63,7 +63,7 @@ class Vehicle {
   bool getState(VehicleState* estimated_velocity_state);
 
   bool getHasNewState() { return has_new_state_; }
-  bool resetHasNewState() { has_new_state_ = false; }
+  void resetHasNewState() { has_new_state_ = false; }
 
  private:
   std::string

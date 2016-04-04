@@ -13,21 +13,21 @@
 
 #include <Eigen/Eigen>
 
-#include <vehicle_monitor_library/VehicleMonitor.hpp>
-#include <vehicle_monitor_library/VehicleMonitorObserver.hpp>
-#include <vehicle_monitor_library/Vehicle.hpp>
-#include <vehicle_monitor_library/SimpleVelocityEstimator.hpp>
 #include <vehicle_monitor_library/AttitudeConstraintChecker.hpp>
 #include <vehicle_monitor_library/CollisionConstraintChecker.hpp>
-#include <vehicle_monitor_library/OutOfSpaceConstraintChecker.hpp>
 #include <vehicle_monitor_library/MotionCaptureSystemFrame.hpp>
+#include <vehicle_monitor_library/OutOfSpaceConstraintChecker.hpp>
+#include <vehicle_monitor_library/SimpleVelocityEstimator.hpp>
+#include <vehicle_monitor_library/Vehicle.hpp>
+#include <vehicle_monitor_library/VehicleMonitor.hpp>
+#include <vehicle_monitor_library/VehicleMonitorObserver.hpp>
 
 #include <kill_switch_library/kill_switch.h>
 
-#include <random>
 #include <chrono>
-#include <thread>
+#include <random>
 #include <string>
+#include <thread>
 
 #include <iostream>
 
@@ -39,17 +39,18 @@
 
 #include <boost/filesystem.hpp>
 
-#include "ros/ros.h"
+#include "geometry_msgs/PointStamped.h"
 #include "ros/package.h"
 #include "ros/publisher.h"
-#include "geometry_msgs/PointStamped.h"
+#include "ros/ros.h"
+#include "visualization_msgs/MarkerArray.h"
 
 namespace mav_saver {
 
 class VehicleMonitorObserver
     : public VehicleMonitorLibrary::VehicleMonitorObserverBase {
  public:
-  VehicleMonitorObserver() : take_control_flag_(false){};
+  VehicleMonitorObserver(ros::NodeHandle* const nh);
   virtual ~VehicleMonitorObserver(){};
 
   virtual void Update(
@@ -62,14 +63,16 @@ class VehicleMonitorObserver
 
  private:
   bool take_control_flag_;
+
+  ros::Publisher control_publisher_;
 };
 
 // Default values
 constexpr int kDefaultMotionCaptureFrequency = 100;
-constexpr double kDefaultCollisionThreesholdInBoundingSphereRadius = 1.8;
-constexpr double kDefaultMaxDistToCheckCollision = 2.0;
+constexpr double kDefaultCollisionThreesholdDistance = 0.3;
 constexpr int kDefaultProjectionWindow = 50;
-constexpr double kDefaultVehicleRadius = 0.35;
+constexpr double kDefaultVehicleRadius = 0.4;
+constexpr double kDefaultVehicleHeight = 0.24;
 constexpr double kDefaultMinimumHeightToCheckCollision = 0.7;
 constexpr double kDefaultMaxRoll = 30.0 / 180.0 * M_PI;
 constexpr double kDefaultMaxPitch = 30.0 / 180.0 * M_PI;
@@ -100,10 +103,27 @@ class MavSaver {
 
   void setTakeControlFlag(double take_control_flag);
 
+  bool getTakeControlFlag(void);
+
  private:
+  enum TextType { INFO, WARN, ERR };
+
   void registerConstraintCheckers();
 
   void registerVehicle();
+
+  void setupRvizMarker(ros::NodeHandle* const nh);
+
+  void setRvizMarkerPosition(const Eigen::Vector3d& pos,
+                             const Eigen::Quaterniond& rot);
+
+  void setRvizMarkerPosition(const Eigen::Vector3d& pos,
+                             const Eigen::Quaterniond& rot,
+                             const Eigen::Vector3d& vel);
+
+  void setRvizMarkerText(const std::string& text, TextType type);
+
+  void updateRviz(void);
 
   std::shared_ptr<VehicleMonitorLibrary::VehicleMonitor> vehicle_monitor_;
 
@@ -117,10 +137,11 @@ class MavSaver {
 
   octomap_msgs::Octomap octomap_msg_;
 
-  double collision_threshold_in_bounding_sphere_radius_;
-  double max_dist_to_check_collision_;
+  double collision_threshold_distance_;
+
   int projection_window_;
   double vehicle_radius_;
+  double vehicle_height_;
   double minimum_height_to_check_collision_;
 
   std::string vehicle_id_;
@@ -145,6 +166,10 @@ class MavSaver {
   bool enable_collision_constraint_;
   bool enable_bounding_volume_constraint_;
   bool enable_attitude_constraint_;
+
+  ros::Publisher viz_publisher_;
+
+  visualization_msgs::MarkerArray markers_mav_bbox_;
 };
 }
 

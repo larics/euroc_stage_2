@@ -35,10 +35,10 @@ struct VehicleState {
   Eigen::Vector3d position;
   Eigen::Vector3d orientation;
 
-  bool velocity_valid;
-
   Eigen::Vector3d velocity;
   Eigen::Vector3d angular_rate;
+
+  bool velocity_valid;
 
   VehicleState()
       : position(Eigen::Vector3d::Zero()),
