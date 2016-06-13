@@ -14,9 +14,6 @@
   <buildtool_depend>catkin</buildtool_depend>
   <buildtool_depend>catkin_simple</buildtool_depend>
 
-  <depend>gazebo_ros</depend>
-  <depend>rotors_gazebo</depend>
-  <depend>gazebo_plugins</depend>
   <depend>euroc_stage2_common</depend>
   <depend>geometry_msgs</depend>
   <depend>mav_msgs</depend>
