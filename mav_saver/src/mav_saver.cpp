@@ -383,7 +383,9 @@ void MavSaver::checkConstraints(
   }
 
   safety_pose_publisher_->SetTakeControlFlag(take_control_flag_);
-  constraints_violated_publisher_.publish(take_control_flag_);
+  std_msgs::Bool take_control_flag_msg;
+  take_control_flag_msg.data = take_control_flag_;
+  constraints_violated_publisher_.publish(take_control_flag_msg);
 
   ++frame_number_;
 }
