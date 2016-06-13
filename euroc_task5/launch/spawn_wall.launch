@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+
+<launch> 
+
+  <arg name="rectangle_pose_topic" default="rectangle_pose"/>
+
+   <!-- Transform world to rectangle (0 0 0)' -->
+  <arg name="p1_wrld_x"   default="5"/>
+  <arg name="p1_wrld_y"   default="5"/>
+  <arg name="p1_wrld_z"   default="1"/>
+  <arg name="yaw"         default="1"/>
+  <arg name="sqrt2_2_times_sin_yaw_2"   default="0.3390"/>
+  <arg name="sqrt2_2_times_cos_yaw_2"   default="0.6205"/>
+
+  <!-- p3 in rectangle coordinates -->
+  <arg name="p3_rct_x"    default="1"/>
+  <arg name="p3_rct_y"    default="1"/>
+
+  <arg name="frame_width" default="0.05"/>
+
+  <!-- Wall settings-->
+  <arg name="wall_name"   default="wall"/>
+  <arg name="wall_width"  default="5"/>
+  <arg name="wall_height" default="2.3"/>
+  <arg name="wall_depth"  default="0.2"/>
+
+  <!-- send the model XML to param server -->
+  <arg name="xacro_file" default="$(find euroc_task5)/urdf/configurable_wall.xacro"/>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(arg xacro_file)'
+  p1_wrld_x:=$(arg p1_wrld_x)
+  p1_wrld_y:=$(arg p1_wrld_y)
+  p1_wrld_z:=$(arg p1_wrld_z)
+  yaw:=$(arg yaw)
+
+  p3_rct_x:=$(arg p3_rct_x)
+  p3_rct_y:=$(arg p3_rct_y)
+  frame_width:=$(arg frame_width)
+
+  wall_name:=$(arg wall_name)
+  wall_width:=$(arg wall_width)
+  wall_height:=$(arg wall_height)
+  wall_depth:=$(arg wall_depth)
+  "
+  />
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_wall" pkg="gazebo_ros" type="spawn_model"
+   args="-param robot_description
+         -urdf
+         -model $(arg wall_name)"
+   respawn="false" output="screen">
+  </node>
+
+  <!-- publish message -->
+ <node name="vicon_sim_msg" pkg="rostopic" type="rostopic" 
+  args=" pub -r 100  $(arg rectangle_pose_topic) geometry_msgs/TransformStamped '{header: {stamp: now, frame_id: 'world'},
+    transform: {translation: {x: $(arg p1_wrld_x), y: $(arg p1_wrld_y), z: $(arg p1_wrld_z)},
+    rotation: {w: $(arg sqrt2_2_times_cos_yaw_2), x: $(arg sqrt2_2_times_cos_yaw_2), y: $(arg sqrt2_2_times_sin_yaw_2), z: $(arg sqrt2_2_times_sin_yaw_2)}}}'"
+   output="screen">
+   </node>
+
+  <!-- Note about the quaternion published here: 
+    From world frame to rectangle frame, the following transformations are applied:
+      1. Rotate around z-axis (by yaw), to align rectangle plane
+      2. Rotate 90 Degrees around x-axis, to transform into rectangle coordinates, where 
+          y points up, x to the right, and z outwards from rectangle plane (so rectangle is at z=0)
+
+      This yields the quaternion [w x y z]' = sqrt(2)/2 * [cos(yaw/2) cos(yaw/2) sin(yaw/2) sin(yaw/2)]' 
+  -->
+  
+
+</launch>
