@@ -1,0 +1,11 @@
+<launch>
+  <arg name="gazebo_world_name" default="LeoC6"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find vicon_room_simulator)/worlds/$(arg gazebo_world_name).world"/>
+    <arg name="paused" value="false"/>
+  </include>
+
+  <node name="vicon_room_simulator" pkg="vicon_room_simulator" type="vicon_room_simulator" clear_params="true" output="screen" >
+  </node>
+</launch>

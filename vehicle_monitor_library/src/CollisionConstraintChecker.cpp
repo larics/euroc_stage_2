@@ -23,38 +23,53 @@
 
 #include "vehicle_monitor_library/CollisionConstraintChecker.hpp"
 
+#include "vehicle_monitor_library/BaseVelocityEstimator.hpp"
+#include "vehicle_monitor_library/BoundingVolume.hpp"
+#include "vehicle_monitor_library/MotionCaptureSystemFrame.hpp"
 #include "vehicle_monitor_library/Vehicle.hpp"
 #include "vehicle_monitor_library/VehicleMonitor.hpp"
-#include "vehicle_monitor_library/BoundingVolume.hpp"
-#include "vehicle_monitor_library/BaseVelocityEstimator.hpp"
-#include "vehicle_monitor_library/MotionCaptureSystemFrame.hpp"
 
 using namespace std;
 
 namespace VehicleMonitorLibrary {
 
+OctreeHolder::OctreeHolder(void) : octree_ptr_(nullptr){};
+
+octomap::OcTree* OctreeHolder::getOctreePtr(void) { return octree_ptr_; }
+
+void OctreeHolder::updateOctree(const octomap_msgs::OctomapConstPtr& msg) {
+  octomap::AbstractOcTree* new_octree = octomap_msgs::msgToMap(*msg);
+  if (new_octree) {
+    octree_ptr_ = dynamic_cast<octomap::OcTree*>(new_octree);
+  }
+}
+
 CollisionConstraintChecker::CollisionConstraintChecker(
-    std::shared_ptr<octomap::OcTree> oc_tree,
-    double collision_threshold_distance,
-    double vehicle_height,
-    double vehicle_radius,
-    unsigned int projection_window,
+    std::shared_ptr<OctreeHolder> octree_holder_ptr,
+    double collision_threshold_distance, double vehicle_height,
+    double vehicle_radius, unsigned int projection_window,
     unsigned int motion_capture_system_frequency, double minimum_height)
     : BaseConstraintChecker("COLLISION_CONSTRAINT_CHECKER"),
-      oc_tree_ptr_(oc_tree),
+      octree_holder_ptr_(octree_holder_ptr),
       collision_threshold_distance_(collision_threshold_distance),
       vehicle_radius_(vehicle_radius),
       vehicle_height_(vehicle_height),
       projection_window_size_(projection_window),
       minimum_height_(minimum_height),
-      motion_capture_system_frequency_(motion_capture_system_frequency) {
-}
+      motion_capture_system_frequency_(motion_capture_system_frequency) {}
 
 CollisionConstraintChecker::~CollisionConstraintChecker() {}
 
 void CollisionConstraintChecker::doCheckConstraint(
     const MotionCaptureSystemFrame& motion_capture_system_frame,
     bool emergency_button_pressed, std::map<std::string, bool>& check_result) {
+  if (!octree_holder_ptr_->getOctreePtr()) {
+    std::cout << "[VEHICLE_MONITOR] WARNING: no octomap found Collision "
+                 "Constraints will not be checked"
+              << std::endl;
+    return;
+  }
+
   bool constraint_ok;
 
   VehicleState estimated_state;
@@ -85,43 +100,46 @@ void CollisionConstraintChecker::doCheckConstraint(
     }
 
     // Project current position according to velocity estimation
-    octomath::Vector3 future_pose(estimated_state.position.x() +
-                                    estimated_state.velocity.x() * delta_time,
-                                estimated_state.position.y() +
-                                    estimated_state.velocity.y() * delta_time,
-                                estimated_state.position.z() +
-                                    estimated_state.velocity.z() * delta_time);
+    octomath::Vector3 future_pose(
+        estimated_state.position.x() +
+            estimated_state.velocity.x() * delta_time,
+        estimated_state.position.y() +
+            estimated_state.velocity.y() * delta_time,
+        estimated_state.position.z() +
+            estimated_state.velocity.z() * delta_time);
 
     // Given the future position check for a collision
     octomath::Vector3 bbx_min(
-      future_pose.x() - vehicle_radius_ - collision_threshold_distance_,
-      future_pose.y() - vehicle_radius_ - collision_threshold_distance_,
-      future_pose.z() - vehicle_height_/2.0 - collision_threshold_distance_);
+        future_pose.x() - vehicle_radius_ - collision_threshold_distance_,
+        future_pose.y() - vehicle_radius_ - collision_threshold_distance_,
+        future_pose.z() - vehicle_height_ / 2.0 -
+            collision_threshold_distance_);
 
     octomath::Vector3 bbx_max(
-      future_pose.x() + vehicle_radius_ + collision_threshold_distance_,
-      future_pose.y() + vehicle_radius_ + collision_threshold_distance_,
-      future_pose.z() + vehicle_height_/2.0 + collision_threshold_distance_);
+        future_pose.x() + vehicle_radius_ + collision_threshold_distance_,
+        future_pose.y() + vehicle_radius_ + collision_threshold_distance_,
+        future_pose.z() + vehicle_height_ / 2.0 +
+            collision_threshold_distance_);
 
     constraint_ok = true;
     for (octomap::OcTree::leaf_bbx_iterator it =
-             oc_tree_ptr_->begin_leafs_bbx(bbx_min, bbx_max);
-         it != oc_tree_ptr_->end_leafs_bbx(); ++it) {
-      if (oc_tree_ptr_->isNodeOccupied(*it)) {
-
+             octree_holder_ptr_->getOctreePtr()->begin_leafs_bbx(bbx_min,
+                                                                 bbx_max);
+         it != octree_holder_ptr_->getOctreePtr()->end_leafs_bbx(); ++it) {
+      if (octree_holder_ptr_->getOctreePtr()->isNodeOccupied(*it)) {
         float center_offset = it.getSize() / 2.0;
         octomath::Vector3 diff = future_pose - it.getCoordinate();
         diff = octomath::Vector3(fabs(fabs(diff.x()) - center_offset),
-          fabs(fabs(diff.y()) - center_offset),
-          fabs(fabs(diff.z()) - center_offset));
+                                 fabs(fabs(diff.y()) - center_offset),
+                                 fabs(fabs(diff.z()) - center_offset));
 
         float check_height = diff.z();
-        float check_radius = sqrtf(diff.x()*diff.x() + diff.y()*diff.y());
-
+        float check_radius = sqrtf(diff.x() * diff.x() + diff.y() * diff.y());
 
         // divide shape into 2 cylinders and a torus and check constraints
         if ((vehicle_radius_ > check_radius) &&
-            ((vehicle_height_ / 2.0 + collision_threshold_distance_) > check_height)) {
+            ((vehicle_height_ / 2.0 + collision_threshold_distance_) >
+             check_height)) {
           constraint_ok = false;
           break;
         }
@@ -131,7 +149,7 @@ void CollisionConstraintChecker::doCheckConstraint(
           constraint_ok = false;
           break;
         }
-        if (collision_threshold_distance_*collision_threshold_distance_ >
+        if (collision_threshold_distance_ * collision_threshold_distance_ >
             ((check_radius - vehicle_radius_) *
                  (check_radius - vehicle_radius_) +
              (check_height - vehicle_height_ / 2.0) *
@@ -146,8 +164,5 @@ void CollisionConstraintChecker::doCheckConstraint(
   }
 }
 
-void CollisionConstraintChecker::doReset() {
-  take_off_detected_.clear();
-}
-
+void CollisionConstraintChecker::doReset() { take_off_detected_.clear(); }
 }

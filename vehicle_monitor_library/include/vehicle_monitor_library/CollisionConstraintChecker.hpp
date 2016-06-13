@@ -24,30 +24,45 @@
 #ifndef VML__COLLISION_CONSTRAINT_CHECKER_H_
 #define VML__COLLISION_CONSTRAINT_CHECKER_H_
 
-#include <unordered_set>
 #include <set>
+#include <unordered_set>
 
 #include "BaseConstraintChecker.hpp"
 
 #include "BoundingVolume.hpp"
 
-#include "octomap/octomap.h"
+#include <octomap/octomap.h>
+#include <octomap_msgs/Octomap.h>
+#include <octomap_msgs/conversions.h>
 
 namespace octomap {
-  class OcTree;
+class OcTree;
 }
 
 namespace VehicleMonitorLibrary {
 
+// small helper class to allow messages to change octree without changing
+// pointer address of object
+class OctreeHolder {
+ public:
+  OctreeHolder(void);
+
+  octomap::OcTree* getOctreePtr(void);
+
+  void updateOctree(const octomap_msgs::OctomapConstPtr& msg);
+
+ private:
+  octomap::OcTree* octree_ptr_;
+};
+
 class CollisionConstraintChecker : public BaseConstraintChecker {
  public:
-  CollisionConstraintChecker(
-    std::shared_ptr<octomap::OcTree> oc_tree,
-    double collision_threshold_distance,
-    double vehicle_height,
-    double vehicle_radius,
-    unsigned int projection_window,
-    unsigned int motion_capture_system_frequency, double minimum_height);
+  CollisionConstraintChecker(std::shared_ptr<OctreeHolder> octree_holder_ptr,
+                             double collision_threshold_distance,
+                             double vehicle_height, double vehicle_radius,
+                             unsigned int projection_window,
+                             unsigned int motion_capture_system_frequency,
+                             double minimum_height);
 
   virtual ~CollisionConstraintChecker();
 
@@ -59,7 +74,7 @@ class CollisionConstraintChecker : public BaseConstraintChecker {
   void doReset();
 
  private:
-  std::shared_ptr<octomap::OcTree> oc_tree_ptr_;
+  std::shared_ptr<OctreeHolder> octree_holder_ptr_;
 
   double collision_threshold_distance_;
 
