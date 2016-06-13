@@ -24,6 +24,7 @@
 namespace mav_saver {
 
 // Default values
+static const std::string kDefaultOctomapTopic = "ground_truth_octree/octomap_binary";
 static const std::string kDefaultTransformTopic = "transform";
 static const std::string kDefaultOdometryTopic = "odometry";
 static const std::string kDefaultTakeControlTopic = "take_control";
@@ -33,12 +34,14 @@ class MavSaverNode {
   MavSaverNode();
 
  private:
+  ros::Subscriber octomap_sub_;
   ros::Subscriber transform_sub_;
   ros::Subscriber odometry_sub_;
   ros::Subscriber take_control_sub_;
 
   bool valid_odometry_;
 
+  void OctomapCallback(const octomap_msgs::OctomapConstPtr& msg);
   void TransformCallback(const geometry_msgs::TransformStampedConstPtr& msg);
   void OdometryCallback(const nav_msgs::OdometryConstPtr& msg);
 

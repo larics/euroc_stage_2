@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <world name="default">
+    <gui>
+      <camera name='user_camera'>
+        <pose>-7.47546 8.69597 9.49994 -0 0.579643 -0.911805</pose>
+      </camera>
+    </gui>   
+    <light name='sun' type='directional'>
+      <cast_shadows>0</cast_shadows>
+    </light>
+    <plugin name='gazebo_octomap' filename='librotors_gazebo_octomap_plugin.so'/>
+    <model name="scaffold_b">
+      <static>true</static>
+      <pose frame=''>0.61 -1.70 1.65 0 0 -0.176</pose>r
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://ScaffoldB.dae</uri>
+            </mesh>
+          </geometry>
+          <material><script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Red</name>
+          </script></material>
+        </visual>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://ScaffoldB.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+    <model name="scaffold_a">
+      <static>true</static>
+      <pose frame=''>2.08 0.09 1.65 0 0 0.086</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://ScaffoldA.dae</uri>
+            </mesh>
+          </geometry>
+          <material><script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Blue</name>
+          </script></material>
+        </visual>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://ScaffoldA.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+    <model name="room">
+      <static>true</static>
+      <pose frame=''>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <pose>0 0 0 0 0 0</pose>
+          <transparency>0.80</transparency>
+          <geometry>
+            <mesh>
+              <uri>model://LeoC6.dae</uri>
+            </mesh>
+          </geometry>
+          <material><script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Black</name>
+          </script></material>
+        </visual>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://LeoC6.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+  </world>
+</sdf>

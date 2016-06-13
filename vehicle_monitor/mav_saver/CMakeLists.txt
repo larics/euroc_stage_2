@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
+  tf_conversions
   vehicle_monitor_library
   kill_switch_library
 )
@@ -24,7 +25,7 @@ find_package(octomap REQUIRED)
 
 include_directories(include ${catkin_INCLUDE_DIRS}
                     ${Eigen_INCLUDE_DIRS}
-   				    ${OCTOMAP_INCLUDE_DIRS}
+   				          ${OCTOMAP_INCLUDE_DIRS}
 )
 
 catkin_package(
@@ -39,6 +40,5 @@ add_executable(mav_saver_node src/mav_saver_node.cpp
 							  src/safety_pose_publisher.cpp)
 add_dependencies(mav_saver_node ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(mav_saver_node ${OCTOMAP_LIBRARIES} 
-                                     ${catkin_LIBRARIES})
-                                     
+                                     ${catkin_LIBRARIES})                               
 SET_TARGET_PROPERTIES(mav_saver_node PROPERTIES COMPILE_FLAGS "-std=c++11")

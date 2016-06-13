@@ -8,7 +8,6 @@
 #ifndef INCLUDE_MAV_SAVER_HPP_
 #define INCLUDE_MAV_SAVER_HPP_
 
-//#include "mav_saver/vehicle_monitor.hpp"
 #include "mav_saver/safety_pose_publisher.hpp"
 
 #include <Eigen/Eigen>
@@ -53,18 +52,15 @@ class VehicleMonitorObserver
   VehicleMonitorObserver(ros::NodeHandle* const nh);
   virtual ~VehicleMonitorObserver(){};
 
-  virtual void Update(
-      const std::map<std::string,
-                     std::map<std::string,
-                              VehicleMonitorLibrary::ConstraintCheckerOutput> >&
-          vehicleStatus);
+  virtual void Update(const std::map<
+      std::string,
+      std::map<std::string, VehicleMonitorLibrary::ConstraintCheckerOutput> >&
+                          vehicleStatus);
 
   bool getTakeControlFlag() const { return take_control_flag_; }
 
  private:
   bool take_control_flag_;
-
-  ros::Publisher control_publisher_;
 };
 
 // Default values
@@ -77,9 +73,9 @@ constexpr double kDefaultMinimumHeightToCheckCollision = 0.7;
 constexpr double kDefaultMaxRoll = 30.0 / 180.0 * M_PI;
 constexpr double kDefaultMaxPitch = 30.0 / 180.0 * M_PI;
 
-const std::string kDefaultObstacleOctomapPath = "res/LeoC6.bt";
 const Eigen::Vector3d kBoundingBoxCorner1(-5.0, -5.0, -1.0);
 const Eigen::Vector3d kBoundingBoxCorner2(5.0, 5.0, 5.0);
+
 constexpr bool kDefaultEnableCollisionConstraint(true);
 constexpr bool kDefaultEnableBoundingVolumeConstraint(true);
 constexpr bool kDefaultEnableAttitudeConstraint(true);
@@ -93,6 +89,7 @@ class MavSaver {
  public:
   MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh);
 
+  void setOctomap(const octomap_msgs::OctomapConstPtr& msg);
   void setPose(const Eigen::Vector3d& p_W_I, const Eigen::Quaterniond& q_W_I);
   void setOdometry(const Eigen::Vector3d& p_W_I,
                    const Eigen::Quaterniond& q_W_I,
@@ -101,7 +98,7 @@ class MavSaver {
 
   void checkConstraints(const VehicleMonitorLibrary::VehicleState& state);
 
-  void setTakeControlFlag(double take_control_flag);
+  void setTakeControlFlag(bool take_control_flag);
 
   bool getTakeControlFlag(void);
 
@@ -133,10 +130,6 @@ class MavSaver {
 
   int motion_capture_frequency_;
 
-  ros::Publisher octomap_publisher_;
-
-  octomap_msgs::Octomap octomap_msg_;
-
   double collision_threshold_distance_;
 
   int projection_window_;
@@ -153,6 +146,7 @@ class MavSaver {
   double max_roll_;
   double max_pitch_;
 
+  ros::Publisher constraints_violated_publisher_;
   bool take_control_flag_;
 
   std::shared_ptr<kill_switch_library::KillSwitch> kill_switch_;
@@ -166,6 +160,8 @@ class MavSaver {
   bool enable_collision_constraint_;
   bool enable_bounding_volume_constraint_;
   bool enable_attitude_constraint_;
+
+  std::shared_ptr<VehicleMonitorLibrary::OctreeHolder> octree_ptr_;
 
   ros::Publisher viz_publisher_;
 

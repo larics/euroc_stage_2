@@ -12,8 +12,7 @@ namespace mav_saver {
 enum MarkerIdx { MAV = 0, BBOX, TEXT, FUTURE_BBOX, MARKER_IDX_LENGTH };
 
 VehicleMonitorObserver::VehicleMonitorObserver(ros::NodeHandle* const nh)
-    : take_control_flag_(false),
-      control_publisher_(nh->advertise<std_msgs::Bool>("take_control", 0)) {}
+    : take_control_flag_(false) {}
 void VehicleMonitorObserver::Update(
     const std::map<
         std::string,
@@ -29,7 +28,6 @@ void VehicleMonitorObserver::Update(
         //              << " - Last Valid Position: " <<
         //              outputMapElement.second._lastValidState._linear);
         take_control_flag_ = true;
-        control_publisher_.publish(take_control_flag_);
       }
     }
   }
@@ -163,10 +161,14 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
       emergency_button_pressed_prev_(false),
       enable_collision_constraint_(true),
       enable_bounding_volume_constraint_(true),
-      enable_attitude_constraint_(true) {
+      enable_attitude_constraint_(true),
+      octree_ptr_(new VehicleMonitorLibrary::OctreeHolder) {
   safety_pose_publisher_.reset(new SafetyPosePublisher(nh, private_nh));
 
-  std::string obstacle_octomap_path;
+  constraints_violated_publisher_ =
+      nh.advertise<std_msgs::Bool>("saver_constraints_violated", 0);
+
+  std::vector<std::string> obstacle_octomap_paths;
 
   private_nh.param("collision_threshold_distance",
                    collision_threshold_distance_,
@@ -179,8 +181,6 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
                    minimum_height_to_check_collision_,
                    kDefaultMinimumHeightToCheckCollision);
 
-  private_nh.param("obstacle_octomap_path", obstacle_octomap_path,
-                   kDefaultObstacleOctomapPath);
   private_nh.param("motion_capture_frequency", motion_capture_frequency_,
                    kDefaultMotionCaptureFrequency);
   private_nh.param("max_roll", max_roll_, kDefaultMaxRoll);
@@ -203,22 +203,10 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
 
   setupRvizMarker(&nh);
 
-  std::string configFilePath = ros::package::getPath("mav_saver");
-  std::stringstream ss;
-  ss.str("");
-
-  if (obstacle_octomap_path[0] == '/') {
-    ss << obstacle_octomap_path;
-  } else {
-    ss << configFilePath << '/' << obstacle_octomap_path;
-  }
-
-  boost::filesystem::path octoMapPath(ss.str());
-
   vehicle_monitor_observer_.reset(new VehicleMonitorObserver(&nh));
 
   vehicle_monitor_.reset(new VehicleMonitorLibrary::VehicleMonitor(
-      octoMapPath, kBoundingBoxCorner1, kBoundingBoxCorner2,
+      octree_ptr_, kBoundingBoxCorner1, kBoundingBoxCorner2,
       motion_capture_frequency_));
 
   vehicle_monitor_->registerObserver(vehicle_monitor_observer_);
@@ -228,16 +216,6 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
   registerVehicle();
 
   frame_.reset(new VehicleMonitorLibrary::MotionCaptureSystemFrame(0));
-
-  octomap_publisher_ =
-      nh.advertise<octomap_msgs::Octomap>("mav_saver_octomap", 1);
-
-  octomap_msg_.header.stamp = ros::Time::now();
-  octomap_msg_.header.frame_id = "world";
-
-  octomap_msgs::binaryMapToMsg(*vehicle_monitor_->getOcTreePtr(), octomap_msg_);
-
-  octomap_publisher_.publish(octomap_msg_);
 
   // Starting up kill switch
   kill_switch_.reset(new kill_switch_library::KillSwitch(
@@ -292,18 +270,17 @@ void MavSaver::registerVehicle() {
 
   std::shared_ptr<Vehicle> vehiclePtr = std::make_shared<Vehicle>(
       vehicle_id_, vehicle_radius_, velocity_estimator);
+
   vehicle_monitor_->registerVehicle(vehiclePtr);
+}
+
+void MavSaver::setOctomap(const octomap_msgs::OctomapConstPtr& msg) {
+  octree_ptr_->updateOctree(msg);
 }
 
 void MavSaver::setPose(const Eigen::Vector3d& p_W_I,
                        const Eigen::Quaterniond& q_W_I) {
   // vehicle_monitor_SetPose(p_W_I, q_W_I);
-
-  // publishing it once in a while because rviz not always show
-  // the octomap if published only at the beginning
-  if (frame_number_ % 200 == 0) {
-    octomap_publisher_.publish(octomap_msg_);
-  }
 
   VehicleMonitorLibrary::VehicleState vehicle_state;
 
@@ -334,12 +311,6 @@ void MavSaver::setOdometry(const Eigen::Vector3d& p_W_I,
                            const Eigen::Vector3d& v_W_I,
                            const Eigen::Vector3d& omega_I) {
   // vehicle_monitor_SetPose(p_W_I, q_W_I);
-
-  // publishing it once in a while because rviz not always show
-  // the octomap if published only at the beginning
-  if (frame_number_ % 200 == 0) {
-    octomap_publisher_.publish(octomap_msg_);
-  }
 
   VehicleMonitorLibrary::VehicleState vehicle_state;
 
@@ -412,11 +383,14 @@ void MavSaver::checkConstraints(
   }
 
   safety_pose_publisher_->SetTakeControlFlag(take_control_flag_);
+  std_msgs::Bool take_control_flag_msg;
+  take_control_flag_msg.data = take_control_flag_;
+  constraints_violated_publisher_.publish(take_control_flag_msg);
 
   ++frame_number_;
 }
 
-void MavSaver::setTakeControlFlag(double take_control_flag) {
+void MavSaver::setTakeControlFlag(bool take_control_flag) {
   take_control_flag_ = take_control_flag;
 }
 

@@ -1,14 +1,36 @@
 <launch>
   <arg name="mav_name" default="firefly" />
+  <arg name="room_name" default="LeoC6" />
+  <arg name="enable_logging" default="false"/>
+  <arg name="enable_ground_truth" default="true"/>
+  <arg name="log_file" default="firefly"/>
 
-  <node name="mav_saver" pkg="mav_saver" type="mav_saver_node" clear_params="true" output="screen" >
-    <remap from="odometry" to="/$(arg mav_name)/ground_truth/odometry" />
-    <param name="measurement_divisor" value="10" />
-    <param name="obstacle_octomap_path" value="res/LeoC6.bt" />
-    <param name="enable_collision_constraint" value="true" />
-    <param name="kill_switch_port_name" value="/dev/ttyUSB_kill_switch" />
-    <param name="serial_port" value="/dev/ttyUSB_$(arg mav_name)" />
-  </node>
+  <include file="$(find mav_saver)/launch/mav_saver_rotors_base.launch" />
 
-  <include file="$(find mav_simulator_demos)/launch/mav_interactive_marker_msf.launch" />
+  <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
+    <arg name="mav_name" value="$(arg mav_name)" />
+    <arg name="z" value= "0.3" />
+    <arg name="model" value="$(find rotors_description)/urdf/$(arg mav_name)_generic_pose_sensor.gazebo" />
+    <arg name="enable_logging" value="$(arg enable_logging)" />
+    <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
+    <arg name="log_file" value="$(arg log_file)"/>
+  </include>
+
+  <group ns="$(arg mav_name)">
+    <node name="msf" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+      <remap from="msf_updates/pose_with_covariance_input" to="odometry_sensor1/pose_with_covariance" />
+      <remap from="msf_core/imu_state_input" to="imu" />
+      <rosparam command="load" file="$(find rotors_simulator_demos)/resource/msf_simulator.yaml" />
+      <param name="capability_group" value="Core"></param>
+    </node>
+
+    <node name="lee_position_controller_node" pkg="rotors_control" type="lee_position_controller_node" output="screen">
+      <rosparam command="load" file="$(find rotors_gazebo)/resource/lee_controller_$(arg mav_name).yaml" />
+      <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+      <remap from="odometry" to="msf_core/odometry" />
+    </node>
+
+    <node name="hovering_example_msf" pkg="rotors_simulator_demos" type="hovering_example_msf" output="screen"/>
+    <node name="mav_interactive_marker" pkg="mav_interactive_viz" type="interactive_heli" output="screen"/>
+  </group>
 </launch>

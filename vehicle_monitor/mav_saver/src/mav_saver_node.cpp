@@ -15,6 +15,9 @@ MavSaverNode::MavSaverNode() : valid_odometry_(false) {
 
   mav_saver_.reset(new MavSaver(nh, pnh));
 
+  octomap_sub_ = nh.subscribe(kDefaultOctomapTopic, 1,
+                                &MavSaverNode::OctomapCallback, this);
+
   transform_sub_ = nh.subscribe(kDefaultTransformTopic, 10,
                                 &MavSaverNode::TransformCallback, this);
 
@@ -39,6 +42,10 @@ void MavSaverNode::TransformCallback(
       mav_msgs::quaternionFromMsg(msg->transform.rotation);
 
   mav_saver_->setPose(p_W_I, q_W_I);
+}
+
+void MavSaverNode::OctomapCallback(const octomap_msgs::OctomapConstPtr& msg) {
+  mav_saver_->setOctomap(msg);
 }
 
 void MavSaverNode::OdometryCallback(const nav_msgs::OdometryConstPtr& msg) {
