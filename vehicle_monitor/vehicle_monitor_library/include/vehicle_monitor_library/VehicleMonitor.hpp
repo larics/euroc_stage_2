@@ -32,6 +32,7 @@
 #include <octomap/octomap_types.h>
 
 #include "vehicle_monitor_library/BaseConstraintChecker.hpp"
+#include "vehicle_monitor_library/CollisionConstraintChecker.hpp"
 #include "vehicle_monitor_library/BoundingVolume.hpp"
 #include "vehicle_monitor_library/ConstraintCheckerOutput.hpp"
 #include "vehicle_monitor_library/Vehicle.hpp"
@@ -52,14 +53,14 @@ class VehicleMonitor {
                  const Eigen::Vector3d& environmentCorner1,
                  const Eigen::Vector3d& environmentCornerB,
                  unsigned int motionCaptureSystemFrequency);
-  VehicleMonitor(std::shared_ptr<octomap::OcTree> ocTreePtr,
+  VehicleMonitor(std::shared_ptr<OctreeHolder> ocTreePtr,
                  const Eigen::Vector3d& environmentCorner1,
                  const Eigen::Vector3d& environmentCornerB,
                  unsigned int motionCaptureSystemFrequency);
   ~VehicleMonitor();
 
   // methods
-  std::shared_ptr<octomap::OcTree> getOcTreePtr();
+  std::shared_ptr<OctreeHolder> getOcTreePtr();
 
   BoundingVolume getEnvironmentBoundingVolume() const;
 
@@ -92,7 +93,7 @@ class VehicleMonitor {
 
   unsigned int motion_capture_system_frequency_;
 
-  std::shared_ptr<octomap::OcTree> _ocTreePtr;
+  std::shared_ptr<OctreeHolder> _ocTreePtr;
 
   std::map<std::string, std::map<std::string, ConstraintCheckerOutput> >
       last_computed_output_;

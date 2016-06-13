@@ -30,46 +30,19 @@
 
 namespace VehicleMonitorLibrary {
 
-VehicleMonitor::VehicleMonitor(boost::filesystem::path octoMapFilePath,
-                               const Eigen::Vector3d& environmentCorner1,
-                               const Eigen::Vector3d& environmentCornerB,
-                               unsigned int motionCaptureSystemFrequency)
-    : environment_bounding_volume_(environmentCorner1, environmentCornerB),
-      motion_capture_system_frequency_(motionCaptureSystemFrequency) {
-  if (boost::filesystem::exists(octoMapFilePath) &&
-      boost::filesystem::is_regular_file(octoMapFilePath)) {
-    _ocTreePtr = std::make_shared<octomap::OcTree>(octoMapFilePath.string());
-
-    octomath::Vector3 vertexMin = environment_bounding_volume_.getVertexMin();
-    octomath::Vector3 vertexMax = environment_bounding_volume_.getVertexMax();
-
-    _ocTreePtr->setBBXMin(vertexMin);
-    _ocTreePtr->setBBXMax(vertexMax);
-
-    vehicles_map_ = std::make_shared<std::map<std::string, Vehicle::Ptr> >();
-
-  } else {
-    throw std::invalid_argument("The OctoMap path is not valid");
-  }
-}
-
-VehicleMonitor::VehicleMonitor(std::shared_ptr<octomap::OcTree> ocTreePtr,
+VehicleMonitor::VehicleMonitor(std::shared_ptr<OctreeHolder> ocTreePtr,
                                const Eigen::Vector3d& environmentCorner1,
                                const Eigen::Vector3d& environmentCornerB,
                                unsigned int motionCaptureSystemFrequency)
     : _ocTreePtr(ocTreePtr),
       environment_bounding_volume_(environmentCorner1, environmentCornerB),
       motion_capture_system_frequency_(motionCaptureSystemFrequency) {
-  octomath::Vector3 vertexMin = environment_bounding_volume_.getVertexMin();
-  octomath::Vector3 vertexMax = environment_bounding_volume_.getVertexMax();
-
-  _ocTreePtr->setBBXMin(vertexMin);
-  _ocTreePtr->setBBXMax(vertexMax);
+  vehicles_map_ = std::make_shared<std::map<std::string, Vehicle::Ptr> >();
 }
 
 VehicleMonitor::~VehicleMonitor() {}
 
-std::shared_ptr<octomap::OcTree> VehicleMonitor::getOcTreePtr() {
+std::shared_ptr<OctreeHolder> VehicleMonitor::getOcTreePtr() {
   return _ocTreePtr;
 }
 
@@ -195,9 +168,9 @@ void VehicleMonitor::trigger(
       // this means:
       // _lastComputedOutput[vehicleID][constrainCheckerID] =
       // constraincCheckerOutput;
-      last_computed_output_[resultMapElement.first][constraintMapElement
-                                                        .first] =
-          resultMapElement.second;
+      last_computed_output_[resultMapElement.first]
+                           [constraintMapElement.first] =
+                               resultMapElement.second;
     }
   }
 
@@ -207,7 +180,8 @@ void VehicleMonitor::trigger(
 bool VehicleMonitor::registerObserver(
     std::shared_ptr<VehicleMonitorObserverBase> observerPtr) {
   std::pair<std::set<std::shared_ptr<VehicleMonitorObserverBase> >::iterator,
-            bool> ret;
+            bool>
+      ret;
 
   ret = observers_.insert(observerPtr);
 
