@@ -1,0 +1,37 @@
+<launch>
+  <arg name="mav_name" default="firefly" />
+  <group ns="$(arg mav_name)">
+    <node name="task4_server_node" pkg="euroc_task4" type="task4_server_node" output="screen">
+      <remap from="odometry" to="ground_truth/odometry" />
+      <param name="waypoint_file" value="$(find euroc_task4)/res/task4_waypoints_sim.txt" />
+    </node>
+
+    <node name="task4_eval_node" pkg="euroc_task4" type="task4_eval_node" output="screen">
+      <remap from="odometry" to="ground_truth/odometry" />
+      <param name="octomap_file" value="$(find mav_saver)/res/LEO_octomap.bt" />
+      <param name="results_path" value="$(find euroc_task4)/results/" />
+    </node>
+
+    <!-- Visualization -->
+    <node name="mav_interactive_marker" pkg="mav_interactive_viz" type="interactive_heli" output="screen">
+      <remap from="pose" to="ground_truth/pose" />
+    </node>
+
+    <!-- Map -->
+    <node name="octomap_manager" pkg="octomap_world" type="octomap_manager" output="screen" args="--alsologtostderr" >
+      <!-- Load an empty octomap here. -->
+      <param name="octomap_file" value="$(find mav_saver)/res/LEO_octomap.bt" />
+
+      <param name="visualize_min_z" value="-1.0" />
+      <param name="visualize_max_z" value="2.0" />
+    </node>
+
+    <!-- Solution -->
+    <node name="safe_joystick_nav_node" pkg="safe_joystick_nav" type="safe_joystick_nav_node" output="screen">
+      <remap from="odometry" to="ground_truth/odometry" />
+      <remap from="octomap_full" to="octomap_manager/octomap_full" />
+    </node>
+
+    <!-- Joystick drivers maybe -->
+  </group>
+</launch>

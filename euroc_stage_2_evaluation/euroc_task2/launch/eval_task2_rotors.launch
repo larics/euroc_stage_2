@@ -1,0 +1,17 @@
+<launch>
+  <arg name="mav_name" default="firefly" />
+
+  <node name="trajectory_sampler" pkg="mav_planning_utils" type="trajectory_sampling_node" output="screen">
+    <param name="publish_whole_trajectory" value="true" />
+  </node>
+
+  <node name="task2_eval_node" pkg="euroc_task2" type="task2_eval_node" output="screen">
+    <remap from="pose" to="/firefly/ground_truth/transform" />
+  </node>
+
+  <node name="task2_server_node" pkg="euroc_task2" type="task2_server_node" output="screen">
+    <remap from="firefly/vrpn_client/pose" to="/firefly/ground_truth/transform" />
+  </node>
+
+  <include file="$(find mav_saver)/launch/mav_saver_rotors.launch" />
+</launch>

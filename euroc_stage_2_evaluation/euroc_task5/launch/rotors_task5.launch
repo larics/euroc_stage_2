@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<!-- mpantic: Taken from rotors_task3.launch, probably needs further adjustments -->
+<launch>
+  <arg name="mav_name" default="firefly" />
+  <arg name="enable_logging" default="false" />
+  <arg name="enable_ground_truth" default="true" />
+  <arg name="log_file" default="$(arg mav_name)" />
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find rotors_gazebo)/worlds/basic.world"/>
+    <!-- <arg name="debug" value="true"/> -->
+    <arg name="paused" value="true"/>
+    <!-- <arg name="gui" value="false"/> -->
+  </include>
+
+  <group ns="$(arg mav_name)">
+    <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
+      <arg name="mav_name" value="$(arg mav_name)" />
+      <arg name="model" value="$(find rotors_description)/urdf/$(arg mav_name)_generic_odometry_sensor.gazebo" />
+      <arg name="enable_logging" value="$(arg enable_logging)" />
+      <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
+      <arg name="log_file" value="$(arg log_file)"/>
+    </include>
+
+    <node name="hovering_example" pkg="rotors_gazebo" type="hovering_example" output="screen">
+      <param name="capability_group" value="Simulation" />
+    </node>
+
+    <!-- Simulation controller -->
+    <node name="lee_position_controller_node" pkg="rotors_control" type="lee_position_controller_node" output="screen">
+      <rosparam command="load" file="$(find rotors_gazebo)/resource/lee_controller_$(arg mav_name).yaml" />
+      <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+      <remap from="odometry" to="odometry_sensor1/odometry" />
+      <param name="capability_group" value="Simulation" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="world_tf_broadcaster" args="0 0 0 0 0 0 1 world odom 100">
+      <param name="capability_group" value="Simulation" />
+    </node>
+
+    <!-- needs to be adjusted for task 5
+    <node name="task3" pkg="euroc_task3" type="task3_server_node" output="screen">
+      <remap from="vrpn_client/pose" to="ground_truth/transform" />
+    </node> -->
+
+  </group>
+
+  <!-- Spawn configurable wall model -->
+  <include file="$(find euroc_task5)/launch/spawn_wall.launch">
+
+    <arg name="rectangle_pose_topic" value="/$(arg mav_name)/vrpn_client_rec/estimated_transform" />
+
+    <!-- Transform world to rectangle (0 0 0)' -->
+    <arg name="p1_wrld_x"   value="5"/>   <!-- Lower left rectangle boundary in world coordinates -->
+    <arg name="p1_wrld_y"   value="5"/>   <!-- Lower left rectangle boundary in world coordinates -->
+    <arg name="p1_wrld_z"   value="1"/>   <!-- Lower left rectangle boundary in world coordinates -->
+    <arg name="yaw"         value="1"/>   <!-- Yaw of rectangle plane relative to world -->
+
+    <!-- The following values are used for publishing the transform from world to rectangle frame
+         Please adjust them to correspond with the yaw value configured above!
+         For more information, see spawn_wall.launch -->
+    <arg name="sqrt2_2_times_sin_yaw_2"   value="0.3390"/> <!--sqrt(2)/2 * sin(yaw/2) -->
+    <arg name="sqrt2_2_times_cos_yaw_2"   value="0.6205"/> <!--sqrt(2)/2 * cos(yaw/2) -->
+
+    <!-- p3 in rectangle coordinates -->
+    <arg name="p3_rct_x"    value="1"/>     <!-- Upper right rectangle boundary in rectangle coordinates (x points to left)-->
+    <arg name="p3_rct_y"    value="1"/>     <!-- Upper right rectangle boundary in rectangle coordinates (y points upwards)-->
+
+    <arg name="frame_width" value="0.05"/>  <!-- Width of black frame-->
+
+    <!-- Wall settings-->
+    <arg name="wall_name"   value="wall"/>  <!-- Name of object in gazebo -->
+    <arg name="wall_width"  value="5"/>
+    <arg name="wall_height" value="2.3"/>
+    <arg name="wall_depth"  value="0.2"/>   <!-- Thickness of wall -->
+  </include>
+</launch> 
