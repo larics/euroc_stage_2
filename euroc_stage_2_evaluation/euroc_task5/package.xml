@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>euroc_task5</name>
+  <version>0.0.0</version>
+  <description>
+      EuRoC stage2 - task 5
+  </description>
+  <maintainer email="burrimi@ethz.ch">Michael Burri</maintainer>
+  <maintainer email="ztaylor@ethz.ch">Zachary Taylor</maintainer>
+  <maintainer email="schidomi@ethz.ch">Dominik Schindler</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+
+  <depend>euroc_stage2_common</depend>
+  <depend>geometry_msgs</depend>
+  <depend>mav_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
+
+ <!-- For accessing textures etc -->
+  <export>
+    <gazebo_ros gazebo_media_path="${prefix}"/>
+  </export>
+
+</package>

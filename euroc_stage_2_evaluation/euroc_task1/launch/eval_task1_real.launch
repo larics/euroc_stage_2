@@ -1,0 +1,18 @@
+<launch>
+  <arg name="mav_name" default="bluebird" />
+  <arg name="room_name" default="LeoC6" />
+
+  <node name="task1_eval_node" pkg="euroc_task1" type="task1_eval_node" output="screen">
+    <remap from="vicon_transform" to="/$(arg mav_name)/vrpn_client/estimated_transform" />
+    <rosparam file="$(find euroc_task1)/parameters/task1_params.yaml"/>
+  </node>
+
+  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
+    <arg name="object_name" value="$(arg mav_name)"/>
+  </include>
+
+  <include file="$(find mav_saver)/launch/mav_saver_real.launch">
+    <arg name="mav_name" value="$(arg mav_name)"/>
+  </include>
+
+</launch>
