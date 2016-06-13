@@ -28,6 +28,7 @@
 #include <ros/ros.h>
 
 #include <ethzasl_mav_interface/common.h>
+#include <functional>
 
 namespace ethzasl_mav_interface {
 
@@ -36,6 +37,13 @@ namespace trinity {
 class AttitudeCommandHandler {
  public:
   AttitudeCommandHandler(ros::NodeHandle& nh, ros::NodeHandle& private_nh);
+  typedef std::function<void(double thrust)>
+         ThrustFunctionType;
+
+  void registerCommandedThrustCallback(const ThrustFunctionType& function)
+  {
+    thrust_function_ = function;
+  }
 
  private:
   void attitudeThrustCallback(const mav_msgs::AttitudeThrustConstPtr& msg);
@@ -46,6 +54,8 @@ class AttitudeCommandHandler {
   void odometryCallback(const nav_msgs::OdometryConstPtr& msg);
 
   void fastPacketCallback();
+
+  ThrustFunctionType thrust_function_;
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;

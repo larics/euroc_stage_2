@@ -42,7 +42,8 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
       private_nh_(private_nh),
       publish_commanded_motor_speeds_(false),
       publish_raw_imu_(false),
-      publish_nav1_imu_(false)
+      publish_nav1_imu_(false),
+      publisher_queue_size_(1)
 {
 
   private_nh_.param("frame_id", frame_id_, std::string("fcu"));
@@ -57,18 +58,19 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
   private_nh_.param("publish_commanded_motor_speeds", publish_commanded_motor_speeds_, false);
   private_nh_.param("publish_raw_imu", publish_raw_imu_, publish_raw_imu_);
   private_nh_.param("publish_nav1_imu", publish_nav1_imu_, publish_nav1_imu_);
+  private_nh_.param("publisher_queue_size", publisher_queue_size_, publisher_queue_size_);
 
-  imu_pub_ = nh_.advertise<sensor_msgs::Imu>(mav_msgs::default_topics::IMU, 1);
-  motors_pub_ = nh_.advertise<mav_msgs::Actuators>(mav_msgs::default_topics::MOTOR_MEASUREMENT, 1);
-  gps_pub_ = nh_.advertise<sensor_msgs::NavSatFix>(mav_msgs::default_topics::GPS, 1);
-  rc_pub_ = nh_.advertise<sensor_msgs::Joy> (mav_msgs::default_topics::RC, 1);
-  status_pub_ = nh_.advertise<mav_msgs::Status> (mav_msgs::default_topics::STATUS, 1);
+  imu_pub_ = nh_.advertise<sensor_msgs::Imu>(mav_msgs::default_topics::IMU, publisher_queue_size_);
+  motors_pub_ = nh_.advertise<mav_msgs::Actuators>(mav_msgs::default_topics::MOTOR_MEASUREMENT, publisher_queue_size_);
+  gps_pub_ = nh_.advertise<sensor_msgs::NavSatFix>(mav_msgs::default_topics::GPS, publisher_queue_size_);
+  rc_pub_ = nh_.advertise<sensor_msgs::Joy> (mav_msgs::default_topics::RC, publisher_queue_size_);
+  status_pub_ = nh_.advertise<mav_msgs::Status> (mav_msgs::default_topics::STATUS, publisher_queue_size_);
 //  discharge_current_pub_ = nh_.advertise<std_msgs::Float32>(kDefaultDischargeCurrentTopic, 1); //TODO: re-enable, once fully supported.
-  safety_pilot_status_pub_ = nh_.advertise<std_msgs::String>(kDefaultSafetyPilotStatusTopic, 1);
+  safety_pilot_status_pub_ = nh_.advertise<std_msgs::String>(kDefaultSafetyPilotStatusTopic, publisher_queue_size_);
 
   if (publish_commanded_motor_speeds_) {
     motors_cmd_pub_ = nh_.advertise<mav_msgs::Actuators>(
-        std::string(mav_msgs::default_topics::MOTOR_MEASUREMENT) + "_commanded", 1);
+        std::string(mav_msgs::default_topics::MOTOR_MEASUREMENT) + "_commanded", publisher_queue_size_);
     ROS_INFO("Will publish commanded motor speeds.");
   } else {
     ROS_INFO("Will NOT publish commanded motor speeds. "
@@ -77,7 +79,7 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
 
   if (publish_raw_imu_) {
     ROS_INFO("Will publish raw IMU measurements");
-    imu_pub_raw_ = nh_.advertise<sensor_msgs::Imu>(std::string(mav_msgs::default_topics::IMU) + "_raw", 1);
+    imu_pub_raw_ = nh_.advertise<sensor_msgs::Imu>(std::string(mav_msgs::default_topics::IMU) + "_raw", publisher_queue_size_);
   }
   else {
     ROS_INFO("Will NOT publish raw IMU measurements"
@@ -86,7 +88,7 @@ CommonDataPublisher::CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& p
 
   if (publish_nav1_imu_) {
     ROS_INFO("Will publish nav1 IMU measurements");
-    imu_pub_nav1_ = nh_.advertise<sensor_msgs::Imu>(std::string(mav_msgs::default_topics::IMU) + "_nav1", 1);
+    imu_pub_nav1_ = nh_.advertise<sensor_msgs::Imu>(std::string(mav_msgs::default_topics::IMU) + "_nav1", publisher_queue_size_);
   }
   else {
     ROS_INFO("Will NOT publish nav1 IMU measurements"
@@ -327,7 +329,7 @@ void CommonDataPublisher::publishImu(const std_msgs::Header& header) {
 }
 
 void CommonDataPublisher::publishMotors(const std_msgs::Header& header) {
-  constexpr double rpm_to_rad_per_sec = 2.0 * M_PI / 60.0;
+
 
   if (motors_pub_.getNumSubscribers() > 0) {
     mav_msgs::ActuatorsPtr msg(new mav_msgs::Actuators);
@@ -338,7 +340,7 @@ void CommonDataPublisher::publishMotors(const std_msgs::Header& header) {
     for (size_t i = 0; i < kNumberOfRotors; ++i) {
       msg->angular_velocities[i] =
           static_cast<mav_msgs::Actuators::_angular_velocities_type::value_type>(motor_speed_measured_[i].value())
-              * rpm_to_rad_per_sec;
+              * kRPM2RadPerSec;
     }
 
     motors_pub_.publish(msg);
@@ -353,7 +355,7 @@ void CommonDataPublisher::publishMotors(const std_msgs::Header& header) {
     for (size_t i = 0; i < kNumberOfRotors; ++i) {
       msg->angular_velocities[i] =
           static_cast<mav_msgs::Actuators::_angular_velocities_type::value_type>(motor_speed_commanded_[i].value())
-              * rpm_to_rad_per_sec;
+              * kRPM2RadPerSec;
     }
 
     motors_cmd_pub_.publish(msg);
@@ -426,6 +428,29 @@ void CommonDataPublisher::publishStatus(const std_msgs::Header& header){
     msg->vehicle_type = aci::mavTypeToString(aci::instance().getMavType());
 
     msg->rc_command_mode = aci::flightModeToStringTrinity(flight_mode_.value());
+
+    double generated_thrust = 0;
+    bool motors_running = false;
+    for (size_t i = 0; i < kNumberOfRotors; ++i) {
+      if(motor_speed_measured_[i].value() >= kMinMotorSpeed){
+        motors_running = true;
+      }
+      generated_thrust += kMotorConstant*(motor_speed_measured_[i].value() * kRPM2RadPerSec)*(motor_speed_measured_[i].value() * kRPM2RadPerSec);
+    }
+
+    // sets motor status (note will not output starting or stopping)
+    if (motors_running){
+      msg->motor_status = "running";
+    }
+    else{
+      msg->motor_status = "stopped";
+    }
+
+    if (std::abs(generated_thrust - commanded_thrust_) < 2.0
+        && motor_speed_measured_[0].value() > 0)  // if commanded thrust is tracked within 2N and motors are spinning then we assume we are in air
+      msg->in_air = true;
+    else
+      msg->in_air = false;
 
     // TODO(acmarkus): serial interface enabled?
 

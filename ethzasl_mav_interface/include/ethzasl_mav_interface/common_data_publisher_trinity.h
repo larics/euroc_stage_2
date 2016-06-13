@@ -28,9 +28,15 @@ namespace trinity {
 class CommonDataPublisher {
  public:
   CommonDataPublisher(ros::NodeHandle& nh, ros::NodeHandle& private_nh);
+  void setThrust(double thrust){
+    commanded_thrust_ = thrust;
+  }
 
  private:
   static constexpr int kNumberOfRotors = 6;
+  static constexpr double kRPM2RadPerSec = 2.0 * M_PI / 60.0;
+  static constexpr double kMotorConstant = 8.6e-6;
+  static constexpr int kMinMotorSpeed = 1;
 
   void fastPacketCallback();
   void mediumPacketCallback();
@@ -78,6 +84,9 @@ class CommonDataPublisher {
   bool publish_commanded_motor_speeds_;
   bool publish_raw_imu_;
   bool publish_nav1_imu_;
+  double publisher_queue_size_;
+
+  double commanded_thrust_;
 
   aci::Variable<aci::VariableUint8> rc_data_lock_;
   aci::Variable<aci::VariableInt16> rc_roll_;

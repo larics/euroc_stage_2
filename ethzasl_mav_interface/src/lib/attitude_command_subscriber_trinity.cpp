@@ -30,13 +30,14 @@ namespace ethzasl_mav_interface {
 namespace trinity {
 
 AttitudeCommandHandler::AttitudeCommandHandler(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
-    : nh_(nh),
+    : thrust_function_(NULL),
+      nh_(nh),
       private_nh_(private_nh),
       packet_id_(-1),
       current_imu_attitude_(Eigen::Quaterniond::Identity()),
       current_estimated_attitude_(Eigen::Quaterniond::Identity()),
       last_pose_update_time_(0),
-      thrust_constant_(1.0) {
+      thrust_constant_(1.0){
 
   aci::Aci& aci = aci::instance();
 
@@ -136,6 +137,10 @@ void AttitudeCommandHandler::rollPitchYawrateThrustCallback(
   thrust_ = msg->thrust.z * thrust_constant_;  // TODO(asctec): thrust should be commanded as force, not acceleration @ weight ??.
 
   aci::instance().sendCommandPacketToDevice(packet_id_);
+
+  if(thrust_function_ != NULL)
+    thrust_function_(msg->thrust.z * thrust_constant_);
+
 }
 
 void AttitudeCommandHandler::fastPacketCallback() {
