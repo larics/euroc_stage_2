@@ -77,6 +77,9 @@ bool MavInterface::start(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
     ROS_INFO("Starting components for trinity");
     common_data_trinity_.reset(new trinity::CommonDataPublisher(nh_, private_nh_));
     attitude_command_subscriber_trinity_.reset(new trinity::AttitudeCommandHandler(nh_, private_nh_));
+    attitude_command_subscriber_trinity_->registerCommandedThrustCallback(
+        std::bind(&trinity::CommonDataPublisher::setThrust, common_data_trinity_,
+                  std::placeholders::_1));
   }
   else if (aci.getFcuType() == aci::FcuType::AutoPilot) {
     ROS_INFO("Starting components for autopilot");
