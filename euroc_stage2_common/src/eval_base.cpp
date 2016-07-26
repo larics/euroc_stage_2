@@ -14,7 +14,12 @@ EvalBase::EvalBase(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh,
       nh_.subscribe("saver_constraints_violated", QUEUE_SIZE,
                     &EvalBase::saverConstraintsViolatedFlagCallback, this);
 
+  writeTime();
   results_writer_ << "Starting " << task_name << "\n";
+}
+
+void EvalBase::writeTime(){
+  results_writer_ << "[" <<ros::Time::now() << "]: ";
 }
 
 ResultsFileWriter EvalBase::readResultsWriterParams(

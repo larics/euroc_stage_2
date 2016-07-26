@@ -25,10 +25,11 @@ void Task2Eval::poseCallback(
 
   // if new point improves metric score
   if (trajectory_evaluator_.addPoint(point_time, point_position)) {
+    writeTime();
     results_writer_ << ros::Time::now() << ", RMS Error of "
                     << trajectory_evaluator_.getMinError()
                     << " at a time offset of "
-                    << trajectory_evaluator_.getTimeOffset() << "\n";
+                    << trajectory_evaluator_.getTimeOffsetFromStart() << "\n";
   }
   marker_pub_.publish(trajectory_evaluator_.getMarkers());
 }

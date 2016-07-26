@@ -1,5 +1,5 @@
 <launch>
-  <arg name="mav_name" default="bluebird" />
+  <arg name="mav_name" default="euroc6" />
   <arg name="room_name" default="LeoC6" />
 
   <group ns="$(arg mav_name)">
@@ -10,6 +10,7 @@
 
     <node name="task2_eval_node" pkg="euroc_task2" type="task2_eval_node" output="screen">
       <remap from="pose" to="vrpn_client/estimated_transform" />
+      <remap from="saver_constraints_violated" to="/saver_constraints_violated" />
     </node>
 
     <node name="task2_server_node" pkg="euroc_task2" type="task2_server_node" output="screen">
