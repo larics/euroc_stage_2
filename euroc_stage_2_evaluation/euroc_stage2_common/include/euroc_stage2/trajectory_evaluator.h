@@ -26,7 +26,7 @@ class TrajectoryEvaluator {
 
   double getMinError() const;
 
-  ros::Duration getTimeOffset() const;
+  ros::Duration getTimeOffsetFromStart() const;
 
  private:
   static constexpr double kVicondt = 0.01;

@@ -47,7 +47,8 @@ void Task4Eval::setOctomapFromMsg(const octomap_msgs::Octomap& msg) {
   }
 
   if (msg.binary) {
-    octree_.reset(octomap_msgs::binaryMsgToMap(msg));
+    octree_.reset(
+        dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(msg)));
   } else {
     octree_.reset(
         dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(msg)));
@@ -69,7 +70,9 @@ void Task4Eval::odometryCallback(const nav_msgs::Odometry& msg) {
   mav_msgs::eigenOdometryFromMsg(msg, &odom);
 
   // Before computing new command, calculate error from last one and output.
-  if (received_twist_ref_) {
+  if (received_twist_ref_ &&
+      std::abs((last_ref_time_ - last_msg_time_).toSec()) <
+          kReferenceTimeoutSec) {
     calculateScoreAndOutput(odom);
   }
 }
@@ -81,6 +84,7 @@ void Task4Eval::twistCallback(const geometry_msgs::TwistStamped& twist_msg) {
                       twist_msg.twist.linear.z);
   last_yaw_rate_command_ = twist_msg.twist.angular.z;
   received_twist_ref_ = true;
+  last_ref_time_ = twist_msg.header.stamp;
 }
 
 void Task4Eval::calculateScoreAndOutput(const mav_msgs::EigenOdometry& odom) {

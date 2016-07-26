@@ -95,8 +95,14 @@ visualization_msgs::MarkerArray TrajectoryEvaluator::getMarkers() const {
 
 double TrajectoryEvaluator::getMinError() const { return min_rms_error_; }
 
-ros::Duration TrajectoryEvaluator::getTimeOffset() const {
-  return time_offset_;
+ros::Duration TrajectoryEvaluator::getTimeOffsetFromStart() const {
+  if(flown_path_.size()){
+    return time_offset_ - flown_path_.front().first;
+  }
+  else{
+    ROS_ERROR("Requested time offset for an empty path");
+    return ros::Duration(0);
+  }
 }
 
 void TrajectoryEvaluator::updateMarkerPath(size_t num_trajectory_points) {
@@ -113,8 +119,8 @@ void TrajectoryEvaluator::updateMarkerPath(size_t num_trajectory_points) {
   marker_array_.markers[TEXT_IDX].pose.position =
       marker_array_.markers[MARK_IDX].points.back();
   std::stringstream marker_text;
-  marker_text << std::setprecision(2) << "Trajectory time offset: "
-              << (time_offset_ - flown_path_.front().first)
+  marker_text << std::setprecision(4) << "Trajectory time offset: "
+              << (time_offset_ - flown_path_.front().first).toSec()
               << "\nRMS Error: " << min_rms_error_;
   ROS_INFO_STREAM(marker_text.str());
   marker_array_.markers[TEXT_IDX].text = marker_text.str();

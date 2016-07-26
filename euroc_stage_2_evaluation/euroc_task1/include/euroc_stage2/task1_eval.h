@@ -14,6 +14,9 @@
 #include <mav_msgs/default_topics.h>
 #include <std_msgs/Bool.h>
 
+// ros srvs
+#include <std_srvs/Empty.h>
+
 #include <euroc_stage2/waypoint.h>
 #include <euroc_stage2/eval_base.h>
 
@@ -26,7 +29,12 @@ class Task1Eval : public EvalBase {
  private:
   Waypoint readWaypointParams();
 
+  bool startTaskEvaluationCallback(std_srvs::EmptyRequest& request,
+                                   std_srvs::EmptyResponse& response);
   void viconUpdateCallback(const geometry_msgs::TransformStampedConstPtr& msg);
+
+  // service
+  ros::ServiceServer start_srv_;
 
   // subscribers
   ros::Subscriber vicon_sub_;
@@ -35,7 +43,7 @@ class Task1Eval : public EvalBase {
   ros::Publisher vis_pub_;
 
   size_t waypoint_idx_;
-  Waypoint waypoint_;
+  std::shared_ptr<Waypoint> waypoint_;
 
   bool finished_;
 };
@@ -47,6 +55,5 @@ constexpr double kDefaultWaypointPositionY = 0.0;
 constexpr double kDefaultWaypointPositionZ = 0.0;
 constexpr double kDefaultWaypointRadius = 0.0;
 constexpr double kDefaultWaypointHoldTime = 0.0;
-
 }
 #endif

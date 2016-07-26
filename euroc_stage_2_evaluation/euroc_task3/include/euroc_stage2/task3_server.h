@@ -40,7 +40,8 @@ enum Task3Mode {
   PUBLISH_POSE = 1,
   PUBLISH_TRAJECTORY = 2,
   WAIT_FOR_TRAJECTORY_FINISHED = 3,
-  PUBLISH_WAYPOINT = 4
+  PUBLISH_SECOND_POSE = 4,
+  PUBLISH_WAYPOINT = 5
 };
 
 // Task 3 consists of the following phases:
@@ -87,6 +88,8 @@ class Task3Server {
   void saverConstraintsViolatedFlagCallback(const std_msgs::BoolConstPtr& msg);
 
   void poseCallback(const geometry_msgs::TransformStamped& msg);
+
+  void publishWaypoint(void);
 
   void plotTrajectory();
 
