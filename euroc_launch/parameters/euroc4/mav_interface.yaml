@@ -1,4 +1,4 @@
 serial_port: '/dev/ttyUSB0'
 baudrate: 460800
 publish_commanded_motor_speeds: false
-thrust_constant: 0.75
+thrust_constant: 1.0
