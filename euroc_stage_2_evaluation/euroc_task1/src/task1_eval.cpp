@@ -4,10 +4,12 @@ namespace euroc_stage2 {
 
 Task1Eval::Task1Eval(const ros::NodeHandle& nh,
                      const ros::NodeHandle& private_nh)
-    : EvalBase(nh, private_nh, "Task 1"), waypoint_(readWaypointParams()) {
+    : EvalBase(nh, private_nh, "Task 1"), waypoint_(nullptr) {
+  start_srv_ = private_nh_.advertiseService(
+      "start_evaluation", &Task1Eval::startTaskEvaluationCallback, this);
+
   vis_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("waypoint_marker", 0);
-  vis_pub_.publish(waypoint_.getMarkers());
 
   vicon_sub_ = nh_.subscribe("vicon_transform", kQueueSize,
                              &Task1Eval::viconUpdateCallback, this);
@@ -31,15 +33,27 @@ Waypoint Task1Eval::readWaypointParams() {
   return Waypoint(pos, radius, hold_time, ros::Time::now());
 }
 
+bool Task1Eval::startTaskEvaluationCallback(std_srvs::EmptyRequest& request,
+                                            std_srvs::EmptyResponse& response) {
+  waypoint_ = std::make_shared<Waypoint>(readWaypointParams());
+  if (waypoint_)
+    return true;
+  else
+    return false;
+}
+
 void Task1Eval::viconUpdateCallback(
     const geometry_msgs::TransformStampedConstPtr& msg) {
-  bool finish_update =
-      waypoint_.updateStatus(msg, !saver_constraints_violated_flag_);
-  if (!finished_ && finish_update) {
-    results_writer_ << "Waypoint reached in " << waypoint_.getFinishTime()
-                    << " Seconds \n";
+  if (waypoint_) {
+    bool finish_update =
+        waypoint_->updateStatus(msg, !saver_constraints_violated_flag_);
+    if (!finished_ && finish_update) {
+      writeTime();
+      results_writer_ << "Waypoint reached in " << waypoint_->getFinishTime()
+                      << " Seconds \n";
+    }
+    finished_ = finish_update;
+    vis_pub_.publish(waypoint_->getMarkers());
   }
-  finished_ = finish_update;
-  vis_pub_.publish(waypoint_.getMarkers());
 }
 };

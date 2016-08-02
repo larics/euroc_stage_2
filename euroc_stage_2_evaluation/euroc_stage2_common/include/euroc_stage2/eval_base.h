@@ -28,6 +28,8 @@ class EvalBase {
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
+  void writeTime();
+
   ResultsFileWriter results_writer_;
   bool saver_constraints_violated_flag_;
 };

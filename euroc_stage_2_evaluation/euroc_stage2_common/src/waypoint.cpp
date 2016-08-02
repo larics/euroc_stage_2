@@ -150,4 +150,5 @@ ros::Duration Waypoint::getFinishTime(void) { return finish_duration_; }
 void Waypoint::changeStartTime(const ros::Time& start_time) {
   start_time_ = start_time;
 }
+
 }

@@ -4,7 +4,9 @@
 namespace euroc_stage2 {
 
 Task3Server::Task3Server(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
-    : mode_(IDLE), waypoint_number_(0), saver_constraints_violated_flag_(false) {
+    : mode_(IDLE),
+      waypoint_number_(0),
+      saver_constraints_violated_flag_(false) {
   bool trajectory_from_waypoint = true;
 
   private_nh.param("trajectory_file_path", trajectory_file_path_,
@@ -19,8 +21,9 @@ Task3Server::Task3Server(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
 
   transform_sub_ =
       nh.subscribe("vrpn_client/pose", 1, &Task3Server::poseCallback, this);
-  saver_constraints_violated_flag_sub_ = nh.subscribe("saver_constraints_violated", 1,
-                                   &Task3Server::saverConstraintsViolatedFlagCallback, this);
+  saver_constraints_violated_flag_sub_ =
+      nh.subscribe("saver_constraints_violated", 1,
+                   &Task3Server::saverConstraintsViolatedFlagCallback, this);
   pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
       "pose", kPublisherQueueSize, true);
   marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>(
@@ -68,7 +71,8 @@ Task3Server::Task3Server(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
 
 Task3Server::~Task3Server() {}
 
-void Task3Server::saverConstraintsViolatedFlagCallback(const std_msgs::BoolConstPtr& msg) {
+void Task3Server::saverConstraintsViolatedFlagCallback(
+    const std_msgs::BoolConstPtr& msg) {
   saver_constraints_violated_flag_ = msg->data;
 }
 
@@ -89,6 +93,7 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
       } else {
         // Switch to trajectory mode once we are done publishing poses.
         mode_ = Task3Mode::PUBLISH_TRAJECTORY;
+        vicon_msg_counter_ = 0;
       }
       break;
     }
@@ -118,17 +123,21 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
       ros::Duration time_diff = ros::Time::now() - trajectory_start_time_;
       if (time_diff.toSec() >
           trajectory_position_->getMaxTime() + kWaitTimeTrajectory) {
+        mode_ = Task3Mode::PUBLISH_SECOND_POSE;
+      }
+      break;
+    }
+    case Task3Mode::PUBLISH_SECOND_POSE: {
+      if (vicon_msg_counter_ < kNumViconMsgs) {
+        // Publish message.
+        geometry_msgs::PoseStamped msg_pub;
+        mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(current_pose_,
+                                                         &msg_pub);
+        pose_pub_.publish(msg_pub);
+        ++vicon_msg_counter_;
+      } else {
         waypoint_number_ = 0;
-        Eigen::Vector3d waypoint =
-            waypoints_.at(waypoint_number_).block<3, 1>(0, 0);
-        waypoint_.reset(new Waypoint(waypoint, kWaypointRadius,
-                                     kWaypointHoldTime, ros::Time::now()));
-        geometry_msgs::PoseStamped waypoint_msg;
-        waypoint_msg.pose.position.x = waypoints_.at(waypoint_number_).x();
-        waypoint_msg.pose.position.y = waypoints_.at(waypoint_number_).y();
-        waypoint_msg.pose.position.z = waypoints_.at(waypoint_number_).z();
-        waypoint_pub_.publish(waypoint_msg);
-        ROS_INFO("[task3]: Publishing first Waypoint.");
+        publishWaypoint();
         mode_ = Task3Mode::PUBLISH_WAYPOINT;
       }
       break;
@@ -140,8 +149,9 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
         break;
       }
 
-      bool waypoint_reached = waypoint_->updateStatus(current_pose_.position_W,
-                                                      msg.header.stamp, !saver_constraints_violated_flag_);
+      bool waypoint_reached =
+          waypoint_->updateStatus(current_pose_.position_W, msg.header.stamp,
+                                  !saver_constraints_violated_flag_);
 
       vis_pub_.publish(waypoint_->getMarkers());
 
@@ -149,16 +159,7 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
         waypoint_finish_times_.push_back(waypoint_->getFinishTime());
         ++waypoint_number_;
         if (waypoint_number_ < waypoints_.size()) {
-          Eigen::Vector3d waypoint =
-              waypoints_.at(waypoint_number_).block<3, 1>(0, 0);
-          waypoint_.reset(new Waypoint(waypoint, kWaypointRadius,
-                                       kWaypointHoldTime, ros::Time::now()));
-          geometry_msgs::PoseStamped waypoint_msg;
-          waypoint_msg.pose.position.x = waypoints_.at(waypoint_number_).x();
-          waypoint_msg.pose.position.y = waypoints_.at(waypoint_number_).y();
-          waypoint_msg.pose.position.z = waypoints_.at(waypoint_number_).z();
-          waypoint_pub_.publish(waypoint_msg);
-          ROS_INFO("[task3]: Publishing next Waypoint.");
+          publishWaypoint();
         } else {
           mode_ = Task3Mode::IDLE;
         }
@@ -166,7 +167,29 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
 
       break;
     }
+    case Task3Mode::IDLE: {
+      break;
+    }
+    default: {
+      ROS_ERROR(
+          "[Task3]: Entered an invalid state, this should never happen and "
+          "something is seriously wrong");
+    }
   }
+}
+
+void Task3Server::publishWaypoint(void) {
+  Eigen::Vector3d waypoint = waypoints_.at(waypoint_number_).block<3, 1>(0, 0);
+  ros::Time start_time(ros::Time::now());
+  waypoint_.reset(
+      new Waypoint(waypoint, kWaypointRadius, kWaypointHoldTime, start_time));
+  geometry_msgs::PoseStamped waypoint_msg;
+  waypoint_msg.header.stamp = start_time;
+  waypoint_msg.pose.position.x = waypoints_.at(waypoint_number_).x();
+  waypoint_msg.pose.position.y = waypoints_.at(waypoint_number_).y();
+  waypoint_msg.pose.position.z = waypoints_.at(waypoint_number_).z();
+  waypoint_pub_.publish(waypoint_msg);
+  ROS_INFO("[task3]: Publishing next Waypoint.");
 }
 
 void Task3Server::plotTrajectory() {

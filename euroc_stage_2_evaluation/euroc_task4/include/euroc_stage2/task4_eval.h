@@ -25,6 +25,8 @@ class Task4Eval : public EvalBase {
   // Max distance away from the octomap for which the EDT is calculated.
   static constexpr double kOctomapMaxDistMeters = 3.0;
   static constexpr char kOutputSeparator[] = ", ";
+  // Stop recording after it's been a second from the last reference.
+  static constexpr double kReferenceTimeoutSec = 1.0;
 
   Task4Eval(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
   ~Task4Eval();
@@ -63,6 +65,7 @@ class Task4Eval : public EvalBase {
 
   // Throttle input data.
   ros::Time last_msg_time_;
+  ros::Time last_ref_time_;
   bool received_twist_ref_;
 
   // Cached commands.

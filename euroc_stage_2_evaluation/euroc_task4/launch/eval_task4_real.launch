@@ -17,6 +17,7 @@
     </node>
 
     <node name="task4_eval_node" pkg="euroc_task4" type="task4_eval_node" output="screen">
+      <remap from="saver_constraints_violated" to="/saver_constraints_violated" />
       <remap from="odometry" to="vrpn_client/estimated_odometry" />
       <remap from="octomap" to="/ground_truth_octree/octomap_full" />
       <!-- <param name="octomap_file" value="$(find mav_saver)/res/LEO_octomap.bt" /> -->
