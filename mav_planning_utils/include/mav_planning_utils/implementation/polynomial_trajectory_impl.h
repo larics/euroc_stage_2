@@ -133,6 +133,8 @@ void PolynomialTrajectory<N>::evaluateRangeImpl(
   }
 
   TimeNs accumulated_duration_ns(TimeNs::zero());
+  // The first sample should always be taken.
+  bool first_sample_in_segment = false;
   TimeNs current_sampling_time_ns =
       t_start_ns - accumulated_segment_time_ns +
       std::chrono::duration_cast<TimeNs>(TimeDoubleS(it->getTime()));
@@ -143,24 +145,33 @@ void PolynomialTrajectory<N>::evaluateRangeImpl(
 
     if (current_sampling_time_ns > segment_time_ns) {
       current_sampling_time_ns = TimeNs::zero();
+      first_sample_in_segment = true;
       ++it;
       if (it == segments_.end()) {
         LOG(ERROR) << "segment iterator == end(), this should not happen";
         return;
       }
     }
-    const double current_sampling_time =
-        std::chrono::duration_cast<TimeDoubleS>(current_sampling_time_ns)
+
+    // Skip the first sample in new segments since this is equal to the last sample in the previous segment!
+    if(!first_sample_in_segment)
+    {
+      const double current_sampling_time =
+          std::chrono::duration_cast<TimeDoubleS>(current_sampling_time_ns)
+          .count();
+      result->push_back(it->evaluate(current_sampling_time, derivative_order));
+
+      if (write_sampling_times) {
+        const double accumulated_duration =
+            std::chrono::duration_cast<TimeDoubleS>(accumulated_duration_ns)
             .count();
-    result->push_back(it->evaluate(current_sampling_time, derivative_order));
-
-    if (write_sampling_times) {
-      const double accumulated_duration =
-          std::chrono::duration_cast<TimeDoubleS>(accumulated_duration_ns)
-              .count();
-      sampling_times->push_back(accumulated_duration);
+        sampling_times->push_back(accumulated_duration);
+      }
     }
-
+    else
+    {
+      first_sample_in_segment = false;
+    }
     current_sampling_time_ns += dt_ns;
     accumulated_duration_ns += dt_ns;
   }
