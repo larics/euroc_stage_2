@@ -20,6 +20,7 @@
 #include <vehicle_monitor_library/Vehicle.hpp>
 #include <vehicle_monitor_library/VehicleMonitor.hpp>
 #include <vehicle_monitor_library/VehicleMonitorObserver.hpp>
+#include <vehicle_monitor_library/VelocityConstraintChecker.hpp>
 
 #include <kill_switch_library/kill_switch.h>
 
@@ -73,12 +74,16 @@ constexpr double kDefaultMinimumHeightToCheckCollision = 0.7;
 constexpr double kDefaultMaxRoll = 30.0 / 180.0 * M_PI;
 constexpr double kDefaultMaxPitch = 30.0 / 180.0 * M_PI;
 
+constexpr double kDefaultAcceptableViolationDuration = 0.00;
+constexpr double kDefaultMaxVelocity = 2;
+
 const Eigen::Vector3d kBoundingBoxCorner1(-5.0, -5.0, -1.0);
 const Eigen::Vector3d kBoundingBoxCorner2(5.0, 5.0, 5.0);
 
 constexpr bool kDefaultEnableCollisionConstraint(true);
 constexpr bool kDefaultEnableBoundingVolumeConstraint(true);
 constexpr bool kDefaultEnableAttitudeConstraint(true);
+constexpr bool kDefaultEnableVelocityConstraint(true);
 
 const std::string kDefaultKillSwitchPort = "/dev/ttyUSB1";
 constexpr double kDefaultKillSwitchCheckRate = 10.0;
@@ -137,6 +142,9 @@ class MavSaver {
   double vehicle_height_;
   double minimum_height_to_check_collision_;
 
+  double acceptable_violation_duration_;
+  ros::Time violation_time_;
+
   std::string vehicle_id_;
 
   std::shared_ptr<VehicleMonitorLibrary::MotionCaptureSystemFrame> frame_;
@@ -145,6 +153,7 @@ class MavSaver {
 
   double max_roll_;
   double max_pitch_;
+  double max_velocity_;
 
   ros::Publisher constraints_violated_publisher_;
   bool take_control_flag_;
@@ -160,6 +169,7 @@ class MavSaver {
   bool enable_collision_constraint_;
   bool enable_bounding_volume_constraint_;
   bool enable_attitude_constraint_;
+  bool enable_velocity_constraint_;
 
   std::shared_ptr<VehicleMonitorLibrary::OctreeHolder> octree_ptr_;
 

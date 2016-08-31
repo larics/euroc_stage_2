@@ -4,11 +4,11 @@
 
   <node name="mav_saver" pkg="mav_saver" type="mav_saver_node" clear_params="true" output="screen" >
     <remap from="odometry" to="$(arg mav_name)/vrpn_client/estimated_odometry" />
-    <remap from="transform" to="$(arg mav_name)/vrpn_client/estimated_transform" />
     <param name="measurement_divisor" value="10" />
     <param name="enable_collision_constraint" value="true" />
     <param name="kill_switch_port_name" value="/dev/ttyUSB_kill_switch" />
     <param name="serial_port" value="/dev/ttyUSB_$(arg mav_name)" />
+    <param name="minimum_height_to_check_collision" value="0.7" />
     <param name="capability_group" value="MAV Saver"></param>
   </node>
 
@@ -16,6 +16,7 @@
     <param name="capability_group" value="MAV Saver"></param>
     <remap from="ground_truth/scaffold_a" to="scaffold_A/vrpn_client/estimated_transform"/>
     <remap from="ground_truth/scaffold_b" to="scaffold_B/vrpn_client/estimated_transform"/>
+    <remap from="ground_truth/pipes_thing" to="pipes_thing/vrpn_client/estimated_transform"/>
     <param name="resolution" value="0.05"></param>
     <param name="visualize_max_z" value="4.0"></param>
     <param name="visualize_min_z" value="-1.0"></param>
@@ -28,6 +29,11 @@
 
   <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
     <arg name="object_name" value="scaffold_B"/>
+    <param name="capability_group" value="MAV Saver"></param>
+  </include>
+
+  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
+    <arg name="object_name" value="pipes_thing"/>
     <param name="capability_group" value="MAV Saver"></param>
   </include>
   
