@@ -6,13 +6,16 @@ namespace euroc_stage2 {
 Task3Server::Task3Server(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
     : mode_(IDLE),
       waypoint_number_(0),
-      saver_constraints_violated_flag_(false) {
+      saver_constraints_violated_flag_(false),
+      half_score_(false) {
   bool trajectory_from_waypoint = true;
 
   private_nh.param("trajectory_file_path", trajectory_file_path_,
                    kDefaultTrajectoryFilePath);
   private_nh.param("waypoint_file_path", waypoint_file_path_,
                    kDefaultWaypointFilePath);
+  private_nh.param("half_score_service_name", half_score_service_name_,
+                   kDefaultHalfScoreServiceName);
 
   start_publishing_service_ = private_nh.advertiseService(
       "start_publishing", &Task3Server::startPublishing, this);
@@ -30,6 +33,8 @@ Task3Server::Task3Server(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
       "path", kPublisherQueueSize, true);
   path_pub_ = nh.advertise<planning_msgs::PolynomialTrajectory4D>(
       "path_segments", kPublisherQueueSize);
+  half_score_vicon_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
+      "half_score_vicon_pose", kPublisherQueueSize, true);
 
   vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("waypoint_marker",
                                                            kPublisherQueueSize);
@@ -80,6 +85,30 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
   ROS_INFO_ONCE("[task3]: Got first pose from vicon.");
 
   mav_msgs::eigenTrajectoryPointFromTransformMsg(msg, &current_pose_);
+
+  //give vicon while halving score
+  if(half_score_vicon_pub_.getNumSubscribers() > 0){
+    if(!half_score_){
+
+      //tell eval node to halve score
+      std_srvs::Empty::Request request;
+      std_srvs::Empty::Response response;
+      if(!ros::service::call(half_score_service_name_, request, response)){
+        ROS_ERROR("Failed to halve score");
+      }
+      else {
+        half_score_ = true;
+      }
+    }
+
+    // Publish message.
+    geometry_msgs::PoseStamped msg_pub;
+    mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(current_pose_,
+                                                      &msg_pub);
+    half_score_vicon_pub_.publish(msg_pub);
+
+  }
+
 
   switch (mode_) {
     case Task3Mode::PUBLISH_POSE: {

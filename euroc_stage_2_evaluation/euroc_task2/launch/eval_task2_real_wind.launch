@@ -17,6 +17,7 @@
 
     <node name="task2_server_node" pkg="euroc_task2" type="task2_server_node" output="screen">
       <remap from="vrpn_client/pose" to="vrpn_client/estimated_transform" />
+      <param name="file_path" value="res/wind.txt"/>
     </node>
 
   </group>
