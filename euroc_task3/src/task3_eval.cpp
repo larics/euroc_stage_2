@@ -10,6 +10,10 @@ Task3Eval::Task3Eval(const ros::NodeHandle& nh,
 
   waypoint_sub_ = nh_.subscribe(mav_msgs::default_topics::COMMAND_POSE,
                                 kQueueSize, &Task3Eval::waypointCallback, this);
+
+  half_score_srv_ = private_nh_.advertiseService(
+      "half_score", &Task3Eval::halfScoreSrvs, this);
+
 }
 
 void Task3Eval::waypointCallback(const geometry_msgs::PoseStamped& msg) {
@@ -17,6 +21,13 @@ void Task3Eval::waypointCallback(const geometry_msgs::PoseStamped& msg) {
                            msg.pose.position.z);
   waypoint_.push_back(
       Waypoint(position, kWaypointRadius, kWaypointHoldTime, msg.header.stamp));
+}
+
+bool Task3Eval::halfScoreSrvs(std_srvs::EmptyRequest& request,
+                                            std_srvs::EmptyResponse& response) {
+  writeTime();
+  results_writer_ << "VICON USED: SCORE MUST BE HALVED\n";
+  return true;
 }
 
 void Task3Eval::poseCallback(

@@ -11,6 +11,8 @@
 #include <euroc_stage2/eval_base.h>
 #include <euroc_stage2/waypoint.h>
 
+#include <std_srvs/Empty.h>
+
 #include <mav_msgs/default_topics.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -29,6 +31,11 @@ class Task3Eval : public EvalBase {
  private:
   void poseCallback(const geometry_msgs::TransformStampedConstPtr& msg);
   void waypointCallback(const geometry_msgs::PoseStamped& msg);
+  bool halfScoreSrvs(std_srvs::EmptyRequest& request,
+                                            std_srvs::EmptyResponse& response);
+
+  // service
+  ros::ServiceServer half_score_srv_;
 
   // subscribers
   ros::Subscriber transform_sub_;

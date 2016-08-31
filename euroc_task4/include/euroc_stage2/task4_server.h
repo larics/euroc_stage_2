@@ -22,7 +22,7 @@ namespace euroc_stage2 {
 
 class Task4Server {
  public:
-  static constexpr double kMaxYawTolerance = 0.1; // Radians.
+  static constexpr double kMaxYawTolerance = 0.35; // Radians.
 
   Task4Server(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
   ~Task4Server();
