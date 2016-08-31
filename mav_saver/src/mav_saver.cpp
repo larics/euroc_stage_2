@@ -185,6 +185,7 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
                    kDefaultMotionCaptureFrequency);
   private_nh.param("max_roll", max_roll_, kDefaultMaxRoll);
   private_nh.param("max_pitch", max_pitch_, kDefaultMaxPitch);
+  private_nh.param("max_velocity", max_velocity_, kDefaultMaxVelocity);
   private_nh.param("enable_collision_constraint", enable_collision_constraint_,
                    kDefaultEnableCollisionConstraint);
   private_nh.param("enable_bounding_volume_constraint",
@@ -192,6 +193,8 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
                    kDefaultEnableBoundingVolumeConstraint);
   private_nh.param("enable_attitude_constraint", enable_attitude_constraint_,
                    kDefaultEnableAttitudeConstraint);
+  private_nh.param("enable_velocity_constraint", enable_velocity_constraint_,
+                   kDefaultEnableVelocityConstraint);
   private_nh.param("kill_switch_port_name", kill_switch_port_name_,
                    kDefaultKillSwitchPort);
   private_nh.param("kill_switch_check_rate", kill_switch_check_rate_,
@@ -200,6 +203,9 @@ MavSaver::MavSaver(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
                    kDefaultKillSwitchBaudrate);
   private_nh.param("kill_switch_wait_time_", kill_switch_wait_time_,
                    kDefaultKillSwitchWaitTime);
+
+  private_nh.param("acceptable_violation_duration", acceptable_violation_duration_,
+                   kDefaultAcceptableViolationDuration);
 
   setupRvizMarker(&nh);
 
@@ -259,6 +265,14 @@ void MavSaver::registerConstraintCheckers() {
             vehicle_monitor_->getEnvironmentBoundingVolume()));
 
     vehicle_monitor_->registerChecker(outOfSpaceChecker);
+  }
+
+  if (enable_velocity_constraint_) {
+    std::shared_ptr<VelocityConstraintChecker> velocityChecker(
+        new VelocityConstraintChecker(
+            max_velocity_));
+
+    vehicle_monitor_->registerChecker(velocityChecker);
   }
 }
 
@@ -375,11 +389,21 @@ void MavSaver::checkConstraints(
   vehicle_monitor_->trigger(*frame_, emergency_button_pressed);
 
   if (vehicle_monitor_observer_->getTakeControlFlag()) {
-    setTakeControlFlag(true);
-    std::string text = "[MAV_SAVER]: CONSTRAINTS HIT, TAKING OVER !!!";
-    ROS_WARN_THROTTLE(1, text.c_str());
-    setRvizMarkerText("CONSTRAINT HIT, SAVER ACTIVATED", ERR);
-    updateRviz();
+    if((ros::Time::now() - violation_time_).toSec()  >= acceptable_violation_duration_){
+      setTakeControlFlag(true);
+      std::string text = "[MAV_SAVER]: CONSTRAINTS HIT, TAKING OVER !!!";
+      ROS_WARN_THROTTLE(1, text.c_str());
+      setRvizMarkerText("CONSTRAINT HIT, SAVER ACTIVATED", ERR);
+      updateRviz();
+    } else{
+      std::string time_left = std::to_string(acceptable_violation_duration_ - (ros::Time::now() - violation_time_).toSec());
+      std::string text = "[MAV_SAVER]: CONSTRAINTS HIT, TAKING OVER IN " + time_left + " SECONDS";
+      ROS_WARN_THROTTLE(1, text.c_str());
+      setRvizMarkerText("CONSTRAINT HIT, SAVER WILL ACTIVATE IN " + time_left + " SECONDS", WARN);
+      updateRviz();
+    }
+  } else{
+    violation_time_ = ros::Time::now();
   }
 
   safety_pose_publisher_->SetTakeControlFlag(take_control_flag_);

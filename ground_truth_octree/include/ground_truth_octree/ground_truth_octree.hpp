@@ -29,7 +29,8 @@ const std::string kDefaultRoomOctree = "res/LeoC6.bt";
 // pairs of vicon tracker topics and octomaps of the same object
 const std::map<std::string, std::string> kDefaultObstacles = {
     {"ground_truth/scaffold_a", "res/ScaffoldA.bt"},
-    {"ground_truth/scaffold_b", "res/ScaffoldB.bt"}};
+    {"ground_truth/scaffold_b", "res/ScaffoldB.bt"},
+    {"ground_truth/pipes_thing", "res/PipesThing.bt"}};
 constexpr double kDefaultMaxUpdateRate = 1;
 constexpr bool kAlwaysUpdate = false;
 constexpr int kNumOfUpdatesAtStart = 5;
@@ -57,6 +58,8 @@ class ObjectPoints {
   ros::NodeHandle nh_;
   pcl::PointCloud<pcl::PointXYZ> point_cloud_;
 
+  bool has_pose_;
+
   tf::Transform pose_;
 
   ros::Subscriber vicon_sub_;
@@ -78,7 +81,7 @@ class UpdatingOctree : public volumetric_mapping::OctomapManager {
 
   bool updateService(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
-  void viconCallback(const geometry_msgs::TransformStampedConstPtr& msg);
+  void viconCallback(const ros::TimerEvent& e);
 
  private:
 
@@ -91,7 +94,7 @@ class UpdatingOctree : public volumetric_mapping::OctomapManager {
   int num_of_updates_at_start_;
   int current_update_num_;
 
-  ros::Subscriber vicon_sub_;
+  ros::Timer update_timer_;
   ros::ServiceServer update_service_; 
 
   std::vector<ObjectPoints::Ptr> objects_;

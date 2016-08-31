@@ -6,6 +6,7 @@
     <remap from="odometry" to="/$(arg mav_name)/ground_truth/odometry" />
     <param name="measurement_divisor" value="10" />
     <param name="enable_collision_constraint" value="true" />
+    <param name="acceptable_violation_duration" value="0.0" />
     <param name="kill_switch_port_name" value="/dev/ttyUSB_kill_switch" />
     <param name="serial_port" value="/dev/ttyUSB_$(arg mav_name)" />
     <param name="capability_group" value="MAV Saver"></param>
