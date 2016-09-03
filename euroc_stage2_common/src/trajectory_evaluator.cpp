@@ -4,8 +4,12 @@ namespace euroc_stage2 {
 
 enum MarkerIdx { MARK_IDX = 0, TEXT_IDX };
 
-TrajectoryEvaluator::TrajectoryEvaluator()
-    : min_rms_error_(std::numeric_limits<double>::max()), time_offset_(0) {
+TrajectoryEvaluator::TrajectoryEvaluator(double trajectory_start_distance,
+                                         double trajectory_end_distance)
+    : trajectory_start_distance_(trajectory_start_distance),
+      trajectory_end_distance_(trajectory_end_distance),
+      min_rms_error_(std::numeric_limits<double>::max()),
+      time_offset_(0) {
   visualization_msgs::Marker marker_trajectory;
   marker_trajectory.header.frame_id = "world";
   marker_trajectory.id = MARK_IDX;
@@ -44,6 +48,13 @@ void TrajectoryEvaluator::trajectoryCallback(
     trajectory_msgs::MultiDOFJointTrajectoryConstPtr msg) {
   desired_path_.clear();
 
+  double trajectory_length = 0.0;
+
+  Eigen::Vector3d prev_position;
+  prev_position.x() = msg->points.front().transforms.front().translation.x;
+  prev_position.y() = msg->points.front().transforms.front().translation.y;
+  prev_position.z() = msg->points.front().transforms.front().translation.z;
+
   // extract points and times
   for (auto& i : msg->points) {
     std::pair<ros::Duration, Eigen::Vector3d> point;
@@ -51,15 +62,29 @@ void TrajectoryEvaluator::trajectoryCallback(
     point.second.x() = i.transforms.front().translation.x;
     point.second.y() = i.transforms.front().translation.y;
     point.second.z() = i.transforms.front().translation.z;
-    desired_path_.push_back(point);
+    trajectory_length += (point.second - prev_position).norm();
+    prev_position = point.second;
+
+    if ((trajectory_length >= trajectory_start_distance_) &&
+        (trajectory_length < trajectory_end_distance_)) {
+      desired_path_.push_back(point);
+    }
+  }
+
+  if (!desired_path_.empty() && !(msg->points.empty())) {
+    min_time_needed_ =
+        desired_path_.back().first - msg->points.front().time_from_start;
+    ROS_INFO_STREAM("Time length of trajectory: " << min_time_needed_);
+  } else {
+    ROS_WARN("Empty trajectory section detected");
   }
 }
 
 bool TrajectoryEvaluator::addPoint(const ros::Duration& point_time,
                                    const Eigen::Vector3d& point_position) {
-  if (!flown_path_.empty() && flown_path_.back().first >= point_time) {
+  if (!flown_path_.empty() && flown_path_.back().first > point_time) {
     ROS_ERROR(
-        "New pose has timestamp smaller then current last pose and will be "
+        "New pose has timestamp smaller than current last pose and will be "
         "ignored");
     return false;
   }
@@ -73,12 +98,13 @@ bool TrajectoryEvaluator::addPoint(const ros::Duration& point_time,
       flown_path_.back().first - flown_path_.front().first;
   ros::Duration desired_duration =
       desired_path_.back().first - desired_path_.front().first;
-  if (flown_duration < desired_duration) {
+  if ((flown_duration < min_time_needed_) ||
+      (flown_duration < desired_duration)) {
     return false;
   }
-
   std::pair<double, size_t> error_info = calcSquaredError();
   double rms_error = std::sqrt(error_info.first / error_info.second);
+  // ROS_ERROR_STREAM(" " << error_info.first << " " << error_info.second);
   if (rms_error < min_rms_error_) {
     min_rms_error_ = rms_error;
     time_offset_ = flown_path_.back().first - desired_path_.back().first;
@@ -96,10 +122,9 @@ visualization_msgs::MarkerArray TrajectoryEvaluator::getMarkers() const {
 double TrajectoryEvaluator::getMinError() const { return min_rms_error_; }
 
 ros::Duration TrajectoryEvaluator::getTimeOffsetFromStart() const {
-  if(flown_path_.size()){
+  if (flown_path_.size()) {
     return time_offset_ - flown_path_.front().first;
-  }
-  else{
+  } else {
     ROS_ERROR("Requested time offset for an empty path");
     return ros::Duration(0);
   }
@@ -131,26 +156,34 @@ void TrajectoryEvaluator::updateMarkerPath(size_t num_trajectory_points) {
 std::pair<double, size_t> TrajectoryEvaluator::calcSquaredError() const {
   ros::Duration current_time_offset =
       flown_path_.back().first - desired_path_.back().first;
-  ros::Duration start_time = desired_path_.back().first -
-                             desired_path_.front().first + current_time_offset;
+  ros::Duration start_time =
+      flown_path_.back().first - desired_path_.back().first;
 
-  size_t index_offset = flown_path_.size() - desired_path_.size();
+  int index_offset = flown_path_.size() - desired_path_.size();
 
   double squared_error = 0;
-  size_t num_points_compared = 0;
 
-  for (size_t i = 0; i < desired_path_.size(); ++i) {
+  size_t i = 0;
+
+  while ((i < desired_path_.size()) &&
+         ((i + index_offset) < flown_path_.size())) {
     // skip points with missing vicon info
     if ((flown_path_[i + index_offset].first - desired_path_[i].first -
          start_time).toSec() > kVicondt) {
       --index_offset;
+      ++i;
+    }
+    // skip eval if too many vicon messages
+    else if ((flown_path_[i + index_offset].first - desired_path_[i].first -
+              start_time).toSec() < -kVicondt) {
+      ++index_offset;
     } else {
       Eigen::Vector3d diff =
           flown_path_[i + index_offset].second - desired_path_[i].second;
       squared_error += diff.squaredNorm();
-      ++num_points_compared;
+      ++i;
     }
   }
-  return std::make_pair(squared_error, num_points_compared);
+  return std::make_pair(squared_error, i);
 }
 }
