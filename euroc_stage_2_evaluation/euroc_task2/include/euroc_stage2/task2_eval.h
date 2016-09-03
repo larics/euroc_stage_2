@@ -16,6 +16,11 @@
 
 namespace euroc_stage2 {
 
+constexpr unsigned int kNumSubTasks = 4;
+constexpr double kSubTaskLength = 25.0;
+constexpr double kWindSubTaskLength = 50.0;
+constexpr bool kDefaultIsWindTrajectory = false;
+
 class Task2Eval : public EvalBase {
  public:
   
@@ -25,6 +30,9 @@ class Task2Eval : public EvalBase {
 
   void poseCallback(const geometry_msgs::TransformStampedConstPtr& msg);
 
+  void trajectoryCallback(
+    trajectory_msgs::MultiDOFJointTrajectoryConstPtr msg);
+
   void controlFlagUpdateCallback(const std_msgs::BoolConstPtr& msg);
 
   // subscribers
@@ -32,9 +40,9 @@ class Task2Eval : public EvalBase {
   ros::Subscriber trajectory_sub_;
 
   // publishers
-  ros::Publisher marker_pub_;
+  std::vector<ros::Publisher> marker_pubs_;
 
-  TrajectoryEvaluator trajectory_evaluator_;
+  std::vector<TrajectoryEvaluator> trajectory_evaluators_;
 
 };
 }
