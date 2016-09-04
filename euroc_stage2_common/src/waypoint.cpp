@@ -27,7 +27,7 @@ Waypoint::Waypoint(const Eigen::Vector3d& position, double radius,
       finish_duration_(0, 0),
       first_update_(true) {
   visualization_msgs::Marker marker_waypoint;
-  marker_waypoint.header.frame_id = "world";
+  marker_waypoint.header.frame_id = "vicon";
   marker_waypoint.id = MARK_IDX;
   marker_waypoint.type = visualization_msgs::Marker::SPHERE;
   marker_waypoint.action = visualization_msgs::Marker::ADD;
@@ -45,7 +45,7 @@ Waypoint::Waypoint(const Eigen::Vector3d& position, double radius,
   markerArray_.markers.push_back(marker_waypoint);
 
   visualization_msgs::Marker marker_text;
-  marker_text.header.frame_id = "world";
+  marker_text.header.frame_id = "vicon";
   marker_text.id = TEXT_IDX;
   marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   marker_text.action = visualization_msgs::Marker::ADD;
