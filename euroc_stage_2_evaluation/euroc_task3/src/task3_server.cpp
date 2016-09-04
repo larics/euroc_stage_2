@@ -28,13 +28,15 @@ Task3Server::Task3Server(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
       nh.subscribe("saver_constraints_violated", 1,
                    &Task3Server::saverConstraintsViolatedFlagCallback, this);
   pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
-      "pose", kPublisherQueueSize, true);
+      "/pose", kPublisherQueueSize, true);
   marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>(
       "path", kPublisherQueueSize, true);
   path_pub_ = nh.advertise<planning_msgs::PolynomialTrajectory4D>(
       "path_segments", kPublisherQueueSize);
   half_score_vicon_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
       "half_score_vicon_pose", kPublisherQueueSize, true);
+  num_subbed_to_half_score_pub_ = nh.advertise<std_msgs::Int32>(
+      "num_subbed_to_half_score", kPublisherQueueSize, true);
 
   vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("waypoint_marker",
                                                            kPublisherQueueSize);
@@ -87,6 +89,9 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
   mav_msgs::eigenTrajectoryPointFromTransformMsg(msg, &current_pose_);
 
   //give vicon while halving score
+  std_msgs::Int32 num_subbed_msg;
+  num_subbed_msg.data = half_score_vicon_pub_.getNumSubscribers();
+  num_subbed_to_half_score_pub_.publish(num_subbed_msg);
   if(half_score_vicon_pub_.getNumSubscribers() > 0){
     if(!half_score_){
 

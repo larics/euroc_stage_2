@@ -11,7 +11,7 @@ TrajectoryEvaluator::TrajectoryEvaluator(double trajectory_start_distance,
       min_rms_error_(std::numeric_limits<double>::max()),
       time_offset_(0) {
   visualization_msgs::Marker marker_trajectory;
-  marker_trajectory.header.frame_id = "world";
+  marker_trajectory.header.frame_id = "vicon";
   marker_trajectory.id = MARK_IDX;
   marker_trajectory.type = visualization_msgs::Marker::LINE_STRIP;
   marker_trajectory.action = visualization_msgs::Marker::ADD;
@@ -27,7 +27,7 @@ TrajectoryEvaluator::TrajectoryEvaluator(double trajectory_start_distance,
   marker_array_.markers.push_back(marker_trajectory);
 
   visualization_msgs::Marker marker_text;
-  marker_text.header.frame_id = "world";
+  marker_text.header.frame_id = "vicon";
   marker_text.id = TEXT_IDX;
   marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   marker_text.action = visualization_msgs::Marker::ADD;
