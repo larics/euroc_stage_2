@@ -37,7 +37,9 @@ class Task4Server {
   void odometryCallback(const nav_msgs::Odometry& msg);
 
   void publishMarkers(const mav_msgs::EigenOdometry& odom,
-                      const Eigen::Vector3d& desired_vel_body);
+                      const Eigen::Vector3d& desired_vel_body,
+                      const Eigen::Vector3d& commanded_vel_body,
+                      double commanded_yaw_rate);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;

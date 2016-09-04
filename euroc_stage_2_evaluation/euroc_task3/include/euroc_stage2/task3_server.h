@@ -16,6 +16,7 @@
 #include <mav_msgs/default_topics.h>
 #include <std_srvs/Empty.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 
 #include <euroc_stage2/trajectory_interface.h>
 #include <euroc_stage2/waypoint.h>
@@ -106,6 +107,7 @@ class Task3Server {
   ros::Publisher waypoint_pub_;
   ros::Publisher vis_pub_;
   ros::Publisher half_score_vicon_pub_;
+  ros::Publisher num_subbed_to_half_score_pub_;
 
   // clients
   ros::ServiceClient pos_hold_client_;
