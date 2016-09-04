@@ -11,8 +11,8 @@ Task4Server::Task4Server(const ros::NodeHandle& nh,
     : nh_(nh),
       nh_private_(nh_private),
       idle_mode_(true),
-      vel_max_(1.0),
-      acc_max_(20.0),
+      vel_max_(0.5),
+      acc_max_(5.0),
       yaw_rate_max_(1.5),
       dt_sec_(0.05),
       p_gain_(1.0) {
@@ -30,6 +30,7 @@ Task4Server::Task4Server(const ros::NodeHandle& nh,
 
   std::string waypoint_file = "task4_waypoints.txt";
   nh_private_.param("waypoint_file", waypoint_file, waypoint_file);
+  nh_private_.param("vel_max", vel_max_, vel_max_);
 
   if (!readWaypointsFromCsv(waypoint_file) || waypoint_positions_.empty() ||
       waypoint_times_sec_.empty()) {
@@ -71,6 +72,7 @@ bool Task4Server::startPublishing(std_srvs::Empty::Request& request,
                                   std_srvs::Empty::Response& response) {
   ROS_INFO_STREAM("task4 starts publishing.");
   idle_mode_ = false;
+  last_msg_time_ = ros::Time::now();
 
   return true;
 }
@@ -133,9 +135,11 @@ void Task4Server::odometryCallback(const nav_msgs::Odometry& msg) {
   // Ideally, velocity should always be in the positive x direction in the
   // body frame. Therefore we just need to apply a yaw rate to compensate.
   double desired_yaw_offset = std::atan2(command_vel.y(), command_vel.x());
+  //std::cout << "Desired yaw offset: " << desired_yaw_offset << " y: " << command_vel.y() << " x: " << command_vel.x() << std::endl;
+
   // If y is very small, we don't actually want any yaw offset -- the current
   // yaw is correct. This also happens when we're actually at the goal
-  if (std::abs(command_vel.y()) < 0.1 || position_error.norm() < 0.1) {
+  if ((std::abs(command_vel.y()) < 0.1 && command_vel.x() >= 0.0) || position_error.norm() < 0.1) {
     desired_yaw_offset = 0.0;
   }
 
@@ -179,13 +183,15 @@ void Task4Server::odometryCallback(const nav_msgs::Odometry& msg) {
   }
 
   // Publish markers.
-  publishMarkers(odom, desired_vel_body);
+  publishMarkers(odom, desired_vel_body, command_vel, desired_yaw_offset);
 }
 
 void Task4Server::publishMarkers(const mav_msgs::EigenOdometry& odom,
-                                 const Eigen::Vector3d& desired_vel_body) {
+                                 const Eigen::Vector3d& desired_vel_body,
+                                 const Eigen::Vector3d& commanded_vel_body,
+                                 double commanded_yaw_rate) {
   visualization_msgs::Marker marker;
-  marker.header.frame_id = "world";
+  marker.header.frame_id = "vicon";
   marker.header.stamp = ros::Time::now();
   marker.ns = "goal_point";
   marker.id = 0;
@@ -198,11 +204,13 @@ void Task4Server::publishMarkers(const mav_msgs::EigenOdometry& odom,
   marker.pose.orientation.w = 1.0;
   marker.scale.x = marker.scale.y = marker.scale.z = 0.5;
   marker.color.r = 1.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
   marker.color.a = 0.5;
 
   visualization_msgs::Marker desired_vel_marker;
   desired_vel_marker = marker;
-  desired_vel_marker.ns = "desired_vel";
+  desired_vel_marker.ns = "commanded_vel";
   desired_vel_marker.type = visualization_msgs::Marker::ARROW;
   desired_vel_marker.pose.position.x = 0;
   desired_vel_marker.pose.position.y = 0;
@@ -220,11 +228,40 @@ void Task4Server::publishMarkers(const mav_msgs::EigenOdometry& odom,
   desired_vel_marker.points.push_back(point);
 
   // Convert desired vel body into world.
-  Eigen::Vector3d desired_vel_world = odom.orientation_W_B * desired_vel_body;
+  Eigen::Vector3d desired_vel_world = odom.orientation_W_B * commanded_vel_body;
   point.x = odom.position_W.x() + desired_vel_world.x();
   point.y = odom.position_W.y() + desired_vel_world.y();
   point.z = odom.position_W.z() + desired_vel_world.z();
   desired_vel_marker.points.push_back(point);
+
+  visualization_msgs::Marker commanded_yaw_marker;
+  commanded_yaw_marker = marker;
+  commanded_yaw_marker.ns = "commanded_yaw_rate";
+  commanded_yaw_marker.type = visualization_msgs::Marker::ARROW;
+  commanded_yaw_marker.pose.position.x = 0;
+  commanded_yaw_marker.pose.position.y = 0;
+  commanded_yaw_marker.pose.position.z = 0;
+  commanded_yaw_marker.scale.x = 0.1;
+  commanded_yaw_marker.scale.y = 0.2;
+  commanded_yaw_marker.scale.z = 0.2;
+  commanded_yaw_marker.color.r = 0.5;
+  commanded_yaw_marker.color.g = 1.0;
+  commanded_yaw_marker.color.b = 0.0;
+  commanded_yaw_marker.color.a = 0.8;
+  // We will set the arrow from points since this is simpler...
+
+  point.x = odom.position_W.x();
+  point.y = odom.position_W.y();
+  point.z = odom.position_W.z();
+  commanded_yaw_marker.points.push_back(point);
+
+  // Convert desired vel body into world.
+  Eigen::Vector3d desired_dir_world =
+      odom.orientation_W_B * Eigen::Vector3d(0.0, commanded_yaw_rate, 0.0);
+  point.x = odom.position_W.x() + desired_dir_world.x();
+  point.y = odom.position_W.y() + desired_dir_world.y();
+  point.z = odom.position_W.z() + desired_dir_world.z();
+  commanded_yaw_marker.points.push_back(point);
 
   visualization_msgs::Marker current_vel_marker;
   current_vel_marker = desired_vel_marker;
@@ -233,6 +270,7 @@ void Task4Server::publishMarkers(const mav_msgs::EigenOdometry& odom,
   current_vel_marker.id = 2;
   current_vel_marker.color.r = 0.0;
   current_vel_marker.color.b = 1.0;
+  current_vel_marker.color.g = 0.0;
 
   point.x = odom.position_W.x();
   point.y = odom.position_W.y();
@@ -248,6 +286,7 @@ void Task4Server::publishMarkers(const mav_msgs::EigenOdometry& odom,
   visualization_msgs::MarkerArray marker_array;
   marker_array.markers.push_back(marker);
   marker_array.markers.push_back(desired_vel_marker);
+  marker_array.markers.push_back(commanded_yaw_marker);
   marker_array.markers.push_back(current_vel_marker);
   marker_pub_.publish(marker_array);
 }

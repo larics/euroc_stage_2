@@ -5,8 +5,6 @@
 #include "gazebo_msgs/ModelStates.h"
 #include <ros/ros.h>
 
-#define QUEUE_SIZE 100
-
 namespace vicon_room_simulator {
 
 // Small class that will grab every object in a gazebo simulation and publish
@@ -22,7 +20,12 @@ class ViconRoom {
   std::map<std::string, ros::Publisher> vicon_pubs_;
 
   ros::NodeHandle nh_;
+
+  ros::Time last_update_time_;
 };
 }
+
+constexpr double kViconFreq = 100;
+constexpr size_t kQueueSize = 100;
 
 #endif /* INCLUDE_VICON_ROOM_SIMULATOR_HPP_ */

@@ -12,7 +12,7 @@
     <plugin name='gazebo_octomap' filename='librotors_gazebo_octomap_plugin.so'/>
     <model name="scaffold_b">
       <static>true</static>
-      <pose frame=''>0.61 -1.70 1.65 0 0 -0.176</pose>r
+      <pose frame=''>0.61 -0.90 1.65 0 0 -0.176</pose>
       <link name="link">
         <visual name="visual">
           <geometry>
@@ -36,7 +36,7 @@
     </model>
     <model name="scaffold_a">
       <static>true</static>
-      <pose frame=''>2.08 0.09 1.65 0 0 0.086</pose>
+      <pose frame=''>2.08 0.89 1.65 0 0 0.086</pose>
       <link name="link">
         <visual name="visual">
           <geometry>
@@ -53,6 +53,30 @@
           <geometry>
             <mesh>
               <uri>model://ScaffoldA.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+    <model name="pipes_thing">
+      <static>true</static>
+      <pose frame=''>4.69823555359 2.13088655048 -0.0578190669284 -0.00856956663 0.014172074 3.118048162</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://PipesThing.dae</uri>
+            </mesh>
+          </geometry>
+          <material><script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Green</name>
+          </script></material>
+        </visual>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://PipesThing.dae</uri>
             </mesh>
           </geometry>
         </collision>

@@ -12,6 +12,7 @@
   <node name="task3_server_node" pkg="euroc_task3" type="task3_server_node" output="screen">
     <remap from="vrpn_client/pose" to="/$(arg mav_name)/vrpn_client/estimated_transform" />
     <remap from="saver_constraints_violated" to="/saver_constraints_violated" />
+    <param name="half_score_service_name" value="/$(arg mav_name)/task3_eval_node/half_score"/>
   </node>
 
   </group>

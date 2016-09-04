@@ -16,6 +16,7 @@
 #include <mav_msgs/default_topics.h>
 #include <std_srvs/Empty.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 
 #include <euroc_stage2/trajectory_interface.h>
 #include <euroc_stage2/waypoint.h>
@@ -34,6 +35,7 @@ namespace euroc_stage2 {
 const std::string kDefaultTrajectoryFilePath = "res/trajectory.txt";
 const std::string kDefaultWaypointFilePath = "res/waypoints.txt";
 const std::string kPackageName = "euroc_task3";
+const std::string kDefaultHalfScoreServiceName = "/task3_eval_node/half_score";
 
 enum Task3Mode {
   IDLE = 0,
@@ -104,6 +106,8 @@ class Task3Server {
   ros::Publisher command_pub_;
   ros::Publisher waypoint_pub_;
   ros::Publisher vis_pub_;
+  ros::Publisher half_score_vicon_pub_;
+  ros::Publisher num_subbed_to_half_score_pub_;
 
   // clients
   ros::ServiceClient pos_hold_client_;
@@ -121,6 +125,9 @@ class Task3Server {
   int vicon_msg_counter_;
   // subtusk number 1..5
   int subtask_;
+
+  std::string half_score_service_name_;
+  bool half_score_;
 
   bool idle_mode_;
 

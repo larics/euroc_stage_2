@@ -20,10 +20,7 @@ UpdatingOctree::UpdatingOctree(const ros::NodeHandle& nh,
 
   room_ = std::make_shared<ObjectPoints>(room_octree_path, getResolution());
 
-  ROS_INFO("Subscired to %s for vicon triggers",
-           obstacles_info.begin()->first.c_str());
-  vicon_sub_ = nh_.subscribe(obstacles_info.begin()->first, QUEUE_SIZE,
-                             &UpdatingOctree::viconCallback, this);
+  update_timer_ = nh_.createTimer(ros::Duration(max_update_rate_), &UpdatingOctree::viconCallback, this);
 
   for (std::pair<const std::string, std::string>& info : obstacles_info) {
     ROS_INFO("subscribed to %s", info.first.c_str());
@@ -63,21 +60,17 @@ bool UpdatingOctree::updateService(std_srvs::Empty::Request& request, std_srvs::
   return true;
 }
 
-void UpdatingOctree::viconCallback(
-    const geometry_msgs::TransformStampedConstPtr& msg) {
+void UpdatingOctree::viconCallback(const ros::TimerEvent& e) {
   if (always_update_ || (num_of_updates_at_start_ > current_update_num_)) {
-    if ((1 / max_update_rate_) <
-        (msg->header.stamp - previous_send_time_).toSec()) {
-      regenerateOctree();
-      publishAll();
-      ++current_update_num_;
-      previous_send_time_ = msg->header.stamp;
-    }
+    regenerateOctree();
+    publishAll();
+    ++current_update_num_;
   }
 }
 
 ObjectPoints::ObjectPoints(const std::string& octree_path, double octree_res) {
   loadPoints(octree_path, octree_res);
+  has_pose_ = true;
 }
 
 ObjectPoints::ObjectPoints(const ros::NodeHandle& nh, const std::string& topic,
@@ -86,6 +79,7 @@ ObjectPoints::ObjectPoints(const ros::NodeHandle& nh, const std::string& topic,
   vicon_sub_ =
       nh_.subscribe(topic, QUEUE_SIZE, &ObjectPoints::viconCallback, this);
 
+  has_pose_ = false;
   loadPoints(octree_path, octree_res);
 }
 
@@ -149,6 +143,7 @@ std::string ObjectPoints::processPath(const std::string& octomap_path_string) {
 void ObjectPoints::viconCallback(
     const geometry_msgs::TransformStampedConstPtr& msg) {
   tf::transformMsgToTF(msg->transform, pose_);
+  has_pose_ = true;
 }
 
 std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> ObjectPoints::getTformedPoints(
@@ -156,9 +151,11 @@ std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> ObjectPoints::getTformedPoints(
   std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> tformed_cloud(
       new pcl::PointCloud<pcl::PointXYZ>);
 
-  Eigen::Affine3d temp_eigen_tf;
-  tf::transformTFToEigen(pose_, temp_eigen_tf);
-  pcl::transformPointCloud(point_cloud_, *tformed_cloud, temp_eigen_tf);
+  if(has_pose_){
+    Eigen::Affine3d temp_eigen_tf;
+    tf::transformTFToEigen(pose_, temp_eigen_tf);
+    pcl::transformPointCloud(point_cloud_, *tformed_cloud, temp_eigen_tf);
+  }
   return tformed_cloud;
 }
 };

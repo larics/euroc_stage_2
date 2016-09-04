@@ -15,7 +15,7 @@ namespace euroc_stage2 {
 
 class TrajectoryEvaluator {
  public:
-  TrajectoryEvaluator();
+  TrajectoryEvaluator(double trajectory_start_distance, double trajectory_end_distance);
 
   // returns true if new point results in a new minimum error
   bool addPoint(const ros::Duration& point_time, const Eigen::Vector3d& point_position);
@@ -37,8 +37,12 @@ class TrajectoryEvaluator {
 
   visualization_msgs::MarkerArray marker_array_;
 
+  double trajectory_start_distance_;
+  double trajectory_end_distance_;
+
   double min_rms_error_;
   ros::Duration time_offset_;
+  ros::Duration min_time_needed_;
 
   void updateMarkerPath(size_t num_trajectory_points);
 

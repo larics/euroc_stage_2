@@ -65,6 +65,7 @@ set(VML_SRC
     src/EmergencyButtonConstraintChecker.cpp
     src/MotionConstraintChecker.cpp
     src/OutOfSpaceConstraintChecker.cpp
+    src/VelocityConstraintChecker.cpp
 	
 	# Checkers plugins
 	
