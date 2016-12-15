@@ -1,0 +1,6 @@
+<launch>
+  <node name="task4_predict_score" pkg="euroc_task4" type="task4_predict_score" output="screen">
+    <param name="waypoint_file" value="$(find euroc_task4)/res/task4_waypoints_sim.txt" />
+    <param name="results_file" value="$(find euroc_task4)/results/ETH/task4/1472986516.487975.txt" />
+  </node>
+</launch>

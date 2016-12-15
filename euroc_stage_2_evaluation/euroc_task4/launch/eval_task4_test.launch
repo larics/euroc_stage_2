@@ -1,0 +1,25 @@
+<launch>
+  <arg name="mav_name" default="euroc6" />
+  <arg name="room_name" default="LeoC6" />
+
+   <group ns="$(arg mav_name)">
+    <node name="task4_server_node" pkg="euroc_task4" type="task4_server_node" output="screen">
+      <remap from="odometry" to="/euroc6/vrpn_client/estimated_odometry" />
+
+      <!-- <remap from="odometry" to="do_not_subscribe/forbidden_vicon_odometry" /> -->
+      <param name="waypoint_file" value="$(find euroc_task4)/res/task4_waypoints_vicon.txt" />
+    </node>
+
+    <node name="task4_eval_node" pkg="euroc_task4" type="task4_eval_node" output="screen" clear_params="true">
+      <remap from="saver_constraints_violated" to="/saver_constraints_violated" />
+      <remap from="odometry" to="/euroc6/vrpn_client/estimated_odometry" />
+      <!-- <remap from="odometry" to="do_not_subscribe/forbidden_vicon_odometry" /> -->
+      <remap from="octomap" to="/ground_truth_octree/octomap_full" />
+      <!-- <param name="octomap_file" value="$(find mav_saver)/res/LEO_octomap.bt" /> -->
+      <param name="octomap_min_z" value="0.2" />
+      <param name="octomap_max_z" value="3.8" />
+    </node>
+
+  </group>
+
+</launch>

@@ -110,6 +110,7 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
     geometry_msgs::PoseStamped msg_pub;
     mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(current_pose_,
                                                       &msg_pub);
+    msg_pub.header = msg.header;
     half_score_vicon_pub_.publish(msg_pub);
 
   }
@@ -132,6 +133,14 @@ void Task3Server::poseCallback(const geometry_msgs::TransformStamped& msg) {
       break;
     }
     case Task3Mode::PUBLISH_TRAJECTORY: {
+
+      // Call the service call to takeover publishing commands.
+      if (pos_hold_client_.exists()) {
+        std_srvs::Empty empty_call;
+        ROS_INFO("[task3]: Sending position hold service call.");
+        pos_hold_client_.call(empty_call);
+      }
+
       ROS_INFO("[task3]: Publishing exploration trajectory.");
 
       planning_msgs::PolynomialTrajectory4D polynomial_msg;

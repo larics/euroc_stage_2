@@ -4,7 +4,7 @@ namespace euroc_stage2 {
 
 Task3Eval::Task3Eval(const ros::NodeHandle& nh,
                      const ros::NodeHandle& private_nh)
-    : EvalBase(nh, private_nh, "Task 3") {
+    : EvalBase(nh, private_nh, "task3") {
   transform_sub_ = nh_.subscribe("vrpn_client/pose", kQueueSize,
                                  &Task3Eval::poseCallback, this);
 

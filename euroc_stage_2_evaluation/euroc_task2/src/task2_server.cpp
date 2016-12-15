@@ -68,6 +68,14 @@ void Task2Server::poseCallback(const geometry_msgs::TransformStampedConstPtr& ms
       pose_pub_.publish(msg);
       ++vicon_msg_counter_;
     } else {
+
+      // Call the service call to takeover publishing commands.
+      if (pos_hold_client_.exists()) {
+        std_srvs::Empty empty_call;
+        ROS_INFO("[task3]: Sending position hold service call.");
+        pos_hold_client_.call(empty_call);
+      }
+
       // TODO(burrimi): publish 5 subtask trajectories. For now only have one.
       ROS_INFO("[task2]: Publishing trajectory.");
 

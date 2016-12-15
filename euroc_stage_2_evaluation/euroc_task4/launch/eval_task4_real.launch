@@ -2,28 +2,23 @@
   <arg name="mav_name" default="euroc6" />
   <arg name="room_name" default="LeoC6" />
 
-  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
-    <arg name="object_name" value="$(arg mav_name)"/>
-  </include>
-
-  <include file="$(find mav_saver)/launch/mav_saver_real.launch">
-    <arg name="mav_name" value="$(arg mav_name)"/>
-  </include>
-
    <group ns="$(arg mav_name)">
     <node name="task4_server_node" pkg="euroc_task4" type="task4_server_node" output="screen">
-      <remap from="odometry" to="vrpn_client/estimated_odometry" />
-      <param name="waypoint_file" value="$(find euroc_task4)/res/task4_waypoints_sim.txt" />
+      <remap from="odometry" to="do_not_subscribe/forbidden_vicon_odometry" />
+      <param name="waypoint_file" value="$(find euroc_task4)/res/task4_waypoints_vicon.txt" />
     </node>
 
-    <node name="task4_eval_node" pkg="euroc_task4" type="task4_eval_node" output="screen">
+    <node name="task4_eval_node" pkg="euroc_task4" type="task4_eval_node" output="screen" clear_params="true">
       <remap from="saver_constraints_violated" to="/saver_constraints_violated" />
-      <remap from="odometry" to="vrpn_client/estimated_odometry" />
-      <remap from="octomap" to="/ground_truth_octree/octomap_full" />
-      <!-- <param name="octomap_file" value="$(find mav_saver)/res/LEO_octomap.bt" /> -->
-      <param name="results_path" value="$(find euroc_task4)/results/" />
+      <remap from="odometry" to="do_not_subscribe/forbidden_vicon_odometry" />
+      <param name="octomap_file" value="$(find euroc_task4)/res/groundtruth.bt" />
       <param name="octomap_min_z" value="0.2" />
       <param name="octomap_max_z" value="3.8" />
+      <param name="team_name" value="$(arg mav_name)" />
+    </node>
+
+    <node name="vicon_publisher" pkg="euroc_vicon_transmission" type="vicon_pub_node" output="screen">
+      <rosparam command="load" file="$(find euroc_vicon_transmission)/cfg/vicon_pub.yaml" />
     </node>
 
   </group>
