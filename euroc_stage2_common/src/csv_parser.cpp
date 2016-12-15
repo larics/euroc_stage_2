@@ -22,6 +22,12 @@ bool parseCsvIntoVector(const std::string& filename, size_t num_columns,
   while (std::getline(import_file, line)) {
     std::stringstream line_stream(line);
     // Check how this line is separated.
+    // Check if this starts with an invalid character: # or [
+    // Then ignore and just get the next line.
+    if (line_stream.peek() == '#' || line_stream.peek() == '[') {
+      continue;
+    }
+
     const bool comma_separated = (line.find(',') != std::string::npos);
     if (line_stream.eof()) {
       return false;

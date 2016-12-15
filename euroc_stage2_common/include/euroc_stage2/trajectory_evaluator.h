@@ -30,6 +30,7 @@ class TrajectoryEvaluator {
 
  private:
   static constexpr double kVicondt = 0.01;
+  static constexpr double kMagicIMUScalingFactor = 1.0218;
 
   ros::Subscriber trajectory_sub_;
   std::vector<std::pair<ros::Duration, Eigen::Vector3d>> flown_path_;

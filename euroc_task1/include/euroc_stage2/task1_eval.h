@@ -46,6 +46,8 @@ class Task1Eval : public EvalBase {
   std::shared_ptr<Waypoint> waypoint_;
 
   bool finished_;
+
+  std::string task2_service_name_;
 };
 
 // Default values
@@ -55,5 +57,6 @@ constexpr double kDefaultWaypointPositionY = 0.0;
 constexpr double kDefaultWaypointPositionZ = 0.0;
 constexpr double kDefaultWaypointRadius = 0.0;
 constexpr double kDefaultWaypointHoldTime = 0.0;
+const std::string kDefaultTask2ServiceName = "/task2_server_node/start_publishing";
 }
 #endif

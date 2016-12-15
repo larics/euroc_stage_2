@@ -4,7 +4,7 @@ namespace euroc_stage2 {
 
 Task2Eval::Task2Eval(const ros::NodeHandle& nh,
                      const ros::NodeHandle& private_nh)
-    : EvalBase(nh, private_nh, "Task 2") {
+    : EvalBase(nh, private_nh, "task2") {
   pose_sub_ = nh_.subscribe("pose", kQueueSize, &Task2Eval::poseCallback, this);
 
   bool wind_trajectory;

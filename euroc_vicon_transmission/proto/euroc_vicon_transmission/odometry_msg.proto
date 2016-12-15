@@ -1,0 +1,59 @@
+syntax = "proto2";
+package euroc_vicon_transmission;
+
+message time {
+  required uint32 sec = 1;
+  required uint32 nsec = 2;
+}
+
+message Point {
+  required double x = 1;
+  required double y = 2;
+  required double z = 3;
+}
+
+message Quaternion {
+  required double x = 1;
+  required double y = 2;
+  required double z = 3;
+  required double w = 4;
+}
+
+message Pose {
+  required Point position = 1;
+  required Quaternion orientation = 2;
+}
+
+message PoseWithCovariance {
+  required Pose pose = 1;
+  repeated double covariance = 2 [packed=true];
+}
+
+message Vector {
+  required double x = 1;
+  required double y = 2;
+  required double z = 3;
+}
+
+message Twist {
+  required Vector linear = 1;
+  required Vector angular = 2;
+}
+
+message TwistWithCovariance{
+  required Twist twist = 1;
+  repeated double covariance = 2 [packed=true];
+}
+
+message Header {
+  required uint32 seq = 1;
+  required time stamp = 2;
+  required string frame_id = 3;
+}
+
+message Odometry {
+  required Header header = 1;
+  required string child_frame_id = 2;
+  required PoseWithCovariance pose = 3;
+  required TwistWithCovariance twist = 4;
+}

@@ -1,8 +1,9 @@
 #! /usr/bin/python
 
 import math
-
+import os
 import rospy
+import std_srvs.srv
 
 from mav_msgs.msg import Status
 from geometry_msgs.msg import TransformStamped
@@ -15,16 +16,15 @@ from rotations import *
 # able to determine wheter the MAV's motors are running or not. The motors's
 # status is used to stop and start the timing in the evaluation of Task 5.
 class StatusSubscriber:
-  subscriber = None
+  service = None
   start_time = rospy.Time()
   uptime = rospy.Time()
   are_motors_running = False
   is_flight_finished = False
 
   def __init__(self):
-    TOPIC_NAME = 'status'
-    MESSAGE_TYPE = Status
-    self.subscriber = rospy.Subscriber(TOPIC_NAME, MESSAGE_TYPE, self.SubscriberCallback)
+    rospy.Service('motors_started', std_srvs.srv.Empty, self.HandleMotorsStarted)
+    rospy.Service('motors_stopped', std_srvs.srv.Empty, self.HandleMotorsStopped)
 
   def AreMotorsRunning(self):
     return self.are_motors_running
@@ -35,25 +35,18 @@ class StatusSubscriber:
   def GetUptime(self):
     return self.uptime.to_sec()
 
-  def SubscriberCallback(self, input):
-    are_motors_running = (input.motor_status == 'running')
-    if (are_motors_running and not self.are_motors_running):
-      # Motors were turned on.
+  def HandleMotorsStarted(self, input):
       print 'Start evaluation.'
-      self.start_time = input.header.stamp
-      self.are_motors_running = are_motors_running
+      self.start_time = rospy.get_rostime()
+      self.are_motors_running = True
+      return std_srvs.srv.EmptyResponse()
 
-    elif (not are_motors_running and self.are_motors_running):
-      # Motors were turned off.
-      print 'Stop evaluation.'
-      self.uptime = input.header.stamp - self.start_time
-      self.are_motors_running = are_motors_running
+  def HandleMotorsStopped(self, input):
+      print 'Stop evaluation.'      
+      self.uptime = rospy.get_rostime() - self.start_time
+      self.are_motors_running = False
       self.is_flight_finished = True
-
-    else:
-      # Update flight time.
-      self.uptime = input.header.stamp - self.start_time
-
+      return std_srvs.srv.EmptyResponse()
 
 # The RectanglePoseSubscriber class subscribes to a ground truth rectangle pose
 # topic, e.g., the rectangle pose returned by the Vicon motion capture system.
@@ -153,6 +146,18 @@ class Evaluator:
     else:
       print 'Corrected time:', self.GetUptime()/coverage, 's'
     print '--------------------------------------------\n'
+
+    # Also print to file if the file can be loaded...
+    results_path = rospy.get_param('~results_path', '../results')
+    team_name = rospy.get_param('~team_name', 'ETH')
+    output_folder = results_path + '/' + team_name + '/task5/'
+    output_file = output_folder + str(int(round(rospy.get_time()))) + '.txt'
+    if not os.path.exists(output_folder):
+      os.makedirs(output_folder)
+    file = open(output_file, 'w+')
+    if (file):
+      file.write('time, coverage, rmse\n')
+      file.write('%f, %f, %f\n' % (self.GetUptime(), coverage, self.GetDistanceRmse()))
 
   # Calls all the evaluation methods which are triggered by the vicon measurement.
   def ViconCallback(self, input):
