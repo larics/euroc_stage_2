@@ -1,17 +1,22 @@
 <launch>
   <arg name="mav_name" default="firefly" />
+  <arg name="enable_logging" default="false" />
+  <arg name="enable_ground_truth" default="true" />
+  <arg name="log_file" default="$(arg mav_name)" />
 
-  <node name="trajectory_sampler" pkg="mav_planning_utils" type="trajectory_sampling_node" output="screen">
-    <param name="publish_whole_trajectory" value="true" />
-  </node>
+  <group ns="$(arg mav_name)">
 
-  <node name="task2_eval_node" pkg="euroc_task2" type="task2_eval_node" output="screen">
-    <remap from="pose" to="/firefly/ground_truth/transform" />
-  </node>
+    <node name="task2_eval_node" pkg="euroc_task2" type="task2_eval_node" output="screen">
+      <param name="wind_trajectory" value="false" />
+      <remap from="pose" to="/ground_truth/$(arg mav_name)" />
+    </node>
 
-  <node name="task2_server_node" pkg="euroc_task2" type="task2_server_node" output="screen">
-    <remap from="firefly/vrpn_client/pose" to="/firefly/ground_truth/transform" />
-  </node>
+    <node name="task2_server_node" pkg="euroc_task2" type="task2_server_node" output="screen">
+      <remap from="vrpn_client/pose" to="/ground_truth/$(arg mav_name)" />
+      <param name="file_path" value="res/task2.txt"/>
+    </node>
+
+  </group>
 
   <include file="$(find mav_saver)/launch/mav_saver_rotors.launch" />
 </launch>

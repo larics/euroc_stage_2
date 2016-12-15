@@ -1,0 +1,11 @@
+# The topic which the publish server advertises.
+vicon_odometry_topic: "/do_not_subscribe/forbidden_vicon_odometry"
+vicon_transform_topic: "/do_not_subscribe/forbidden_vicon_transform"
+num_odometry_subscribers_topic: "/do_not_subscribe/num_odometry_subscribers"
+num_transform_subscribers_topic: "/do_not_subscribe/num_transform_subscribers"
+
+# Buffer size for odometry publisher.
+publisher_buffer: 1000
+# The port number on which the receiving socket server runs (on the EUROC
+# network).
+port_number: 5555

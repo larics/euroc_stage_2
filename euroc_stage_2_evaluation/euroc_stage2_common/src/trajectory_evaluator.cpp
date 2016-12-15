@@ -2,7 +2,7 @@
 
 namespace euroc_stage2 {
 
-enum MarkerIdx { MARK_IDX = 0, TEXT_IDX };
+enum MarkerIdx { MARK_IDX = 0, MARK_GT_IDX, TEXT_IDX };
 
 TrajectoryEvaluator::TrajectoryEvaluator(double trajectory_start_distance,
                                          double trajectory_end_distance)
@@ -25,6 +25,22 @@ TrajectoryEvaluator::TrajectoryEvaluator(double trajectory_start_distance,
   marker_trajectory.color.b = 0.0;
 
   marker_array_.markers.push_back(marker_trajectory);
+
+  visualization_msgs::Marker marker_gt_trajectory;
+  marker_gt_trajectory.header.frame_id = "vicon";
+  marker_gt_trajectory.id = MARK_GT_IDX;
+  marker_gt_trajectory.type = visualization_msgs::Marker::LINE_STRIP;
+  marker_gt_trajectory.action = visualization_msgs::Marker::ADD;
+  marker_gt_trajectory.pose.position.x = 0.0;
+  marker_gt_trajectory.pose.position.y = 0.0;
+  marker_gt_trajectory.pose.position.z = 0.0;
+  marker_gt_trajectory.scale.x = 0.1;
+  marker_gt_trajectory.color.a = 0.5;
+  marker_gt_trajectory.color.r = 0.0;
+  marker_gt_trajectory.color.g = 0.0;
+  marker_gt_trajectory.color.b = 1.0;
+
+  marker_array_.markers.push_back(marker_gt_trajectory);
 
   visualization_msgs::Marker marker_text;
   marker_text.header.frame_id = "vicon";
@@ -58,7 +74,7 @@ void TrajectoryEvaluator::trajectoryCallback(
   // extract points and times
   for (auto& i : msg->points) {
     std::pair<ros::Duration, Eigen::Vector3d> point;
-    point.first = i.time_from_start;
+    point.first = i.time_from_start * kMagicIMUScalingFactor;
     point.second.x() = i.transforms.front().translation.x;
     point.second.y() = i.transforms.front().translation.y;
     point.second.z() = i.transforms.front().translation.z;
@@ -73,7 +89,7 @@ void TrajectoryEvaluator::trajectoryCallback(
 
   if (!desired_path_.empty() && !(msg->points.empty())) {
     min_time_needed_ =
-        desired_path_.back().first - msg->points.front().time_from_start;
+        desired_path_.back().first - msg->points.front().time_from_start * kMagicIMUScalingFactor;
     ROS_INFO_STREAM("Time length of trajectory: " << min_time_needed_);
   } else {
     ROS_WARN("Empty trajectory section detected");
@@ -139,6 +155,15 @@ void TrajectoryEvaluator::updateMarkerPath(size_t num_trajectory_points) {
     point.y = flown_path_[i].second.y();
     point.z = flown_path_[i].second.z();
     marker_array_.markers[MARK_IDX].points.push_back(point);
+  }
+
+  marker_array_.markers[MARK_GT_IDX].points.clear();
+  for (size_t i = 0; i < desired_path_.size(); ++i) {
+    geometry_msgs::Point point;
+    point.x = desired_path_[i].second.x();
+    point.y = desired_path_[i].second.y();
+    point.z = desired_path_[i].second.z();
+    marker_array_.markers[MARK_GT_IDX].points.push_back(point);
   }
 
   marker_array_.markers[TEXT_IDX].pose.position =

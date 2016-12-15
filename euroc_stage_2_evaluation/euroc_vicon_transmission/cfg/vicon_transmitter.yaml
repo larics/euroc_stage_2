@@ -1,0 +1,10 @@
+# The vicon VRPN client odometry message topic (without MAV name).
+vicon_vrpn_topic: "/vrpn_client/estimated_odometry"
+# The host IP on which the receiving socket server runs (on the EUROC
+# network).
+broadcast_ip: "127.255.255.255"
+# Buffer size for odometry subscriber.
+callback_buffer: 1000
+# The port number on which the receiving socket server runs (on the EUROC
+# network).
+port_number: 5555

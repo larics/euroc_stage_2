@@ -30,6 +30,11 @@ cs_add_executable(task4_eval_node
 )
 target_link_libraries(task4_eval_node ${PROJECT_NAME})
 
+cs_add_executable(task4_predict_score
+  src/task4_predict_score.cpp
+)
+target_link_libraries(task4_predict_score ${PROJECT_NAME})
+
 ##########
 # EXPORT #
 ##########

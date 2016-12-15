@@ -30,6 +30,7 @@
     <node name="safe_joystick_nav_node" pkg="safe_joystick_nav" type="safe_joystick_nav_node" output="screen">
       <remap from="odometry" to="ground_truth/odometry" />
       <remap from="octomap_full" to="octomap_manager/octomap_full" />
+      <remap from="twist" to="twist_reference" />
     </node>
 
     <!-- Joystick drivers maybe -->

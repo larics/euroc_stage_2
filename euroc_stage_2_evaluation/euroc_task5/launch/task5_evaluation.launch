@@ -2,21 +2,20 @@
 <launch>
   <arg name="mav_name" default="euroc6" />
 
+   <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
+    <arg name="object_name" value="rectangle"/>
+  </include>
+  <!-- 
+  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
+    <arg name="object_name" value="$(arg mav_name)"/>
+  </include> -->
+
   <!-- Rectangle dimension parameters. Note: the origin of the rectangle's
        coordinate frame is assumed to be located at the lower left outside corner. Thus,
        the frame_width parameter is required to find the inside dimensions of the rectangle. -->
-  <arg name="rectangle_width" value="1.8" />    <!-- Outside dimension in x-direction in meters. -->
-  <arg name="rectangle_height" value="1.35" />  <!-- Outside dimension in y-direction in meters. -->
+  <arg name="rectangle_width" value="1.502" />    <!-- Outside dimension in x-direction in meters. -->
+  <arg name="rectangle_height" value="1.685" />  <!-- Outside dimension in y-direction in meters. -->
   <arg name="frame_width" value="0.05" />       <!-- Rectangle frame width in meters. -->
-
-
-  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
-    <arg name="object_name" value="rectangle"/>
-  </include>
-
-  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
-    <arg name="object_name" value="$(arg mav_name)"/>
-  </include>
 
   <group ns="$(arg mav_name)">
     <node name="task5_evaluation_node" pkg="euroc_task5" type="task5_evaluation_node.py" output="screen">
@@ -28,6 +27,7 @@
       <!-- The rectangle is subdivided into cells for which the coverage by the sensor beam is evaluated.
            Set the cell dimension in meters. -->
       <param name="cell_size" value="0.01" />
+      <param name="team_name" value="$(arg mav_name)" />
     </node>
   </group>
 </launch>
