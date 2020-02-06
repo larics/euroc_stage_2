@@ -48,6 +48,11 @@ add_message_files(
   ObserverState.msg
   )
 
+add_service_files(
+  FILES
+  SetMass.srv
+  )
+
 generate_messages(
   DEPENDENCIES
   std_msgs

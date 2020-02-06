@@ -21,13 +21,9 @@
 
 #include <mav_linear_mpc/KF_disturbance_observer.h>
 #include <mav_linear_mpc/steady_state_calculation.h>
-#include <mav_linear_mpc/SetMass.h>
-#include <sensor_msgs/Imu.h>
 
 #include <mav_msgs/conversions.h>
 #include <mav_msgs/eigen_mav_msgs.h>
-#include <geometry_msgs/Quaternion.h>
-#include <sensor_fusion_comm/DoubleArrayStamped.h>
 
 #include <stdio.h>
 #include <memory.h>
@@ -50,18 +46,6 @@
 namespace mav_control{
 
 class Integrator;
-
-class HSIA{
-  public:
-    HSIA();
-    double GenOut(double u, double acc);
-    void SetK(double K);
-    void SetFiltCoef(double Kf);
-    void SetG(double g);
-  private:
-    double g, Kf, K, hsia_out, acc_old;
-};
-
 
 class LinearModelPredictiveController{
  public:
@@ -125,20 +109,6 @@ class LinearModelPredictiveController{
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
-  // added
-  // Ros subscriber to imu topic, will be needed in HSIA
-  ros::Subscriber imuSub, accBisaSub;
-  void ImuCallback(const sensor_msgs::Imu &msg);
-  void msfCoreStateCallback(const sensor_fusion_comm::DoubleArrayStamped &msg);
-  double K_x, Kf_x, g_x, K_y, Kf_y, g_y, K_z, Kf_z, g_z;
-  double acc_bias_x, acc_bias_y, acc_bias_z;
-  sensor_msgs::Imu imuData;
-  HSIA hsia_x, hsia_y, hsia_z;
-  ros::Publisher nanPub;
-  // Set mass service
-  ros::ServiceServer setMassServiceServer;
-  bool setMassCallback(mav_linear_mpc::SetMass::Request &req, mav_linear_mpc::SetMass::Response &res);
-
   typedef std::deque<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > Vector3dDeque;
 
   void UpdateQueue(Eigen::VectorXd estimated_disturbances);
@@ -180,7 +150,6 @@ class LinearModelPredictiveController{
 
   Vector3dDeque position_command_queue_;
   Vector3dDeque velocity_command_queue_;
-  Vector3dDeque acceleration_command_queue_;
   std::deque<double> yaw_command_queue_;
 
   double yaw_command_;

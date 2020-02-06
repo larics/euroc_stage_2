@@ -14,7 +14,7 @@
  */
 
 #include <mav_linear_mpc/linear_mpc.h>
-using namespace std;
+
 namespace mav_control {
 
 LinearModelPredictiveController::LinearModelPredictiveController(ros::NodeHandle& nh,
@@ -30,58 +30,11 @@ LinearModelPredictiveController::LinearModelPredictiveController(ros::NodeHandle
       linearized_command_roll_pitch_thrust_(0,0,0),
       SolveTime_avg(0)
 {
-  private_nh.param("K_x", K_x, double(0.0));
-  private_nh.param("Kf_x", Kf_x, double(0.0));
-  private_nh.param("g_x", g_x, double(0.0));
-  private_nh.param("K_y", K_y, double(0.0));
-  private_nh.param("Kf_y", Kf_y, double(0.0));
-  private_nh.param("g_y", g_y, double(0.0));
-  private_nh.param("K_z", K_z, double(0.0));
-  private_nh.param("Kf_z", Kf_z, double(0.0));
-  private_nh.param("g_z", g_z, double(0.0));
-  hsia_x.SetK(K_x);
-  hsia_x.SetFiltCoef(Kf_x);
-  hsia_x.SetG(g_x);
-  hsia_y.SetK(K_y);
-  hsia_y.SetFiltCoef(Kf_y);
-  hsia_y.SetG(g_y);
-  hsia_z.SetK(K_z);
-  hsia_z.SetFiltCoef(Kf_z);
-  hsia_z.SetG(g_z);
-
-  acc_bias_x = 0;
-  acc_bias_y = 0;
-  acc_bias_z = 0;
-
-  ROS_INFO("\nSet hsia params K_x: %0.2f, Kf_x: %0.2f, g_x: %0.2f, K_y: %0.2f, Kf_y: %0.2f, g_y: %0.2f !\n", K_x, Kf_x, g_x, K_y, Kf_y, g_y);
-
-  imuSub = nh.subscribe("imu", 1, &LinearModelPredictiveController::ImuCallback, this);
-  nanPub = nh.advertise<geometry_msgs::Quaternion>("roll_pitch_yawrate_thrust_nan", 1);
-  accBisaSub = nh.subscribe("msf_core/state_out", 1, &LinearModelPredictiveController::msfCoreStateCallback,this);
-  setMassServiceServer = nh.advertiseService("set_mass", 
-      &LinearModelPredictiveController::setMassCallback, this);
   this->InitializeParams();
 }
 
 LinearModelPredictiveController::~LinearModelPredictiveController()
 {
-}
-
-void LinearModelPredictiveController::msfCoreStateCallback(const sensor_fusion_comm::DoubleArrayStamped &msg)
-{
-  acc_bias_x = msg.data[13];
-  acc_bias_y = msg.data[14];
-  acc_bias_z = msg.data[15];
-}
-
-void LinearModelPredictiveController::ImuCallback(const sensor_msgs::Imu &msg)
-{
-  imuData = msg;
-}
-
-bool LinearModelPredictiveController::setMassCallback(mav_linear_mpc::SetMass::Request &req, mav_linear_mpc::SetMass::Response &res)
-{
-  mass_ = req.mass;
 }
 
 void LinearModelPredictiveController::InitializeParams()
@@ -280,8 +233,6 @@ void LinearModelPredictiveController::SetCommandTrajectoryPoint(
   //clear queue
   position_command_queue_.clear();
   velocity_command_queue_.clear();
-  // added
-  acceleration_command_queue_.clear();
   yaw_command_queue_.clear();
 
   command_trajectory_ = command_trajectory;
@@ -289,8 +240,6 @@ void LinearModelPredictiveController::SetCommandTrajectoryPoint(
   for (int i = 0; i < PREDICTION_HORIZON; i++) {
     position_command_queue_.push_back(command_trajectory.position_W);
     velocity_command_queue_.push_back(command_trajectory.velocity_W);
-    // added
-    acceleration_command_queue_.push_back(command_trajectory.acceleration_W);
     yaw_command_queue_.push_back(command_trajectory.getYaw());
   }
 }
@@ -308,15 +257,11 @@ void LinearModelPredictiveController::SetCommandTrajectory(
   position_command_queue_.clear();
   velocity_command_queue_.clear();
   yaw_command_queue_.clear();
-  // added
-  acceleration_command_queue_.clear();
 
   for (int i = 0; i < array_size; i++) {
     position_command_queue_.push_back(command_trajectory_array.at(i).position_W);
     velocity_command_queue_.push_back(command_trajectory_array.at(i).velocity_W);
     yaw_command_queue_.push_back(command_trajectory_array.at(i).getYaw());
-    // added
-    acceleration_command_queue_.push_back(command_trajectory_array.at(i).acceleration_W);
   }
 
   int i = array_size;
@@ -324,8 +269,6 @@ void LinearModelPredictiveController::SetCommandTrajectory(
     position_command_queue_.push_back(position_command_queue_.back());
     velocity_command_queue_.push_back(velocity_command_queue_.back());
     yaw_command_queue_.push_back(yaw_command_queue_.back());
-    // added
-    acceleration_command_queue_.push_back(acceleration_command_queue_.back());
     i++;
   }
 }
@@ -339,21 +282,15 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
 
   const Eigen::Vector3d last_position_in_queue = position_command_queue_.back();
   const Eigen::Vector3d last_velocity_in_queue = velocity_command_queue_.back();
-  // added
-  const Eigen::Vector3d last_acceleration_in_queue = acceleration_command_queue_.back();
   const double last_yaw_in_queue = yaw_command_queue_.back();
   while (position_command_queue_.size() < PREDICTION_HORIZON) {
     position_command_queue_.push_back(last_position_in_queue);
     velocity_command_queue_.push_back(last_velocity_in_queue);
-    // added
-    acceleration_command_queue_.push_back(last_acceleration_in_queue);
     yaw_command_queue_.push_back(last_yaw_in_queue);
   }
 
   command_trajectory_.position_W = position_command_queue_.front();
   command_trajectory_.velocity_W = velocity_command_queue_.front();
-  // added
-  command_trajectory_.acceleration_W = acceleration_command_queue_.front();
   command_trajectory_.setFromYaw(yaw_command_queue_.front());
 
   Eigen::VectorXd target_state(state_size_);
@@ -372,8 +309,6 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
       reference << position_command_queue_.front(), velocity_command_queue_.front();
       position_command_queue_.pop_front();
       velocity_command_queue_.pop_front();
-      // added
-      acceleration_command_queue_.pop_front();
       steady_state_calculation_->ComputeSteadyState(estimated_disturbances, reference,
                                                     &target_state, &target_input);
 
@@ -394,8 +329,6 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
     reference << position_command_queue_.front(), velocity_command_queue_.front();
     position_command_queue_.pop_front();
     velocity_command_queue_.pop_front();
-    // added
-    acceleration_command_queue_.pop_front();
 
     steady_state_calculation_->ComputeSteadyState(estimated_disturbances, reference, &target_state,
                                                   &target_input);
@@ -492,8 +425,6 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
       reference << position_command_queue_.front(), velocity_command_queue_.front();
       position_command_queue_.pop_front();
       velocity_command_queue_.pop_front();
-      // added
-      acceleration_command_queue_.pop_front();
 
       steady_state_calculation_->ComputeSteadyState(estimated_disturbances, reference,
           &target_state, &target_input);
@@ -515,8 +446,6 @@ void LinearModelPredictiveController::UpdateQueue(Eigen::VectorXd estimated_dist
     reference << position_command_queue_.front(), velocity_command_queue_.front();
     position_command_queue_.pop_front();
     velocity_command_queue_.pop_front();
-    // added
-    acceleration_command_queue_.pop_front();
 
     steady_state_calculation_->ComputeSteadyState(estimated_disturbances, reference,
         &target_state, &target_input);
@@ -687,39 +616,14 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
     linearized_command_roll_pitch_thrust_ = linearized_command_roll_pitch_thrust_.cwiseMin(u_max_);
   }
 
-  // added acceleration feed forward
   command_roll_pitch_yaw_thrust_(3) = (linearized_command_roll_pitch_thrust_(2) + gravity_
-      + Ki_height_ * height_error_integrator_ + command_trajectory_.acceleration_W(2)) / (cos(roll) * cos(pitch));
-  double ux = (linearized_command_roll_pitch_thrust_(1) + command_trajectory_.acceleration_W(0)/gravity_) * 
-    (gravity_ / command_roll_pitch_yaw_thrust_(3));
-  double uy = (linearized_command_roll_pitch_thrust_(0) + command_trajectory_.acceleration_W(1)/gravity_) * 
-    (gravity_ / command_roll_pitch_yaw_thrust_(3));
-
-  // HSIA wind compensation. TODO: discuss if wind compensation should be 
-  // before or after acceleration feed forward
-  // pitch
-  //cout << "hsiax: " << endl;
-  ux = hsia_x.GenOut(ux, (imuData.linear_acceleration.x - acc_bias_x));
-  //roll
-  //cout << "hsiay: " << endl;
-  uy = hsia_y.GenOut(uy, (imuData.linear_acceleration.y - acc_bias_y));
-  //thrust
-  //cout << "Thrust: " << command_roll_pitch_yaw_thrust_(3);
-  //command_roll_pitch_yaw_thrust_(3) = hsia_z.GenOut(command_roll_pitch_yaw_thrust_(3), 
-  //  (imuData.linear_acceleration.z - acc_bias_z));
-  //cout << "Thrust: " << command_roll_pitch_yaw_thrust_(3) << " bias: " << 
-  //  acc_bias_z << " linacc: " << imuData.linear_acceleration.z << endl;
+      + Ki_height_ * height_error_integrator_) / (cos(roll) * cos(pitch));
+  double ux = linearized_command_roll_pitch_thrust_(1) * (gravity_ / command_roll_pitch_yaw_thrust_(3));
+  double uy = linearized_command_roll_pitch_thrust_(0) * (gravity_ / command_roll_pitch_yaw_thrust_(3));
 
   command_roll_pitch_yaw_thrust_(0) = ux * sin(yaw) + uy * cos(yaw);
   command_roll_pitch_yaw_thrust_(1) = ux * cos(yaw) - uy * sin(yaw);
   command_roll_pitch_yaw_thrust_(2) = yaw_command_;
-
-  //std::cout << "Roll: " << command_roll_pitch_yaw_thrust_(0) << std::endl;
-  //std::cout << "Pitch: " << command_roll_pitch_yaw_thrust_(1) << std::endl;
-  //std::cout << "Thrust: " << command_roll_pitch_yaw_thrust_(3) << std::endl;
-  //cout << "Acc: " << command_trajectory_.acceleration_W(0) << endl;
-  //command_roll_pitch_yaw_thrust_(0) = 0;
-  
 
   int n_rotations = (int) (yaw / (2.0 * M_PI));
   yaw = yaw - 2.0 * M_PI * n_rotations;
@@ -744,25 +648,8 @@ void LinearModelPredictiveController::CalculateAttitudeThrust(Eigen::Vector4d *r
   if (yaw_rate_cmd < -M_PI_2)
     yaw_rate_cmd = -M_PI_2;
 
-  //command_roll_pitch_yaw_thrust_(0) = NAN;
-  //command_roll_pitch_yaw_thrust_(1) = NAN;
-  //yaw_rate_cmd = NAN;
-  //command_roll_pitch_yaw_thrust_(3) = NAN;
   *ref_attitude_thrust << command_roll_pitch_yaw_thrust_(0), command_roll_pitch_yaw_thrust_(1), yaw_rate_cmd, command_roll_pitch_yaw_thrust_(
       3) * mass_;  //[N]
-
-  // Searching for nan values through topic.
-  geometry_msgs::Quaternion nanQuat;
-  nanQuat.x = isnan(float(command_roll_pitch_yaw_thrust_(0)));
-  nanQuat.y = isnan(float(command_roll_pitch_yaw_thrust_(1)));
-  nanQuat.z = isnan(float(yaw_rate_cmd));
-  nanQuat.w = isnan(float(command_roll_pitch_yaw_thrust_(3)));
-
-  if((nanQuat.x + nanQuat.y + nanQuat.z + nanQuat.w) > 0.01)
-  {
-    nanPub.publish(nanQuat);
-  }
-
 
   double diff_time = (ros::WallTime::now() - starting_time).toSec();
 
@@ -822,89 +709,6 @@ bool LinearModelPredictiveController::GetCurrentReference(mav_msgs::EigenTraject
   assert(reference != nullptr);
   *reference = command_trajectory_;
   return true;
-}
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// class HSIA
-///////////////////////////////////////////////////////////////////////////////
-
-/*--------------------------------------------------------------------
- * HSIA()
- * Constructor.
- *  -variable initialization
- *------------------------------------------------------------------*/
-
-HSIA::HSIA()
-{
-  K = 0;      //HSIA gain
-  g = 9.81;   //gravitational acceleration
-  Kf = 0;     //filter gain
-  hsia_out = 0; //HSIA controller output
-  acc_old = 0;  //acceleration in step k-1
-}
-
-/*--------------------------------------------------------------------
- * void SetK(double K)
- * public function
- *  - args:
- *      double K - HSIA gain
- *  
- *  seting HSIA gain of the controller
- *------------------------------------------------------------------*/
-
-void HSIA::SetK(double K)
-{
-  this->K = K;
-}
-
-/*--------------------------------------------------------------------
- * void SetG(double G)
- * public function
- *  - args:
- *      double g - gravitational acceleration
- *  
- *  seting gravitational acceleration
- *------------------------------------------------------------------*/
-
-void HSIA::SetG(double g)
-{
-  this->g = g;
-}
-
-/*--------------------------------------------------------------------
- * void SetFiltCoef(double Kf)
- * public function
- *  - args:
- *      double Kf - filter gain
- *  
- *  seting filter gain of the controller
- *------------------------------------------------------------------*/
-
-void HSIA::SetFiltCoef(double Kf)
-{
-  this->Kf = Kf;
-}
-
-/*--------------------------------------------------------------------
- * double GenOut(double u, double acc)
- * public function
- *  - args:
- *      double u - PID controller output, reference value
- *      double acc - acceleration
- *  
- *  calculating HSIA controller output
- *------------------------------------------------------------------*/
-
-double HSIA::GenOut(double u, double acc)
-{
-  hsia_out = u + g*K*(1.0-Kf)*hsia_out - (Kf*acc + acc_old*(1.0-Kf))*K;
-  hsia_out = hsia_out / (1.0-g*K*Kf);
-  acc_old = acc;
-  //cout << "K: " << K << " Kf: " << Kf << " g: " << g << endl;
-  return hsia_out;
 }
 
 }
