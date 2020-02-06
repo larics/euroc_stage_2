@@ -1,0 +1,384 @@
+<launch>
+  <arg name="mav_name" default="euroc3"/>
+  <arg name="namespace" default="$(arg mav_name)" />
+  <arg name="marker_size" default="8"/>
+  <arg name="max_new_marker_error" default="0.1"/>
+  <arg name="max_track_error" default="1"/>
+  <arg name="cam_image_topic" default="/euroc3/cam3/image_raw"/>
+  <arg name="cam_info_topic" default="/euroc3/cam3/info"/>
+  <arg name="output_frame" default="cam3"/>
+
+  <group ns="$(arg namespace)" >
+    <node name="mav_interface" pkg="ethzasl_mav_interface" type="mav_interface_node"
+      output="screen" respawn="true" clear_params="true">
+      <param name="frame_id" value="fcu" />
+      <param name="publish_nav1_imu" value="true" />
+      <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/mav_interface.yaml"/>
+      <!-- remap from="rc" to="rc2"/ -->
+      <param name="capability_group" value="Core" />
+    </node>
+
+    <rosparam file="$(find euroc_launch)/parameters/common/visensor.yaml"/>
+    <node name="visensor_node" pkg="visensor_node" type="visensor_node" output="screen">
+      <param name="capability_group" value="Core" />
+    </node>
+
+    <node name="mav_linear_mpc" pkg="mav_linear_mpc" type="mav_linear_mpc_node"  respawn="true" clear_params="true" output="screen">
+      <remap from="odometry" to="msf_core/odometry" />
+      <param name="control_interface/verbose" value="true"/>
+      <param name="K_x" value="0.0" />
+      <param name="Kf_x" value="0.9" />
+      <param name="g_x" value="9.81" />
+      <param name="K_y" value="0.0" />
+      <param name="Kf_y" value="0.9" />
+      <param name="g_y" value="9.81" />
+      <rosparam file="$(find euroc_launch)/parameters/common/linear_mpc_neo_m3187g.yaml"/>
+      <param name="capability_group" value="Core" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="world_tf_broadcaster" args="0 0 0 0 0 0 1 world odom 100">
+      <param name="capability_group" value="Core" />
+    </node>
+
+    <!-- Vicon -->
+    <node name="pose_sensor_vicon" pkg="msf_updates" type="pose_sensor" respawn="true" clear_params="true" output="screen">
+      <remap from="msf_updates/transform_input" to="vrpn_client/estimated_transform" />
+      <remap from="msf_core/imu_state_input" to="imu" />
+      <rosparam file="$(find euroc_launch)/parameters/common/msf_parameters_vicon.yaml"/>
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <node name="vrpn_client" type="ros_vrpn_client" pkg="ros_vrpn_client" output="screen">
+      <param name="vrpn_server_ip" value="optitrackBorongaj" />
+      <param name="vrpn_coordinate_system" value="optitrack" />
+      <param name="object_name" value="$(arg mav_name)" />
+      <param name="vicon_estimator/dt" value="0.01" />
+      <param name="translational_estimator/kp" value="1.0" />
+      <param name="translational_estimator/kv" value="10.0" />
+      <param name="rotational_estimator/orientation_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/rate_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/orientation_process_covariance" value="0.01" />
+      <param name="rotational_estimator/rate_process_covariance" value="1" />
+      <param name="rotational_estimator/orientation_measurementCovariance" value="0.0005" />
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <node name="vrpn_client_ugv" type="ros_vrpn_client" pkg="ros_vrpn_client" output="screen">
+      <param name="vrpn_server_ip" value="optitrackBorongaj" />
+      <param name="vrpn_coordinate_system" value="optitrack" />
+      <param name="object_name" value="euroc_ugv" />
+      <param name="vicon_estimator/dt" value="0.01" />
+      <param name="translational_estimator/kp" value="1.0" />
+      <param name="translational_estimator/kv" value="10.0" />
+      <param name="rotational_estimator/orientation_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/rate_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/orientation_process_covariance" value="0.01" />
+      <param name="rotational_estimator/rate_process_covariance" value="1" />
+      <param name="rotational_estimator/orientation_measurementCovariance" value="0.0005" />
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <!--node name="vrpn_client_UGV" type="ros_vrpn_client" pkg="ros_vrpn_client" output="screen">
+      <param name="vrpn_server_ip" value="optitrackBorongaj" />
+      <param name="vrpn_coordinate_system" value="optitrack" />
+      <param name="object_name" value="alpha" />
+      <param name="vicon_estimator/dt" value="0.01" />
+      <param name="translational_estimator/kp" value="1.0" />
+      <param name="translational_estimator/kv" value="10.0" />
+      <param name="rotational_estimator/orientation_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/rate_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/orientation_process_covariance" value="0.01" />
+      <param name="rotational_estimator/rate_process_covariance" value="1" />
+      <param name="rotational_estimator/orientation_measurementCovariance" value="0.0005" />
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <node name="vrpn_client_parcel" type="ros_vrpn_client" pkg="ros_vrpn_client" output="screen">
+      <param name="vrpn_server_ip" value="optitrackBorongaj" />
+      <param name="vrpn_coordinate_system" value="optitrack" />
+      <param name="object_name" value="parcel" />
+      <param name="vicon_estimator/dt" value="0.01" />
+      <param name="translational_estimator/kp" value="1.0" />
+      <param name="translational_estimator/kv" value="10.0" />
+      <param name="rotational_estimator/orientation_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/rate_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/orientation_process_covariance" value="0.01" />
+      <param name="rotational_estimator/rate_process_covariance" value="1" />
+      <param name="rotational_estimator/orientation_measurementCovariance" value="0.0005" />
+      <param name="capability_group" value="Vicon" />
+    </node -->
+
+    <node pkg="tf" type="static_transform_publisher" name="vicon_tf_broadcaster" args="0 0 0 0 0 0 1 world vicon 100">
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <!-- Okvis -->
+    <!-- node name="okvis_node" pkg="okvis_node" type="okvis_node" output="screen">
+      <param name="config_filename" value="$(find euroc_launch)/parameters/$(arg mav_name)/okvis_cameras.yaml" />
+      <remap from="/camera0" to="cam2/image_raw" />
+      <remap from="/camera1" to="cam0/image_raw" />
+      <remap from="/imu" to="imu0" />
+      <param name="capability_group" value="Okvis" />
+    </node>
+
+    <node name="pose_sensor_okvis" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+      <remap from="msf_core/imu_state_input" to="imu" />
+      <remap from="msf_updates/transform_input" to="okvis_node/okvis_transform" />
+      <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/msf_parameters_okvis.yaml"/>
+      <param name="capability_group" value="Okvis" />
+    </node -->
+
+    <!-- Rovio -->
+    <node name="rovio" pkg="rovio" type="rovio_node" output="screen">
+      <param name="filter_config" value="$(find euroc_launch)/parameters/common/rovio_filter.info" />
+      <param name="camera0_config" value="$(find euroc_launch)/parameters/$(arg mav_name)/rovio_equidist_cam0.yaml" />
+      <param name="capability_group" value="Rovio" />
+    </node>
+
+    <node name="pose_sensor_rovio" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+      <remap from="msf_core/hl_state_input" to="fcu/ekf_state_out" />
+      <remap from="msf_core/correction" to="fcu/ekf_state_in" />
+      <remap from="msf_core/imu_state_input" to="imu" />
+      <remap from="msf_updates/transform_input" to="rovio/transform" />
+      <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/msf_parameters_okvis.yaml"/>
+      <param name="capability_group" value="Rovio" />
+    </node>
+
+    <!-- Soft -->
+    <node name="soft" pkg="soft" type="soft" output="screen">
+      <remap from="/projected_map" to="/alpha/map"/>
+      <param name="mapping" value="True" />
+      <param name="rectangle" value="False"/>
+      <!--remap from="/octomap_binary" to="octomap_binary_deprecated" / -->
+      <param name="capability_group" value="Soft" />
+    </node>
+
+    <node name="pose_sensor_soft" pkg="msf_updates" type="position_pose_sensor" clear_params="true" output="screen">
+      <remap from="msf_updates/position_input" to="/package/ar_tracker/pose" />
+      <remap from="msf_core/imu_state_input" to="imu" />
+      <remap from="msf_updates/transform_input" to="soft/soft_transform" />
+      <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/msf_parameters_soft.yaml"/>
+      <param name="capability_group" value="Soft" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="soft_tf_broadcaster" args="0 0 0 0 0 0 1 world odom 100">
+      <param name="capability_group" value="Soft" />
+    </node>
+
+    <!--node name="getViconPoseAndSaveItToFile" pkg="mav_path_trajectory" type="getViconPoseAndSaveItToFile.py" output="screen">
+      <param name="capability_group" value="Soft"/>
+    </node-->
+
+    <node name="dynamixel_manager" pkg="dynamixel_controllers" type="controller_manager.py" required="true" output="screen">
+        <rosparam>
+            namespace: dxl_manager
+            serial_ports:
+                pan_tilt_port:
+                    port_name: "/dev/ttyUSB2Dynamixel"
+                    baud_rate:  250000
+                    min_motor_id: 1
+                    max_motor_id: 25
+                    update_rate: 20
+        </rosparam>
+        <param name="capability_group" value="Arms" />
+    </node>
+
+    <rosparam file="$(find my_dynamixel_tutorial)/tilt.yaml" command="load"/>
+    <node name="Joint_controller_spawner" pkg="dynamixel_controllers" type="controller_spawner.py" args="--manager=dxl_manager --port pan_tilt_port JointA1_controller JointB1_controller JointA2_controller JointB2_controller" output="screen" >
+      <param name="capability_group" value="Arms" />
+    </node>
+
+    <node name="mav_mission_planner" pkg="mav_path_trajectory" type="mav_mission_planner" output="screen">
+      <param name="max_quadrotor_speed" value="0.4" />
+      <param name="max_quadrotor_acceleration" value="0.6" />
+      <param name="trajectory_sampling_frequency" value="100" />
+      <param name="acc_scaler_z" value="0.0"/>
+      <param name="speed_scaler_z" value="1.0"/>
+      <param name="ugv_offset_2D" value="0.5"/>
+      <param name="ugv_takeoff_land_height" value="0.75"/>
+      <param name="capability_group" value="PathTrajectory" />
+      <!-- Params for unskilled pilot control -->
+      <!--param name="horizontClearance_vmax" value="0.2" />
+      <param name="horizontClearance_Rmax" value="0.9" />
+      <param name="horizontClearance_Rmin" value="0.65" />
+      <param name="horizontClearance_Fimax" value="1.3" />
+      <param name="horizontClearance_Fimin" value="-1.3" />
+      <param name="horizontClearance_Gain" value="0.6" /-->
+      
+      <param name="horizontClearance_vmax" value="0.2" />
+      <param name="horizontClearance_Rmax" value="0.6" />
+      <param name="horizontClearance_Rmin" value="0.45" />
+      <param name="horizontClearance_Fimax" value="3.13" />
+      <param name="horizontClearance_Fimin" value="-3.13" />
+      <param name="horizontClearance_Gain" value=".15" /> <!--0.02-->
+      <param name="octomap_search_depth" value="16"/>
+      <param name="typeUAV" value="$(arg namespace)"/>
+      <!-- true if you want to enable joystick control -->
+      <param name="joyFlag" value="true"/>
+      <param name="joy_headingREFScale" value="1.0"/>
+      <param name="joy_velocityREFScale" value="1.0"/>
+
+      <!-- Map boundaries -->
+      <param name="map_min_x" value="-5.0"/>
+      <param name="map_max_x" value=" 5.0"/>
+      <param name="map_min_y" value="-5.0"/>
+      <param name="map_max_y" value=" 5.0"/>
+      <param name="map_min_z" value=" 0.4"/>
+      <param name="map_max_z" value=" 1.1"/>
+
+      <remap from="/octomap_binary" to="/octomap_binary_global"/>
+    </node>
+
+    <!--node name="joy_node" pkg="joy" type="joy_node" output="screen">
+      <remap from="/euroc3/joy" to="/joy"/>
+      <param name="dev" value="/dev/input/js1"/>
+      <param name="capability_group" value="PathTrajectory" />
+    </node-->
+
+    <node name="neo_action_server" pkg="neo_action_server" type="neo_action_server_node.py" output="screen">
+      <param name="rate" value="20"/>
+      <param name="capability_group" value="ActionServer"/>
+    </node>
+
+  </group>
+
+  <!-- Vehicle tracking -->
+  <group ns="ugv">
+    <node pkg="euroc_ugv" type="IR_tracker_node" name="IR_tracker_node">
+        <param name="numberOfUGVPictures" value="8"/>
+        <param name="detectionMethod" value="1"/>
+        <param name="rate" value="15"/>
+        <param name="minBlobArea" value="3"/>
+        <param name="maxBlobArea" value="100"/>
+        <param name="minContourArea" value="3000"/>
+        <param name="contourSimilarityFactor" value="0.2"/>
+        <param name="roiImageThreshold" value="230"/>
+        <param name="markerSimilarityFactor" value="0.1"/>
+        <param name="roiMorExOpenNumOfIter" value="1"/>
+        <param name="roiMorExCloseNumOfIter" value="1"/>
+        <param name="conMorExOpenNumOfIter" value="1"/>
+        <param name="conMorExCloseNumOfIter" value="1"/>
+        <param name="closeOpenConNumOfIter" value="2"/>
+        <param name="findContoursThreshold" value="90"/>
+        <param name="useExtrinsicGuess" value="false"/>
+        <param name="x_offset" value="-0.000"/> <!-- -0.020 -->
+        <param name="y_offset" value=" 0.000"/> <!-- 0.015 -->
+        <param name="z_offset" value="-0.045"/> <!-- -0.045 -->
+        <param name="cam2imuTf" value="/parameters/cam2imu.yaml"/>
+        <param name="odometry_topic" value="/euroc3/msf_core/odometry"/>
+        <param name="cam_topic" value="/euroc3/cam3/image_raw"/>
+        <param name="capability_group" value="UgvTracker"/>
+    </node>
+
+    <node name="kalman_tracker_node" pkg="euroc_ugv" type="kalman_tracker_node">
+        <param name="rate" value="15"/>
+        <param name="pos_noise" value="1"/>
+        <param name="vel_noise" value="1"/>
+        <param name="measure_noise" value="50"/>
+        <param name="max_delay" value="0.3"/>
+        <param name="mean_frame_n" value="15"/>
+        <param name="pose_topic" value="ir_tracker/pose"/>
+        <param name="capability_group" value="UgvTracker"/>
+    </node>
+  </group>
+
+  <!-- octomap server runs without namespace -->
+  <!-- freestyle_online_sliced_notRotated.bt -->
+  <node name="octomap_server_node" pkg="octomap_server" type="octomap_server_node" args="$(find mav_path_trajectory)/resource/freestyle_online.bt" output="screen">
+    <param name="occupancy_min_z" value="0.1"/>
+    <remap from="/projected_map" to="/alpha/map"/>
+    <param name="capability_group" value="OctomapServer" />
+  </node>
+
+  <group ns="package">
+
+    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)">
+      <param name="capability_group" value="ParcelTracker"/>
+    </node>
+
+    <node name="marker_tracker" pkg="ar_marker_client" type="marker_tracker_node">
+      <param name="marker_id_target" value="5"/>
+      <param name="marker_offset_x" value="0.0"/> <!-- 0.11 -->
+      <param name="marker_offset_y" value="0.0"/> <!-- 0.057 -->
+      <param name="marker_offset_z" value="0.0"/> <!-- 0.025 -->
+      <param name="cam2imuTf" value="/parameters/cam2imu.yaml"/>
+      <param name="capability_group" value="ParcelTracker"/>
+    </node>
+
+    <node name="cam_info_pub" pkg="ar_marker_client" type="cam_info_publisher.py">
+      <param name="capability_group" value="ParcelTracker"/>
+    </node>
+
+    <!--node name="ar_track_ctl_node" pkg="ar_marker_client" type="ar_track_node_ctl.py">
+        <param name="marker_size" value="8"/>
+        <param name="max_new_marker_error" value="0.1"/>
+        <param name="max_track_error" value="1"/>
+        <param name="cam_image_topic" value="/euroc3/cam3/image_raw"/>
+        <param name="cam_info_topic" value="/euroc3/cam3/info"/>
+        <param name="output_frame" value="cam3"/>
+        <param name="package_id" value="5"/>
+        <param name="marker_offset_x" value="-0.08"/>
+        <param name="marker_offset_y" value="-0.057"/>
+        <param name="marker_offset_z" value="-0.055"/>
+        <param name="odometry_topic" value="/euroc3/msf_core/odometry"/>
+        <param name="cam2imuTf" value="/parameters/cam2imu.yaml"/>
+        <param name="capability_group" value="ParcelTracker"/>
+    </node-->
+
+    <!--node name="kalman_tracker_node" pkg="euroc_ugv" type="kalman_tracker_node">
+        <param name="rate" value="20"/>
+        <param name="pos_noise" value="1"/>
+        <param name="vel_noise" value="1"/>
+        <param name="measure_noise" value="50"/>
+        <param name="max_delay" value="0.3"/>
+        <param name="mean_frame_n" value="20"/>
+        <param name="pose_topic" value="ar_tracker/pose"/>
+        <param name="capability_group" value="ParcelTracker"/>
+    </node-->
+  </group>
+
+  <!-- Vehicle names and priorities -->
+  <rosparam param="vehicleNames">['alpha']</rosparam>
+  <rosparam param="vehiclePriorities">[1]</rosparam>
+  
+  <!-- Pure pursuit parameters for simulation-->
+  <rosparam param="lookAheadDistance">0.4</rosparam>
+  <rosparam param="linVelocity">0.2</rosparam>
+  <rosparam param="maxAngVelocity">0.8</rosparam>
+  
+  <rosparam param="posTolerance">0.1</rosparam>
+
+  <group ns="alpha">
+    <node pkg="tf" type="static_transform_publisher" name="vehicle_tf_broadcaster" args="0 0 0 0 0 0 1 map world 100">
+      <param name="capability_group" value="ugvControl" />
+    </node>
+
+    <!--node pkg="tf" type="static_transform_publisher" name="alpha_map_tf_broadcaster" args="-2.3 -1.5 0 0 0 0 1 map /alpha/map 100">
+      <param name="capability_group" value="ugvControl" />
+    </node-->
+
+    <node pkg="agv_control" name="pathPlanner" type="pathPlanner" args="$(find agv_control)/params/params_p3dx.mat" output="screen">
+      <remap from="map" to="/alpha/map"/>
+      <param name="capability_group" value="ugvControl" />
+    </node>
+    
+    <node pkg="agv_control" name="agvController" type="agvController" args= "$(find agv_control)/params/params_p3dx.mat" output="screen">
+      <param name="base_frame_id" value="/state"/>
+      <param name="global_frame_id" value="/alpha/map"/>
+      <remap from="map" to="/alpha/map"/>
+      <remap from="cmd_vel" to="cmd_vel_ref"/>
+      <param name="capability_group" value="ugvControl" />
+    </node>
+
+    <node pkg="euroc_ugv" name="euroc_ugv_driver" type="euroc_ugv_driver" output="screen">
+      <param name="device" value="/dev/ttyXbeeUGV"/>
+      <param name="capability_group" value="ugvControl"/>
+    </node>
+
+    <node pkg="euroc_ugv" name="ugv_controller" type="ugv_controller" output="screen">
+      <param name="odometry_topic" value="/euroc3/vrpn_client/estimated_odometry"/>
+      <param name="capability_group" value="ugvControl"/>
+    </node>
+  </group>
+
+</launch>

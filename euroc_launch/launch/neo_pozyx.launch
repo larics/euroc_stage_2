@@ -1,0 +1,120 @@
+<launch>
+  <arg name="mav_name" default="euroc3"/>
+  <arg name="namespace" default="$(arg mav_name)" />
+
+  <group ns="$(arg namespace)" >
+    <node name="mav_interface" pkg="ethzasl_mav_interface" type="mav_interface_node"
+      output="screen" respawn="true" clear_params="true">
+      <param name="frame_id" value="fcu" />
+      <param name="publish_nav1_imu" value="true" />
+      <rosparam file="$(find euroc_launch)/parameters/$(arg mav_name)/mav_interface.yaml"/>
+      <param name="capability_group" value="Core" />
+    </node>
+
+    <node name="mav_linear_mpc" pkg="mav_linear_mpc" type="mav_linear_mpc_node"  respawn="true" clear_params="true" output="screen">
+      <remap from="odometry" to="msf_core/odometry" />
+      <param name="control_interface/verbose" value="true"/>
+      <param name="K_x" value="0.0" />
+      <param name="Kf_x" value="0.9" />
+      <param name="g_x" value="9.81" />
+      <param name="K_y" value="0.0" />
+      <param name="Kf_y" value="0.9" />
+      <param name="g_y" value="9.81" />
+      <rosparam file="$(find euroc_launch)/parameters/common/linear_mpc_neo.yaml"/>
+      <param name="capability_group" value="Core" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="world_tf_broadcaster" args="0 0 0 0 0 0 1 world odom 100">
+      <param name="capability_group" value="Core" />
+    </node>
+
+    <!-- Vicon -->
+    <node name="pose_sensor_vicon" pkg="msf_updates" type="pose_sensor" respawn="true" clear_params="true" output="screen">
+      <remap from="msf_updates/transform_input" to="vrpn_client/estimated_transform" />
+      <remap from="msf_core/imu_state_input" to="imu" />
+      <rosparam file="$(find euroc_launch)/parameters/common/msf_parameters_vicon.yaml"/>
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <node name="vrpn_client" type="ros_vrpn_client" pkg="ros_vrpn_client" output="screen">
+      <param name="vrpn_server_ip" value="optitrack" />
+      <param name="vrpn_coordinate_system" value="optitrack" />
+      <param name="object_name" value="$(arg mav_name)" />
+      <param name="vicon_estimator/dt" value="0.01" />
+      <param name="translational_estimator/kp" value="1.0" />
+      <param name="translational_estimator/kv" value="10.0" />
+      <param name="rotational_estimator/orientation_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/rate_estimate_initial_covariance" value="1" />
+      <param name="rotational_estimator/orientation_process_covariance" value="0.01" />
+      <param name="rotational_estimator/rate_process_covariance" value="1" />
+      <param name="rotational_estimator/orientation_measurementCovariance" value="0.0005" />
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="vicon_tf_broadcaster" args="0 0 0 0 0 0 1 world vicon 100">
+      <param name="capability_group" value="Vicon" />
+    </node>
+
+    <!-- Pozyx -->
+    <node name="multitag_positioning" pkg="pozyx_ros" type="multitag_positioning.py" output="screen">
+        <!-- POZYX_POS_ALG_UWB_ONLY = 0   POZYX_POS_ALG_TRACKING = 4-->
+      <param name="algorithm" value="4" />
+        <!-- POZYX_3D = 3    POZYX_2D = 2    POZYX_2_5D = 1 -->
+      <param name="dimension" value="3" />
+        <!-- Height of the tag, required in 2.5D positioning -->
+      <param name="height" value="1000" />
+
+        <!-- filter type FILTER_TYPE_FIR = 1, FILTER_TYPE_MOVINGAVERAGE = 3, FILTER_TYPE_MOVINGMEDIAN = 4, FILTER_TYPE_NONE = 0 -->
+        <param name="filter_type" value="0" />
+        <param name="filter_strength" value="0" />
+
+        <!-- POZYX_RANGE_PROTOCOL_PRECISION = 0, POZYX_RANGE_PROTOCOL_FAST = 1, POZYX_RANGE_PROTOCOL_TEST = 0x02 -->
+        <param name="ranging_protocol" value="0" />
+
+      <param name="frequency" value="40" />
+
+        <param name="number_of_anchors" value="6" />
+
+  <param name="anchor0_id" value="0x6e2e" /> 
+  <param name="anchor1_id" value="0x6e7a" />
+  <param name="anchor2_id" value="0x6e3c" />
+        <param name="anchor3_id" value="0x6e2f" />
+  <param name="anchor4_id" value="0x6e3f" />
+  <param name="anchor5_id" value="0x6e1f" />
+
+      <param name="anchor0_coordinates" value="-1503, 2859, 1619" /><!--"-1503, 2859, 1619" />-->
+        <param name="anchor1_coordinates" value="-687, 1725, 3716" /><!--"-687, 1725, 3716" />-->
+      <param name="anchor2_coordinates" value="1486, 861, 3636" /><!--"1486, 861, 3636" />-->
+      <param name="anchor3_coordinates" value="1990, 1760, 762" /><!--"1990, 1760, 762" />-->
+        <param name="anchor4_coordinates" value="2009, 1231, -1735" /><!--"2009, 1231, -1735" />-->
+        <param name="anchor5_coordinates" value="-1547, 2212, -1828" /><!--"-1547, 2212. -1828" />-->
+
+        <param name="capability_group" value="Pozyx" />
+    </node>
+
+    <include file="$(find pozyx_ros)/launch/msf_pozyx_pose.launch">
+      <arg name="group" value="Pozyx" />
+      <arg name="imu_topic" value="/euroc3/imu" />
+      <arg name="position_topic" value="/euroc3/pozyx/estimated_transform" />
+    </include>
+
+    <include file="$(find pozyx_ros)/launch/msf_pozyx_position.launch">
+      <arg name="group" value="Pozyx" />
+      <arg name="imu_topic" value="/euroc3/imu" />
+      <arg name="position_topic" value="/euroc3/pozyx/estimated_transform" />
+    </include>
+
+    <node pkg="pozyx_ros" type="pozyx_estimator_node" name="pozyx_estimator_node">
+      <param name="rate" value="100" />
+      <remap from="/eaglered/position" to="pozyx/measured"/>
+      <remap from="estimated_transform" to="pozyx/estimated_transform"/>
+      <param name="capability_group" value="Pozyx" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="pozyx_tf_broadcaster" args="0 0 0 0 0 0 1 world pozyx 100">
+      <param name="capability_group" value="Pozyx" />
+    </node>
+
+  </group>
+
+</launch>
