@@ -116,6 +116,21 @@ bool Task2Server::startPublishing(std_srvs::Empty::Request& request,
   vicon_msg_counter_ = 0;
   subtask_ = 1;
 
+  ROS_INFO("[task2]: Publishing trajectory.");
+
+  // publish trajecory.
+  mav_msgs::EigenTrajectoryPoint::Vector flat_states;
+  mav_planning_utils::sampleWholeTrajectory(
+      *trajectory_position_, *trajectory_yaw_, 0.01, &flat_states);
+
+  trajectory_msgs::MultiDOFJointTrajectory msg;
+  msgMultiDofJointTrajectoryFromEigen(flat_states, &msg);
+  command_pub_.publish(msg);
+
+  // switch back to idle mode.
+  idle_mode_ = true;
+  
+
   return true;
 }
 };

@@ -1,5 +1,5 @@
 <launch>
-  <arg name="mav_name" default="euroc6" />
+  <arg name="mav_name" default="euroc3" />
   <arg name="room_name" default="LeoC6" />
 
   <group ns="$(arg mav_name)">
@@ -8,10 +8,10 @@
       <param name="publish_whole_trajectory" value="true" />
     </node>
 
-    <node name="task2_eval_node" pkg="euroc_task2" type="task2_eval_node" output="screen">
+    <!--node name="task2_eval_node" pkg="euroc_task2" type="task2_eval_node" output="screen">
       <remap from="pose" to="vrpn_client/estimated_transform" />
       <remap from="saver_constraints_violated" to="/saver_constraints_violated" />
-    </node>
+    </node-->
 
     <node name="task2_server_node" pkg="euroc_task2" type="task2_server_node" output="screen">
       <remap from="vrpn_client/pose" to="vrpn_client/estimated_transform" />
@@ -19,12 +19,12 @@
 
   </group>
 
-  <include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
+  <!--include file="$(find ros_vrpn_client)/launch/asl_vicon.launch">
     <arg name="object_name" value="$(arg mav_name)"/>
   </include>
 
   <include file="$(find mav_saver)/launch/mav_saver_real.launch">
     <arg name="mav_name" value="$(arg mav_name)"/>
-  </include>
+  </include-->
 
 </launch>
