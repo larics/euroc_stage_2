@@ -40,7 +40,7 @@
 #include <agast/glog.h>
 
 namespace {
-#ifdef __ARM_NEON__
+#ifdef __ARM_NEON
 inline uint8x16_t shiftrightonebyte(uint8x16_t& data) {
   uint64x2_t newval = vreinterpretq_u64_u8(data);
   uint64x2_t shiftval = vshrq_n_u64(newval, 8);
@@ -54,7 +54,7 @@ inline uint8x16_t shiftrightonebyte(uint8x16_t& data) {
 
 namespace brisk {
 void Halfsample16(const agast::Mat& srcimg, agast::Mat& dstimg) {
-#ifdef __ARM_NEON__
+#ifdef __ARM_NEON
   static_cast<void>(srcimg);
   static_cast<void>(dstimg);
   CHECK(false) << "HalfSample16 not implemented for NEON.";
@@ -135,7 +135,7 @@ void Halfsample16(const agast::Mat& srcimg, agast::Mat& dstimg) {
       }
     }
   }
-#endif  // __ARM_NEON__
+#endif  // __ARM_NEON
 }
 
 // Half sampling.
@@ -146,7 +146,7 @@ const bool noleftover = (srcimg.cols % 16) == 0;
 // Make sure the destination image is of the right size:
 CHECK_EQ(srcimg.cols / 2, dstimg.cols);
 CHECK_EQ(srcimg.rows / 2, dstimg.rows);
-#ifdef __ARM_NEON__
+#ifdef __ARM_NEON
   // Mask needed later:
   uint8_t tmpmask[16] = {0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
     0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00};
@@ -165,9 +165,9 @@ CHECK_EQ(srcimg.rows / 2, dstimg.rows);
   unsigned char* p_dest_char;
 
   // Size:
-  const unsigned int size = (srcimg.cols * srcimg.rows) / 16;
   const unsigned int hsize = srcimg.cols / 16;
-  const uint8x16_t* p_end = p1 + size;
+  const uint8x16_t* p_end = reinterpret_cast<const uint8x16_t*>
+      (srcimg.data + (srcimg.cols * srcimg.rows) - leftoverCols);
   unsigned int row = 0;
   const unsigned int end = hsize / 2;
   bool half_end;
@@ -178,15 +178,8 @@ CHECK_EQ(srcimg.rows / 2, dstimg.rows);
   while (p2 < p_end) {
     for (unsigned int i = 0; i < end; ++i) {
       // Load the two blocks of memory:
-      uint8x16_t upper;
-      uint8x16_t lower;
-      if (noleftover) {
-        upper = vld1q_u8(reinterpret_cast<const uint8_t*>(p1));
-        lower = vld1q_u8(reinterpret_cast<const uint8_t*>(p2));
-      } else {
-        upper = vld1q_u8(reinterpret_cast<const uint8_t*>(p1));
-        lower = vld1q_u8(reinterpret_cast<const uint8_t*>(p2));
-      }
+      uint8x16_t upper = vld1q_u8(reinterpret_cast<const uint8_t*>(p1));
+      uint8x16_t lower = vld1q_u8(reinterpret_cast<const uint8_t*>(p2));
 
       uint8x16_t result1 = vqaddq_u8(upper, ones);
       result1 = vrhaddq_u8(upper, lower);  // Average - halving add.
@@ -230,15 +223,8 @@ CHECK_EQ(srcimg.rows / 2, dstimg.rows);
     // If we are not at the end of the row, do the rest:
     if (half_end) {
       // Load the two blocks of memory:
-      uint8x16_t upper;
-      uint8x16_t lower;
-      if (noleftover) {
-        upper = vld1q_u8(reinterpret_cast<const uint8_t*>(p1));
-        lower = vld1q_u8(reinterpret_cast<const uint8_t*>(p2));
-      } else {
-        upper = vld1q_u8(reinterpret_cast<const uint8_t*>(p1));
-        lower = vld1q_u8(reinterpret_cast<const uint8_t*>(p2));
-      }
+      uint8x16_t upper = vld1q_u8(reinterpret_cast<const uint8_t*>(p1));
+      uint8x16_t lower = vld1q_u8(reinterpret_cast<const uint8_t*>(p2));
 
       uint8x16_t result1 = vqaddq_u8(upper, ones);
       result1 = vrhaddq_u8(upper, lower);
@@ -268,9 +254,9 @@ CHECK_EQ(srcimg.rows / 2, dstimg.rows);
       const unsigned char* p2_src_char =
           reinterpret_cast<const unsigned char*>(p2);
       for (unsigned int k = 0; k < leftoverCols; ++k) {
-        uint16_t tmp = p1_src_char[k] + p1_src_char[k + 1]
-        + p2_src_char[k] + p2_src_char[k + 1];
-        *(p_dest_char++) = static_cast<unsigned char>(tmp / 4);
+        uint16_t tmp = p1_src_char[2*k] + p1_src_char[2*k + 1]
+        + p2_src_char[2*k] + p2_src_char[2*k + 1];
+        *(p_dest_char++) = static_cast<unsigned char>((tmp+2) / 4);
       }
       // Done with the two rows:
       ++row;
@@ -296,9 +282,9 @@ CHECK_EQ(srcimg.rows / 2, dstimg.rows);
   unsigned char* p_dest_char;
 
   // Size:
-  const unsigned int size = (srcimg.cols * srcimg.rows) / 16;
   const unsigned int hsize = srcimg.cols / 16;
-  __m128i* p_end = p1+size;
+  const __m128i* p_end = reinterpret_cast<const __m128i*>
+      (srcimg.data + (srcimg.cols * srcimg.rows) - leftoverCols);
   unsigned int row = 0;
   const unsigned int end = hsize / 2;
   bool half_end;
@@ -390,9 +376,9 @@ CHECK_EQ(srcimg.rows / 2, dstimg.rows);
       const unsigned char* p1_src_char = reinterpret_cast<unsigned char*>(p1);
       const unsigned char* p2_src_char = reinterpret_cast<unsigned char*>(p2);
       for (unsigned int k = 0; k < leftoverCols; ++k) {
-        uint16_t tmp = p1_src_char[k] + p1_src_char[k + 1]
-            + p2_src_char[k] + p2_src_char[k + 1];
-        *(p_dest_char++) = static_cast<unsigned char>(tmp / 4);
+        uint16_t tmp = p1_src_char[2*k] + p1_src_char[2*k + 1]
+        + p2_src_char[2*k] + p2_src_char[2*k + 1];
+        *(p_dest_char++) = static_cast<unsigned char>((tmp+2) / 4);
       }
       // Done with the two rows:
       ++row;
@@ -402,11 +388,11 @@ CHECK_EQ(srcimg.rows / 2, dstimg.rows);
           srcimg.data + (2 * row + 1) * srcimg.cols);
     }
   }
-#endif  // __ARM_NEON__
+#endif  // __ARM_NEON
 }
 
 void Twothirdsample16(const agast::Mat& srcimg, agast::Mat& dstimg) {
-#ifdef __ARM_NEON__
+#ifdef __ARM_NEON
   static_cast<void>(srcimg);
   static_cast<void>(dstimg);
   CHECK(false) << "Twothirdsample16 not implemented for NEON";
@@ -581,7 +567,7 @@ void Twothirdsample8(const agast::Mat& srcimg, agast::Mat& dstimg) {
   unsigned int row_dest = 0;
   int hsize = srcimg.cols / 15;
 
-#ifdef __ARM_NEON__
+#ifdef __ARM_NEON
   // masks:
     const uint8_t tmpmask1[16] = {1, 0x80, 4, 0x80, 7, 0x80, 10, 0x80, 13, 0x80,
       0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
@@ -797,6 +783,6 @@ void Twothirdsample8(const agast::Mat& srcimg, agast::Mat& dstimg) {
     p_dest1 = dstimg.data + row_dest * dstimg.cols;
     p_dest2 = p_dest1 + dstimg.cols;
   }
-#endif  // __ARM_NEON__
+#endif  // __ARM_NEON
 }
 }  // namespace brisk

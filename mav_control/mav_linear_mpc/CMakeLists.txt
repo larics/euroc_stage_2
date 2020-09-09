@@ -39,6 +39,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   tf
   mav_control_interface
+  tf_conversions
   )
 
 find_package(Eigen REQUIRED)

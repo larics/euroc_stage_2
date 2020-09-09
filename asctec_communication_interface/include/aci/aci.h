@@ -25,6 +25,7 @@
 #include <map>
 #include <vector>
 #include <list>
+#include <functional>
 
 #include <aci/implementation/asctecCommIntf.h>
 #include <aci/raw_buffer.h>

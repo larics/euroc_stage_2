@@ -8,6 +8,7 @@ catkin_simple()
 add_definitions(-std=c++11)
 
 find_package(Eigen REQUIRED)
+find_package(tf_conversions REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
 
 set(SOURCE_FILES  

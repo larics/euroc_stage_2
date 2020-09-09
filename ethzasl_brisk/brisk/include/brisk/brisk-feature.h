@@ -49,7 +49,7 @@
 #include <brisk/scale-space-feature-detector.h>
 
 #if HAVE_OPENCV
-#ifndef __ARM_NEON__
+#ifndef __ARM_NEON
 namespace brisk {
 class BriskFeature : public cv::Feature2D {
  public:
@@ -72,10 +72,10 @@ class BriskFeature : public cv::Feature2D {
   }
 
   // Inherited from cv::Feature2D interface.
-  virtual void operator()(cv::InputArray image, cv::InputArray mask,
-                          std::vector<agast::KeyPoint>& keypoints,
-                          cv::OutputArray descriptors,
-                          bool useProvidedKeypoints = false) const {
+  virtual void detectAndCompute(cv::InputArray image, cv::InputArray mask,
+                                std::vector<agast::KeyPoint>& keypoints,
+                                cv::OutputArray descriptors,
+                                bool useProvidedKeypoints = false) {
     if (!useProvidedKeypoints) {
       keypoints.clear();
     }
@@ -113,6 +113,6 @@ class BriskFeature : public cv::Feature2D {
   brisk::BriskDescriptorExtractor _briskExtractor;
 };
 }  // namespace brisk
-#endif  // __ARM_NEON__
+#endif  // __ARM_NEON
 #endif  // HAVE_OPENCV
 #endif  // BRISK_BRISK_FEATURE_H_
