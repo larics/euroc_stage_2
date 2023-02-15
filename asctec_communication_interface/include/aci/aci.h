@@ -30,6 +30,7 @@
 #include <aci/raw_buffer.h>
 #include <aci/timesync_base.h>
 #include <aci/variable.h>
+#include <functional>
 
 namespace aci {
 

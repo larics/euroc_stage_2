@@ -23,6 +23,7 @@
 #include <aci/simple_time_synchronizer.h>
 #include <aci/variable_defines_autopilot.h>
 #include <aci/variable_defines_trinity.h>
+#include <functional>
 
 #include <iostream>
 #include <iomanip>
