@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.16)
 project(mav_planning_utils)
 
 find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs std_msgs visualization_msgs planning_msgs msf_timing mav_viz nlopt mav_msgs cmake_modules glog_catkin eigen_checks eigen_conversions yaml_cpp_catkin)

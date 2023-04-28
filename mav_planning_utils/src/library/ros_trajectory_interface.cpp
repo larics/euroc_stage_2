@@ -17,7 +17,7 @@
 
 #include <mav_planning_utils/ros_trajectory_interface.h>
 #include <mav_planning_utils/trajectory_sampling.h>
-#include <planning_msgs/conversions.h>
+#include <mav_planning_utils/conversions.h>
 
 namespace mav_planning_utils {
 
