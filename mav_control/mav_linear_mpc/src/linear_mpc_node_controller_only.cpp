@@ -27,6 +27,11 @@ LinearModelPredictiveControllerNode::LinearModelPredictiveControllerNode(ros::No
       got_first_trajectory_command_(false),
       dyn_config_server_(ros::NodeHandle(private_nh, "controller"))
 {
+  points_pose_sub_ = nh.subscribe("/points", 1,
+                               &LinearModelPredictiveControllerNode::PointsPoseCallback, this,
+                               ros::TransportHints().tcpNoDelay());
+  
+  
   cmd_pose_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_POSE, 1,
                                &LinearModelPredictiveControllerNode::CommandPoseCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -55,6 +60,15 @@ LinearModelPredictiveControllerNode::~LinearModelPredictiveControllerNode()
 }
 
 void LinearModelPredictiveControllerNode::CommandPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
+{
+  mav_msgs::EigenTrajectoryPoint trajectory_point;
+  mav_msgs::eigenTrajectoryPointFromPoseMsg(*msg, &trajectory_point);
+
+  linear_mpc_.SetCommandTrajectoryPoint(trajectory_point);
+  got_first_trajectory_command_ = true;
+}
+
+void LinearModelPredictiveControllerNode::PointsPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
   mav_msgs::EigenTrajectoryPoint trajectory_point;
   mav_msgs::eigenTrajectoryPointFromPoseMsg(*msg, &trajectory_point);

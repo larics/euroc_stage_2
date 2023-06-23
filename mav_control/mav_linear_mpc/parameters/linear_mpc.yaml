@@ -12,7 +12,7 @@
 
 ## Controller Parameters:
 controller:
-  mass: 1.628
+  mass: 2.200
   n_state : 8
   n_input : 3
   n_measurement : 6
@@ -51,13 +51,13 @@ controller:
 
   roll_max  : deg(25.0)
   pitch_max : deg(25.0)
-  thrust_max: 5
+  thrust_max: 50
 
   K_yaw : 1.8
-  Ki_height : 0.0
+  Ki_height : 0.7
 
   use_xy_offset_free : true
-  use_height_error_integrator : false
+  use_height_error_integrator : true
   use_KF_estimated_state : false
 
 ## Kalman Filter Parameters:

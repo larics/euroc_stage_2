@@ -26,8 +26,6 @@ namespace default_topics {
 
 static constexpr char IMU[] = "imu";
 static constexpr char MOTOR_MEASUREMENT[] = "motor_speed";
-static constexpr char MOTOR_POSITION_MEASUREMENT[] = "motor_position";
-static constexpr char MOTOR_FORCE_MEASUREMENT[] = "motor_force";
 static constexpr char MAGNETIC_FIELD[] = "magnetic_field";
 static constexpr char GPS[] = "gps";
 static constexpr char RC[] = "rc";
@@ -46,6 +44,7 @@ static constexpr char COMMAND_POSE[] = "command/pose";
 static constexpr char COMMAND_GPS_WAYPOINT[] = "command/gps_waypoint";
 
 static constexpr char POSE[] = "pose";
+static constexpr char VELOCITY_RELATIVE[] = "velocity_relative";
 static constexpr char POSE_WITH_COVARIANCE[] = "pose_with_covariance";
 static constexpr char TRANSFORM[] = "transform";
 static constexpr char ODOMETRY[] = "odometry";
@@ -53,17 +52,10 @@ static constexpr char POSITION[] = "position";
 
 // Simulation-specific topic names.
 static constexpr char WRENCH[] = "wrench";
-static constexpr char WIND_SPEED[] = "wind_speed";
-static constexpr char EXTERNAL_FORCE[] = "external_force";
+static constexpr char WIND[] = "wind";
 
 static constexpr char GROUND_TRUTH_POSE[] = "ground_truth/pose";
 static constexpr char GROUND_TRUTH_TWIST[] = "ground_truth/twist";
-
-// Flight controller specific topic names
-static constexpr char FLIGHT_CONTROLLER_ARM[] = "mavros/cmd/arming";
-static constexpr char FLIGHT_CONTROLLER_SET_MODE[] = "mavros/set_mode";
-static constexpr char FLIGHT_CONTROLLER_STATE[] = "mavros/state";
-static constexpr char FLIGHT_CONTROLLER_BATTERY[] = "mavros/battery";
 
 }  // end namespace default_topics
 }  // end namespace mav_msgs

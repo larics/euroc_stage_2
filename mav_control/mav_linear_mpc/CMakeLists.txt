@@ -107,3 +107,8 @@ add_executable(PD_attitude_controller_node src/PD_attitude_controller_node.cpp)
 target_link_libraries(PD_attitude_controller_node PD_attitude_controller ${catkin_LIBRARIES})
 add_dependencies(PD_attitude_controller_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 SET_TARGET_PROPERTIES(PD_attitude_controller_node PROPERTIES COMPILE_FLAGS "-std=c++11")
+
+add_executable(point_publisher src/point_publisher.cpp)
+target_link_libraries(point_publisher ${catkin_LIBRARIES})
+add_dependencies(point_publisher ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+#SET_TARGET_PROPERTIES(PD_attitude_controller_node PROPERTIES COMPILE_FLAGS "-std=c++11")

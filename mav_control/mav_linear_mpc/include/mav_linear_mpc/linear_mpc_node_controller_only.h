@@ -58,6 +58,7 @@ class LinearModelPredictiveControllerNode
   ros::Subscriber odometry_sub_;
   ros::Subscriber cmd_trajectory_sub_;
   ros::Subscriber cmd_pose_sub_;
+  ros::Subscriber points_pose_sub_;
 
   //publishers
   ros::Publisher command_roll_pitch_yawrate_thrust_pub_;
@@ -66,6 +67,8 @@ class LinearModelPredictiveControllerNode
   dynamic_reconfigure::Server<mav_linear_mpc::LinearMPCConfig> dyn_config_server_;
 
   void CommandPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
+
+  void PointsPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
 
   void CommandTrajectoryCallback(
       const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& trajectory_reference_array_msg);

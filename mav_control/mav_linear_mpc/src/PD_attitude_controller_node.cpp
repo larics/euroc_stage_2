@@ -14,6 +14,7 @@
  */
 
 #include <mav_msgs/default_topics.h>
+#include <iostream>
 
 #include <mav_linear_mpc/PD_attitude_controller_node.h>
 
@@ -89,7 +90,7 @@ void PDAttitudeControllerNode::OdometryCallback(const nav_msgs::OdometryConstPtr
   for (int i = 0; i < ref_rotor_velocities.size(); i++)
     turning_velocities_msg.angular_velocities.push_back(ref_rotor_velocities[i]);
   turning_velocities_msg.header.stamp = odometry_msg->header.stamp;
-
+  /*std::cout << turning_velocities_msg.angular_velocities;*/
   motor_velocity_reference_pub_.publish(turning_velocities_msg);
 }
 

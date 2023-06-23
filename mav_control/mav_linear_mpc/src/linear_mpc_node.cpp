@@ -99,6 +99,7 @@ bool LinearModelPredictiveControllerNode::calculateRollPitchYawrateThrustCommand
   attitude_thrust_command->pitch = rpy_thrust(1);
   attitude_thrust_command->yaw_rate = rpy_thrust(2);
   attitude_thrust_command->thrust.z() = rpy_thrust(3);
+  std::cout << attitude_thrust_command;
   return true;
 }
 
