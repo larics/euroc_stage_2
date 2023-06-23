@@ -1,0 +1,58 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/lovro/Documents/CatkinWs/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/ethzasl_brisk/agast/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/asctec_communication_interface/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/ethzasl_brisk/brisk/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/eigen_checks/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/ethzasl_mav_interface/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/euroc_stage_2_evaluation/euroc_stage2_common/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/euroc_stage_2_evaluation/euroc_vicon_transmission/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/vehicle_monitor/ground_truth_octree/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/vehicle_monitor/kill_switch_library/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/kindr/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/lightweight_filtering/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/mav_control/mav_control_interface/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/mav_control/mav_linear_mpc/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/mav_comm/mav_msgs/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/mav_planning_utils/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/vehicle_monitor/mav_saver/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/mav_gui/mav_viz/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/minkindr/minkindr/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/minkindr_ros/minkindr_conversions/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/ethzasl_msf/msf_core/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/ethzasl_msf/msf_timing/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/nlopt/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/volumetric_mapping/octomap_world/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/openkvis/okvis_time/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/openkvis/okvis_timing/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/openkvis/okvis_util/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/opengv/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/mav_comm/planning_msgs/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/ros_vrpn_client/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/rotors_simulator/rotors_control/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/rotors_simulator/rotors_gazebo_plugins/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/rotors_simulator/rotors_joy_interface/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/euroc_stage_2_evaluation/solutions/safe_joystick_nav/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/suitesparse/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/vehicle_monitor/vehicle_monitor_library/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/vehicle_monitor/vicon_room_simulator/include/**",
+        "/home/lovro/Documents/CatkinWs/src/euroc_stage_2/volumetric_mapping/volumetric_map_base/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
